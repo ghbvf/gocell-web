@@ -1,0 +1,16 @@
+/* shared/styles/variables.css */
+:root {
+  /* Generic layout sizing */
+  --header-height: 64px;
+  --sidebar-width: 250px;
+  
+  /* Fallback colors if not using AntD vars */
+  --bg-color: #f5f5f5;
+  --text-color: #333333;
+}
+
+/* Dark mode basic overrides if needed outside Antd */
+[data-theme='dark'] {
+  --bg-color: #141414;
+  --text-color: rgba(255, 255, 255, 0.85);
+}
