@@ -9,8 +9,16 @@
 ## Changelog
 
 ### v1.1 — 2026-05-23
-- §9 目录结构从单 app 扁平 `src/` 升级为 **pnpm workspace monorepo**（`apps/web/` + `packages/<cell>/` 平铺，scope `@gocell`）
-- §12 未决项 5「前端架构原则（cell/slice 边界 → AI 并行隔离）」**已决**，单独成文 [parallel-ai-cell-mapping.md](../design/parallel-ai-cell-mapping.md)
+- §9 目录结构从单 app 扁平 `src/` 升级为 **pnpm workspace monorepo**（`apps/web/` + `packages/<cell>/` 平铺，scope `@gocell`，含 `@gocell/devboard` 容纳 Batch 5/6 内容）
+- §11 未决项 5「前端架构原则（cell/slice 边界 → AI 并行隔离）」**已决**，单独成文 [parallel-ai-cell-mapping.md](../design/parallel-ai-cell-mapping.md)
+- 跨包共享元素归属决策（PR #1 review 落地）：
+  - auth store 放 `@gocell/access`（非 `apps/web`）
+  - `<Can>` 拆两层：`@gocell/core` 提供 UI 壳 + 注入点，`@gocell/access` 提供 PDP client
+  - Batch 5/6 内容（Cells/Groups/Coverage/Contracts/Deps）落 `@gocell/devboard`
+- 边界强制机制补全：每包 `package.json#exports` 收口 + Batch 0 末期补 ESLint `no-restricted-imports`
+- codegen CI 校验：`tools/codegen/` 落根目录，CI 跑 `pnpm codegen && git diff --exit-code` 保证 `packages/contracts/src/` 只读
+- §10.1.1 新增 monorepo 结构验收项
+- §12 估算：Batch 0 因 monorepo 骨架追加 1–2 人天（3d → 4–5d），MVP 总工作量 37 → 38–39 人天
 - D1（类型生成）落地点从 `src/api/types/` 改为 `packages/contracts/src/`
 - Feature Flag 实现路径从 `src/lib/flags.ts` 改为 `packages/config/src/composables/useFlag.ts`
 - 设计 token 移植目标从 `src/styles/tokens.css` 改为 `packages/core/src/styles/tokens.css`
@@ -193,14 +201,16 @@ MVP 共 **14 个路由 + 全局 Shell**，按依赖关系分 7 个交付批次�
 > Plan 组（Products/Backlog/Inbox/Board/Sprint）、Build 组的 Workflows/DAG/AI/Sandboxes 不在 MVP；`/access/decisions`、`/access/reviews` 以 placeholder 出现；`/observe` 等 BR-003 落地后再开。
 
 ### Batch 0 · 基建（前置）
-- 项目脚手架：Vite 5 + Vue 3 + TS strict + Pinia + Router 4 + Axios + AntD Vue 4 + vue-i18n 9 + ESLint + Prettier
+- **monorepo 骨架**（v1.1 新增）：根 `package.json` + `pnpm-workspace.yaml`（catalog 钉死所有第三方版本）+ `tsconfig.base.json`；`apps/web` + 9 个空包（core/shared/contracts/request/access/audit/config/observability/devboard）；每包 `package.json#exports` 收口
+- 项目脚手架：Vite 5 + Vue 3 + TS strict + Pinia + Router 4 + Axios + AntD Vue 4 + vue-i18n 9 + ESLint + Prettier（版本全部走 catalog）
 - `packages/core/src/styles/`：tokens.css、v1-linear.scss（从 `docs/design/gocell/project/v1-linear.css` 拆解）
-- 全局 Layout 组件：Sidebar、TopBar、CommandPalette（壳）、AppShell
+- 全局 Layout 组件：Sidebar、TopBar、CommandPalette（壳）、AppShell 放在 `packages/core/src/ui/`
 - 主题切换（light/dark），i18n 框架（zh-CN/en-US 框架就位，业务文案逐 batch 补）
-- HTTP 客户端：Axios 实例 + 401 自动跳登录 + refresh token 拦截器 + 统一错误码 → i18n 映射
-- 认证状态：Pinia `auth` store（user、token、PDP 决策缓存）
-- 路由守卫：未登录跳 `/login`；首次部署跳 `/first-run-setup`；`<Can>` 组件接 PDP（依赖 BR-004 §4.1）
-- **类型生成 toolchain**（D1）：`tools/codegen/` 跑 `json2ts`；`pnpm codegen` 命令；CI 校验未手改
+- HTTP 客户端：Axios 实例 + 401 自动跳登录 + refresh token 拦截器 + 统一错误码 → i18n 映射，放在 `packages/request/src/`
+- 认证状态：Pinia `auth` store（user、token、PDP 决策缓存）放在 `packages/access/src/stores/`（v1.1 决策）
+- 路由守卫：未登录跳 `/login`；首次部署跳 `/first-run-setup`；`<Can>` UI 壳 + `useDecision()` 注入点放 `@gocell/core`，PDP client 放 `@gocell/access`（v1.1 决策；依赖 BR-004 §4.1）
+- **类型生成 toolchain**（D1）：根目录 `tools/codegen/` 跑 `json2ts` 输出 `packages/contracts/src/`；`pnpm codegen` 命令；CI 跑 `pnpm codegen && git diff --exit-code packages/contracts/src/` 校验未手改
+- **边界 lint**（Batch 0 末期）：补 `eslint-plugin-import` `no-restricted-imports` / `import/no-internal-modules` 规则作为双保险
 
 ### Batch 1 · 认证入口（最高优先级）
 
@@ -298,8 +308,6 @@ Wave 2 才上的 Observability tab（Anomalies / What changed / Service graph / 
 | **Feature Flag** | `configcore/featureflag` | `packages/config/src/composables/useFlag.ts` 拉缓存；UI 用 `v-if="isEnabled('flag-id')"`；**不在前端硬编 flag 名** |
 
 ### 8.1 现有 Cell / Slice 清单（来自本地 `../gocell/cells/`）
-
-### 8.1 现有 Cell / Slice 清单（来自本地 `../gocell/cells/`）
 - **accesscore**：authorizationdecide · configreceive · identitymanage · rbacassign · rbaccheck · sessionlogin · sessionlogout · sessionrefresh · sessionvalidate · setup
 - **auditcore**：auditappendconfig · auditappendrole · auditappendsession · auditappenduser · auditquery
 - **configcore**：configpublish · configread · configreadinternal · configsubscribe · configwrite · featureflag · flagwrite
@@ -389,16 +397,20 @@ gocell-web/
 │
 ├── packages/                               # 平铺
 │   │ ── 基础设施层
-│   ├── core/                               # @gocell/core           tokens + UI 原子 + theme/i18n composables
+│   ├── core/                               # @gocell/core           tokens + UI 原子 + theme/i18n composables（不兜底业务）
 │   ├── shared/                             # @gocell/shared         utils / constants / types
 │   ├── contracts/                          # @gocell/contracts      后端 schema → ts 派生（D1 落地点）
 │   ├── request/                            # @gocell/request        axios 实例 + 拦截器
 │   │
 │   │ ── 业务能力层（对齐后端 cells/*）
-│   ├── access/                             # @gocell/access         ← cells/accesscore
+│   ├── access/                             # @gocell/access         ← cells/accesscore（含 auth store + PDP client）
 │   ├── audit/                              # @gocell/audit          ← cells/auditcore
 │   ├── config/                             # @gocell/config         ← cells/configcore
-│   └── observability/                      # @gocell/observability  ← BR-003 LGTM
+│   ├── observability/                      # @gocell/observability  ← BR-003 LGTM
+│   └── devboard/                           # @gocell/devboard       Cells / Groups / Coverage / Contracts / Deps（Batch 5/6）
+│
+├── tools/
+│   └── codegen/                            # 根目录，json2ts 从 ../gocell/contracts/ 派生 packages/contracts/src/
 │
 ├── pnpm-workspace.yaml
 ├── tsconfig.base.json
@@ -421,11 +433,12 @@ packages/access/
 ```
 
 **隔离机制**：
-- 物理：git worktree（沿用后端约定 `<issue-num>-<short-slug>`）
-- 包边界：`package.json#dependencies` + pnpm `workspace:*`（等价后端 `slice.yaml#contractUsages`）
-- 跨包入口：每包 `src/index.ts` 唯一导出（等价后端 Contract 白名单）
-- 类型契约：`@gocell/contracts` schema 派生，CI 校验只读
-- 版本一致：`pnpm-workspace.yaml` 的 `catalog:` 段钉死 Vue / Pinia / AntD Vue 版本
+- 物理：git worktree（沿用后端约定 `<num>-<short-slug>`，无 issue 时序号自增）
+- 跨包入口：每包 `package.json#exports` 收口到 `./src/index.ts`，阻止外部深路径 import
+- 包依赖：`package.json#dependencies` + pnpm `workspace:*`（等价后端 `slice.yaml#contractUsages`）
+- 边界双保险：ESLint `no-restricted-imports` / `import/no-internal-modules`（Batch 0 末期补）
+- 类型契约：`@gocell/contracts` schema 派生，CI 跑 `pnpm codegen && git diff --exit-code` 保证只读
+- 版本一致：`pnpm-workspace.yaml#catalog:` 段钉死 Vue / Pinia / AntD Vue 等版本，业务包用 `"catalog:"` 引用
 
 详细决策记录、AI 并行工作流、落地清单见 [parallel-ai-cell-mapping.md](../design/parallel-ai-cell-mapping.md)。
 
@@ -442,7 +455,14 @@ packages/access/
 - [ ] 首次部署能从 `/first-run-setup` 走到 `/` 全流程
 - [ ] 视觉与设计稿的"V1 Linear"风格 95%+ 一致（line-first / 单 accent / Serif H1 / Mono ID）
 - [ ] Lighthouse Desktop Performance 评分 ≥ 85
-- [ ] 单元测试覆盖率 ≥ 50%（重点：auth flow、HTTP 拦截器、theme/i18n store）
+- [ ] 单元测试覆盖率 ≥ 50%（每包独立 vitest，根 `pnpm -r test` 汇总；重点：auth flow、HTTP 拦截器、theme/i18n store）
+
+### 10.1.1 Monorepo 结构验收（v1.1 新增）
+- [ ] `pnpm install` 一次性成功；`pnpm -F @gocell/web dev` 启动空白页无错误
+- [ ] `pnpm -r build` 全绿
+- [ ] `pnpm codegen && git diff --exit-code packages/contracts/src/` 无 diff（即 contracts 未手改）
+- [ ] ESLint 边界规则跑通：无跨包深路径 import 违规
+- [ ] `pnpm-workspace.yaml#catalog:` 钉死的版本在所有业务 `package.json` 中以 `"catalog:"` 字符串引用（无硬编码版本号）
 
 ### 10.2 非验收项（明确不在 MVP 评估范围内）
 - AI Studio、Sandboxes 的真实功能（仅 UI 壳）
@@ -473,7 +493,7 @@ packages/access/
 | 维度 | 数值 | 说明 |
 |---|---|---|
 | MVP 路由数 | 14 | 含 1 个 multi-tab Cell detail；Access 拆 4 个子路由（MVP 实现 2 个，2 个 placeholder） |
-| MVP 工作量（人天） | 约 **37 人天**（1 名熟练 Vue 工程师） | Batch 0 (3d) + Batch 1 (4d) + Batch 2 (3d, Identities) + Batch 3 (3d, Policies + `<Can>` 组件) + Batch 4 (5d) + Batch 5 (10d) + Batch 6 (6d) + Batch 7 (3d) |
+| MVP 工作量（人天） | 约 **38–39 人天**（1 名熟练 Vue 工程师） | Batch 0 (4–5d，v1.1 含 monorepo 骨架 + catalog + exports + codegen CI hook，+1~2d) + Batch 1 (4d) + Batch 2 (3d, Identities) + Batch 3 (3d, Policies + `<Can>` 组件) + Batch 4 (5d) + Batch 5 (10d) + Batch 6 (6d) + Batch 7 (3d) |
 | 后端配套工作量 | 5–8 人天 | BR-001 (1–2d) + BR-002 (0.5d) + BR-003 (3–5d) + BR-004 §4.1+§4.2 (1d) |
 | 设计稿源代码量 | 26k+ 行 JSX/CSS | 移植成 Vue 时大部分逻辑可保留，CSS 80% 可复用 |
 | 后端联调 | Batch 1/2/3/4/7 必须 |  |
