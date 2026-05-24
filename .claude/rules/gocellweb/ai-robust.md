@@ -1,8 +1,8 @@
-# AI 协作章程
+# AI-robust 治理章程
 
-> 第一性原理：gocell-web 主要实施者是 AI（Claude Code）。工程治理目标必须是 **AI-rebust**——违反不可表达 / 机制不可绕过 / 字面约定全部消除。
+> 第一性原理：gocell-web 主要实施者是 AI（Claude Code）。工程治理目标必须从"对人友好"转为 **AI-robust**——违反不可表达 / 机制不可绕过 / 字面约定全部消除。
 >
-> 本文是约束 enforcement 的权威真值源。落地实例活在代码 + lint 配置，本文不复制。
+> 本文件是约束 enforcement 的权威真值源。原则在此终结，不向 ADR / 代码 "详见"；落地实例活在代码 + lint 配置，本文不复制也不指向。
 
 ## 适用范围
 
@@ -16,7 +16,7 @@
 
 **不在范围**：日常实施任务（加页面 / 加字段 / 修 bug / refactor）；review finding 中的 bug 修复类。
 
-## AI-rebust 三档分级
+## AI-robust 三档分级
 
 | 档 | 定义 | 典型载体 | AI 可绕过性 |
 |---|---|---|---|

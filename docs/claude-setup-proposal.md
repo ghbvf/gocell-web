@@ -1,8 +1,9 @@
-# gocell-web · Claude 协作体系适配方案（草稿）
+# gocell-web · Claude 协作体系适配方案
 
-> 起草：2026-05-23 · 状态：**待 confirm，未落盘**
+> 起草：2026-05-23 · 状态：**已落地（2026-05-23）**——本方案 §3 全部落盘，见 `CLAUDE.md` + `.claude/{skills,agents,rules}/`
 > 参考：`../gocell/CLAUDE.md`、`../gocell/.claude/{skills,agents,rules}/`
 > 立足：本仓库 PRD（`docs/prd/PRD.md` v1.1，Vue 3 + Vite 5 + pnpm monorepo）+ 并行 AI 隔离设计（`docs/design/parallel-ai-cell-mapping.md`）
+> 本文档保留为决策追溯（§5 七问的取舍记录）；现行规则以 `CLAUDE.md` + `.claude/rules/gocellweb/*.md` 为准
 
 ---
 
@@ -18,7 +19,7 @@
 
 | 类别 | 后端文件 | 一句话用途 |
 |---|---|---|
-| 主规则 | `CLAUDE.md` | 分层依赖、Cell/Slice 规则、Go 规范、AI 协作章程、sandbox 提权约定 |
+| 主规则 | `CLAUDE.md` | 分层依赖、Cell/Slice 规则、Go 规范、AI-robust 治理章程、sandbox 提权约定 |
 | skills | `ship/` | 全流程实施：探索→计划→worktree→TDD→PR→review→fix |
 | skills | `fix/` | 问题诊断+根因+Cx 分级+修复+backlog 登记 |
 | skills | `pr-review/` | 按 diff 行数自动分级派 reviewer agent 跑六维度审查 |
@@ -26,7 +27,7 @@
 | skills | `sonar-scan/` | 拉 SonarCloud 静态扫描结果 |
 | skills | `speckit-*` (8 个) | github spec-kit 全套（constitution/specify/clarify/plan/tasks/implement/analyze/checklist） |
 | agents | `architect`, `developer`, `reviewer`, `explorer`, `kernel-guardian`, `doc-engineer`, `devops`, `product-manager`, `project-manager`, `roadmap` | 角色化子代理，opus/sonnet 分级 |
-| rules | `rules/gocell/{ai-collab,cell-patterns,contract-fanout,error-handling,eventbus,observability,runtime-api,api-versioning,go-standards}.md` | 领域规则手册，被 CLAUDE.md / agents 引用 |
+| rules | `rules/gocell/{ai-robust,cell-patterns,contract-fanout,error-handling,eventbus,observability,runtime-api,api-versioning,go-standards}.md` | 领域规则手册，被 CLAUDE.md / agents 引用 |
 
 ---
 
@@ -40,7 +41,7 @@
 | `pr-review` 按 diff 行数派 reviewer | 完全保留分级思路。维度从「Go 六维」改为「**Vue 模板正确性 / TS 类型安全 / 包边界（cell/slice 隔离）/ 可访问性 / 性能（bundle/渲染）/ 设计 token 一致性**」六维 |
 | `fix` 的 Cx1/Cx2/Cx3 复杂度分级 + 根因优先 + backlog 登记 | 保留。backlog 走 GitHub Issues（前端项目不另起 backlog 文档） |
 | `git-worktree` 约定（编号 / `-C` 路径 / 基于 develop） | 保留。命令从 `go -C` 换成 `pnpm -C` |
-| `ai-collab.md` 的 Hard/Medium/Soft 三档 enforcement 评级 | 保留思想。Hard = TS 类型 + ESLint rule + `package.json#exports`；Medium = vitest 用例；Soft = 文档约定（**沿用「Soft 严禁立项」规则**） |
+| `ai-robust.md` 的 Hard/Medium/Soft 三档 enforcement 评级 | 保留思想。Hard = TS 类型 + ESLint rule + `package.json#exports`；Medium = vitest 用例；Soft = 文档约定（**沿用「Soft 严禁立项」规则**） |
 | 「Sandbox 提权」清单（`git push/pull`, `gh`） | 直接复制，加入 `pnpm publish`（如有）和 `gh` 全家桶 |
 
 ### 2.2 改造吸收（需要重写但角色保留）
@@ -83,7 +84,7 @@
 5. **前端编码规范**：Vue 3 `<script setup lang="ts">`、Composition API、Pinia 模块化、API 调用走 `@gocell/<cell>/api`、样式用 `tokens.css` 变量、禁止 inline color
 6. **测试规范**：新增/修改代码 vitest 覆盖率 ≥ 80%；`@gocell/core` ≥ 90%；Playwright 仅冒烟
 7. **修改前流程**：`Read` 目标文件 → `Grep` 已有实现 → 改完跑 `pnpm -F <pkg> typecheck && test` → 涉及多包跑 `pnpm -w lint`
-8. **AI 协作章程**：Hard/Medium/Soft 三档 + Soft 禁止立项；并行 AI 工作必须落在不同 `packages/<cell>` 内（引用 `docs/design/parallel-ai-cell-mapping.md`）
+8. **AI-robust 治理章程**：Hard/Medium/Soft 三档 + Soft 禁止立项；并行 AI 工作必须落在不同 `packages/<cell>` 内（引用 `docs/design/parallel-ai-cell-mapping.md`）
 9. **Sandbox 提权清单**：`git push/pull/fetch`、`gh *`、`pnpm publish`、`docker *`
 10. **参考框架表**（仿后端）：组件库对标 antd / pro-vue / vben-admin；状态对标 pinia 官方；监控对标 grafana onCall console；设计对标 Linear / Vercel
 
@@ -111,7 +112,7 @@
 ### 3.4 `.claude/rules/gocellweb/`（命名空间换成 gocellweb，文件按需）
 
 第一批写 3 篇就够：
-- `ai-collab.md`（Hard/Medium/Soft + 并行 AI 隔离约定）
+- `ai-robust.md`（Hard/Medium/Soft + 并行 AI 隔离约定）
 - `frontend-standards.md`（合并后端 `go-standards.md` 的角色：TS strict、命名、目录、Pinia、Composables、错误处理、a11y、i18n key 规范）
 - `package-boundaries.md`（合并 `cell-patterns.md` + `contract-fanout.md` + `api-versioning.md`：包间 exports、契约只读、版本号变更触发面）
 
@@ -158,6 +159,6 @@ PRD §10 列了 7 个 MVP Batch，本方案建议节奏：
 1. `CLAUDE.md`
 2. `.claude/skills/{ship,pr-review,fix,git-worktree}/SKILL.md`
 3. `.claude/agents/{architect,boundary-guardian,vue-developer,reviewer,explorer}.md`
-4. `.claude/rules/gocellweb/{ai-collab,frontend-standards,package-boundaries}.md`
+4. `.claude/rules/gocellweb/{ai-robust,frontend-standards,package-boundaries}.md`
 
 每个文件落地前再贴关键差异 diff 让你确认，不会一口气写完不让你看。

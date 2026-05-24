@@ -37,7 +37,7 @@ allowed-tools: [Read, Write, Edit, Glob, Grep, Bash, Agent, AskUserQuestion]
    | 4-9 | 2 |
    | ≥ 10 | 3 |
 
-4. **Triage 并行**（subagent_type: `Explore`）：聚类后的组分发，每组完整执行阶段 1.1→1.4 + 2.4，返回结构化表。**同包必须分给同一 agent**（避免重复 Read + 防 fix 阶段写冲突）。Sub-agent prompt 自包含（finding 列表、当前分支 diff 摘要、CLAUDE.md 关键约束）。
+4. **Triage 并行**（subagent_type: `Explore`）：聚类后的组分发，每组完整执行阶段 1.1→1.3 + 2.4，返回结构化表。**同包必须分给同一 agent**（避免重复 Read + 防 fix 阶段写冲突）。Sub-agent prompt 自包含（finding 列表、当前分支 diff 摘要、CLAUDE.md 关键约束）。
 5. 主 agent 汇总，输出状态/归属表：
 
    | 状态 | 归属 | 处理方式 |
@@ -54,8 +54,8 @@ allowed-tools: [Read, Write, Edit, Glob, Grep, Bash, Agent, AskUserQuestion]
    - IN_SCOPE + Cx3 / Cx4 → 只输出方案，标注"需人工决策"
    - RELATED + Cx1 / Cx2 → 搭车修，标注"搭车"
    - OUT_OF_SCOPE → 不修；按 §沟通规则闸门输出建议命令
-7. **修复并行**（subagent_type: `vue-developer`）：按包聚类分发，并发数同步骤 3。每个 sub-agent 串行处理组内 finding（同包内串行避免写冲突），跑阶段 4.4 的 Edit-Test Loop。Cx1 + Cx2 都并行；Cx3 / Cx4 只输出方案不派发。
-8. 主 agent 汇总修复结果，跑阶段 4.5 最终测试 + 4.8 git 收尾 + issue 闭合/创建。
+7. **修复并行**（subagent_type: `vue-developer`）：按包聚类分发，并发数同步骤 3。每个 sub-agent 串行处理组内 finding（同包内串行避免写冲突），跑阶段 4.2 的 Edit-Test Loop。Cx1 + Cx2 都并行；Cx3 / Cx4 只输出方案不派发。
+8. 主 agent 汇总修复结果，跑阶段 4.3 最终测试 + 4.6 git 收尾 + issue 闭合/创建。
 
 ---
 
@@ -65,7 +65,7 @@ allowed-tools: [Read, Write, Edit, Glob, Grep, Bash, Agent, AskUserQuestion]
 
 1. `gh issue list --label backlog --search "<关键词>" --state open --json number,title,labels` → 确认是否已登记
 2. 命中 → `gh issue view <num>` 读取上下文
-3. 未命中 → 记录；修复完成后在阶段 4.8 按 §沟通规则闸门处理
+3. 未命中 → 记录；修复完成后在阶段 4.6 按 §沟通规则闸门处理
 
 ### 1.1 找到问题代码
 
@@ -75,7 +75,7 @@ allowed-tools: [Read, Write, Edit, Glob, Grep, Bash, Agent, AskUserQuestion]
 
 从问题代码向上（调用方 / 父组件 / 路由 / store action）和向下（子组件 / Composables / API client）追踪。跨 3+ 包用 Agent(Explore)。同时追踪数据流：API → store → Composable → 组件 props → DOM。
 
-### 1.4 确认问题是否存在
+### 1.3 确认问题是否存在
 
 | 状态 | 含义 | 下一步 |
 |------|------|--------|
@@ -86,7 +86,7 @@ allowed-tools: [Read, Write, Edit, Glob, Grep, Bash, Agent, AskUserQuestion]
 
 输出含：状态 / 位置 / 调用链 / 数据流 / 问题描述。
 
-### 1.5 复现测试（Reproduction Test First）
+### 1.4 复现测试（Reproduction Test First）
 
 CONFIRMED 后、修复前，构造一个能**复现问题**的测试用例：
 
@@ -249,7 +249,7 @@ Cx2+ 问题，**先查参考再动手**。三层按权威性递减：
 在当前分支直接修改。Commit: `fix(<scope>): <问题简述>` + 根因 + 复杂度 + Refs + Co-Authored-By。
 scope = 包短名（`access` / `audit` / `core` / `web` 等）。安全约束：只 add 修复文件（不 add -A）；不 amend。
 
-### 4.4 Edit-Test Loop
+### 4.2 Edit-Test Loop
 
 > **批量并行**：4+ 条 finding 按批量模式步骤 7 派发 `vue-developer` sub-agent，下面循环在每个 sub-agent 内对其分组的 finding 串行执行；单条 / ≤3 条由主 agent 直接执行。
 
@@ -259,13 +259,13 @@ scope = 包短名（`access` / `audit` / `core` / `web` 等）。安全约束：
 2. Read 目标文件
 3. Edit / Write 修改代码
 4. `pnpm -F @gocell/<pkg> typecheck` — 类型检查
-5. `pnpm -F @gocell/<pkg> test --run -t "<test>"` — **立即跑相关测试**（含 1.5 复现测试）
+5. `pnpm -F @gocell/<pkg> test --run -t "<test>"` — **立即跑相关测试**（含 1.4 复现测试）
 6. 失败：
    - 当前编辑引入 → 立即修正，重回 3
    - 暴露后续依赖 → 记录，继续下一步
 7. 通过 → **TaskUpdate → completed** → 下一任务
 
-### 4.5 最终测试
+### 4.3 最终测试
 
 ```bash
 pnpm -w lint
@@ -277,7 +277,7 @@ pnpm codegen && git diff --exit-code packages/contracts/src/
 pnpm -F @gocell/web build
 ```
 
-### 4.6 测试失败处理（分层回退）
+### 4.4 测试失败处理（分层回退）
 
 | Round | 策略 |
 |-------|------|
@@ -285,11 +285,11 @@ pnpm -F @gocell/web build
 | 3 | `git stash` + 切换备选方案 |
 | 4 | 回滚（`git checkout -- <文件>`），Cx1 标 ESCALATE，Cx2 降级最小修复标遗留 |
 
-### 4.7 验证修复
+### 4.5 验证修复
 
 重新执行阶段 1 的定位，确认：原问题代码已被替换 / 数据流已正确保护 / 测试覆盖了问题场景。
 
-### 4.8 Git 收尾
+### 4.6 Git 收尾
 
 **步骤 1：提交分支代码**
 1. `git add` 修复涉及的代码文件
@@ -322,7 +322,7 @@ pnpm -F @gocell/web build
 - 修复报告（已修）
 - 批量验证（review 报告）
 
-**Backlog 验证**（4.8 已执行，此处 `gh` 复核）：
+**Backlog 验证**（4.6 已执行，此处 `gh` 复核）：
 - FIXED finding 对应 issue 已 closed + comment 引用了 PR 编号
 - OUT_OF_SCOPE finding：按 §沟通规则闸门输出建议命令，必须含 `priority/pX` + `pkg/<name>` 或 `batch/<N>` 至少一个分类 label
 - /fix 派生新问题：同 OUT_OF_SCOPE；body 草稿含 `Discovered via /fix #<original>`
@@ -336,5 +336,5 @@ pnpm -F @gocell/web build
 - 测试失败且 4 轮回退后仍无法修正
 - 修复过程中发现新问题超出原始 scope
 - Cx3 / Cx4 用户追加了 `--auto` 参数（矛盾，需确认）
-- **任何 `gh issue create` 调用前**（OUT_OF_SCOPE / /fix 派生新问题 / 4.8 表格中"输出建议命令"行）：先输出建议命令 + body 草稿，再 AskUserQuestion "是否帮你 run 此命令？"。用户拒绝 → 留命令在最终报告供手工 run，/fix 不自动 create
+- **任何 `gh issue create` 调用前**（OUT_OF_SCOPE / /fix 派生新问题 / 4.6 表格中"输出建议命令"行）：先输出建议命令 + body 草稿，再 AskUserQuestion "是否帮你 run 此命令？"。用户拒绝 → 留命令在最终报告供手工 run，/fix 不自动 create
 - `priority/p0` 红线升级（incident-driven 或安全 CVE）

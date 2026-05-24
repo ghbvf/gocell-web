@@ -1,13 +1,13 @@
 ---
 name: ship
-description: "全流程实施：探索→计划→worktree→TDD→实施→PR→review→fix Cx1/Cx2→人工确认。L1（跳过探索，1 reviewer）/ L2（单 explorer，1 reviewer）/ L3（默认，三 explorer，按 diff 行数 1/2/3/6 reviewer 自动）"
+description: "全流程实施：探索→计划→worktree→TDD→实施→PR→review→fix Cx1/Cx2→人工确认。L1（跳过探索，1 reviewer）/ L2（单 explorer，1 reviewer）/ L3（默认，三 explorer，按 diff 行数 0/2/3/6 reviewer 自动，<200 行主 agent 自审）"
 argument-hint: "[--level=L1|L2|L3] <#issue-number 或任务描述>"
 allowed-tools: [Read, Write, Edit, Glob, Grep, Bash, Agent, AskUserQuestion]
 ---
 
 # gocell-web Ship — 全流程实施
 
-默认 L3（三 explorer + 详细计划 + 与用户确认 + 按 diff 行数自动 1/2/3/6 reviewer，见阶段 7）。
+默认 L3（三 explorer + 详细计划 + 与用户确认 + 按 diff 行数自动 0/2/3/6 reviewer，见阶段 7）。
 
 剥离 `--level=` flag 后，剩余参数匹配 `^#?[0-9]+$` 视为 GitHub issue 号，先 `gh issue view <N> --json title,body,labels,state`（`dangerouslyDisableSandbox: true`）拉取作为任务上下文；后续以 issue title/body 替代自由文本，阶段 6 PR body 追加 `Closes #<N>`。`state != "OPEN"` 或 `gh issue view` 失败 → AskUserQuestion 让用户裁定。
 
@@ -75,9 +75,10 @@ allowed-tools: [Read, Write, Edit, Glob, Grep, Bash, Agent, AskUserQuestion]
 ```bash
 git fetch origin
 git worktree add worktrees/<NNN-short-name> -b <branch-name> origin/develop
+pnpm -C worktrees/<NNN-short-name> install --frozen-lockfile   # 新 worktree 必跑：建立 workspace:* 软链
 ```
 
-编号区间：Feature `001-199` / Fix `200-299` / Refactor `500-599`。扫描 `worktrees/` + `git branch -a` 取最大 +1。
+编号区间：Feature `001-199` / Fix `200-299` / Refactor `500-599`。扫描 `worktrees/` + `git branch -a` 取最大 +1。`pnpm install` 不跑 → 阶段 4 测试会报 `Cannot find module '@gocell/<x>'`（详见 `.claude/skills/git-worktree/SKILL.md` §失败模式）。
 
 ---
 
@@ -170,12 +171,12 @@ git -C worktrees/<NNN> diff --numstat origin/develop | awk '{i+=$1; d+=$2} END{p
 
 | diff 行数 | reviewer 数 | 维度切分 |
 |-----------|------------|---------|
-| `diff < 200` | 1 | 单 agent 跑全六维度 |
+| `diff < 200` | 0（主 agent 自审） | 不派发 sub-agent；主 agent 在自身上下文按 `.claude/agents/reviewer.md` 跑全六维度 |
 | `200 ≤ diff < 600` | 2 | A：Vue 模板 + TS + 设计/产品；B：包边界 + a11y + 性能 |
 | `600 ≤ diff < 1500` | 3 | A：Vue 模板 + TS；B：包边界 + 设计/产品；C：a11y + 性能 |
 | `diff ≥ 1500` | 6 | 六维度各 1 agent 并行 |
 
-多 agent 时并行启动，每个 prompt 自包含其负责维度；全部完成后主 agent 汇总去重 Finding 表（含 Cx 分级）。
+`diff ≥ 200` 时并行启动 sub-agent，每个 prompt 自包含其负责维度；全部完成后主 agent 汇总去重 Finding 表（含 Cx 分级）。与 `.claude/skills/pr-review/SKILL.md` 阶段 3 分级对齐。
 
 ---
 

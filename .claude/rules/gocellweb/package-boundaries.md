@@ -127,7 +127,7 @@ CI 校验链路完整：
 | 自定义 plugin `no-hardcoded-i18n` | 模板 / TS 中文字面量拦截 | Medium |
 | 自定义 plugin `no-css-magic-number` | 颜色 / 间距 / 圆角字面量拦截 | Medium |
 
-所有自定义 plugin 必须配反向自检测试（合规代码 0 命中），详见 `ai-collab.md` §载体决策原则。
+所有自定义 plugin 必须配反向自检测试（合规代码 0 命中），详见 `ai-robust.md` §载体决策原则。
 
 ## README 模板（每包必出）
 

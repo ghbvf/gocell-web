@@ -458,7 +458,7 @@ PRD Batch 5/6 的"开发者平台"功能（Cells 列表 / Smart Groups / Coverag
 - [pnpm Catalog 协议](https://pnpm.io/catalogs)
 
 ### 内部
-- 后端 Cell/Slice/Contract 模型：`../gocell/CLAUDE.md` + `../gocell/.claude/rules/gocell/ai-collab.md`
+- 后端 Cell/Slice/Contract 模型：`../gocell/CLAUDE.md` + `../gocell/.claude/rules/gocell/ai-robust.md`
 - 后端 cell 示例：`../gocell/cells/accesscore/cell.yaml`
 - 后端 slice 示例：`../gocell/cells/configcore/slices/configread/slice.yaml`
 - PRD：`docs/prd/PRD.md`

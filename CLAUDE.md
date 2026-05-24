@@ -50,6 +50,7 @@ worktrees/                — git worktree 工作区（用完即删）
 - `@gocell/core` 只依赖 `@gocell/shared`，**不依赖任何业务 cell**
 - `@gocell/shared` 不依赖其他 `@gocell/*` 包
 - `@gocell/access|audit|config|observability|devboard` 之间**不直接 import**——跨域只允许通过 `@gocell/contracts` 的类型 + `@gocell/request` 的 client
+- **设计性例外**：`@gocell/devboard` 可消费 `@gocell/access` 暴露的 PDP client（`<Can>` 组件、`useDecision()` composable），因为 devboard 所有页面都依赖 PDP；其他业务包之间无例外。`<Can>` 与 PDP client 唯一归属 `@gocell/access`，不在 `@gocell/core` 复刻
 - `apps/web` 可依赖所有 `@gocell/*` 包；反向不允许
 - 跨包 import 只走 `package.json#exports` 暴露的入口，**禁止深路径** `@gocell/foo/src/internal/x`
 
@@ -89,21 +90,9 @@ worktrees/                — git worktree 工作区（用完即删）
    - 跨包：`pnpm -w lint && pnpm -w typecheck`
 4. **只改需要改的**——禁止顺手重构无关代码
 
-## AI 协作章程
+## AI-robust 治理章程
 
-主要实施者是 AI。新增 / 修改约束的 enforcement 机制按三档评级：
-
-| 档 | 含义 | 例子 |
-|---|---|---|
-| **Hard** | 工具链强制，违规即报错 | TS strict、`package.json#exports`、ESLint `no-restricted-imports`、`pnpm codegen` CI 守门 |
-| **Medium** | 自动化测试覆盖，违规挂红 | vitest 单测、Playwright 冒烟 |
-| **Soft** | 仅文档约定，靠人 / AI review 兜底 | 命名规范、注释风格 |
-
-**Soft 严禁单独立项**——纯靠口头规则的约束不立。要么有 Hard / Medium 兜底，要么不写。
-
-### 并行 AI 隔离
-
-多 AI agent 并行实施时**必须落到不同 `packages/<cell>/`**；同包内并行受 `allowedFiles` 约束（同文件冲突归同一 batch / agent）。物理隔离走 git worktree（见 `.claude/skills/git-worktree/`），逻辑隔离走 `workspace:*` + `exports`。详细规则见 `docs/design/parallel-ai-cell-mapping.md` §3。
+主要实施者是 AI（Claude Code）。新增 / 修改约束 enforcement 机制（TS 类型系统 / `package.json#exports` / ESLint rule / 构建期断言 / 运行期 invariant）按 **AI-robust 三档**（Hard / Medium / Soft）评级；**Soft 严禁立项**。载体决策原则、盲区自检、并行 AI 隔离规则、review checklist 详见 `.claude/rules/gocellweb/ai-robust.md`。并行 AI 隔离的设计依据见 `docs/design/parallel-ai-cell-mapping.md` §3。
 
 ## 参考框架
 
