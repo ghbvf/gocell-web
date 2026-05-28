@@ -4,10 +4,25 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./composables": "./src/composables/index.ts",
+    "./styles/tokens.css": "./src/styles/tokens.css",
+    "./styles/v1-linear.scss": "./src/styles/v1-linear.scss"
   },
   "files": ["src"],
   "scripts": {
-    "typecheck": "vue-tsc --noEmit"
+    "typecheck": "vue-tsc --noEmit",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage"
+  },
+  "dependencies": {
+    "vue": "catalog:",
+    "ant-design-vue": "catalog:"
+  },
+  "devDependencies": {
+    "vitest": "catalog:",
+    "@vue/test-utils": "catalog:",
+    "jsdom": "catalog:",
+    "@vitest/coverage-v8": "catalog:"
   }
 }
