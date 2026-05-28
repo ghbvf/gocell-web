@@ -1,9 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { nextTick } from 'vue'
-import { createPinia, setActivePinia } from 'pinia'
 import { createI18n } from 'vue-i18n'
-import { createGocellI18n, syncI18nLocale } from './index'
-import { useLocaleStore } from '../stores/useLocaleStore'
+import { createGocellI18n } from './index'
 import zhCN from './messages/zh-CN'
 import enUS from './messages/en-US'
 
@@ -86,12 +83,13 @@ describe('zh-CN messages', () => {
     expect(zhCN.errors.ERR_VALIDATION).toBeTruthy()
   })
 
-  it('has all 5 nav group labels', () => {
+  it('has all 6 nav group labels', () => {
     expect(zhCN.nav.group.meta).toBeTruthy()
     expect(zhCN.nav.group.plan).toBeTruthy()
     expect(zhCN.nav.group.build).toBeTruthy()
     expect(zhCN.nav.group.access).toBeTruthy()
     expect(zhCN.nav.group.operate).toBeTruthy()
+    expect(zhCN.nav.group.reserved).toBeTruthy()
   })
 
   it('has shell.brand key', () => {
@@ -100,6 +98,24 @@ describe('zh-CN messages', () => {
 
   it('has command.placeholder key', () => {
     expect(zhCN.command.placeholder).toBeTruthy()
+  })
+
+  it('has command.searchLabel key', () => {
+    expect(zhCN.command.searchLabel).toBeTruthy()
+  })
+
+  it('has shell.commandPalette.close key', () => {
+    expect(zhCN.shell.commandPalette.close).toBeTruthy()
+  })
+
+  it('has shell.ai keys', () => {
+    expect(zhCN.shell.ai.label).toBeTruthy()
+    expect(zhCN.shell.ai.expand).toBeTruthy()
+    expect(zhCN.shell.ai.collapse).toBeTruthy()
+  })
+
+  it('has nav.ai key', () => {
+    expect(zhCN.nav.ai).toBeTruthy()
   })
 })
 
@@ -137,31 +153,15 @@ describe('en-US messages', () => {
   it('has shell.brand key', () => {
     expect(enUS.shell.brand).toBe('gocell')
   })
-})
 
-describe('syncI18nLocale', () => {
-  beforeEach(() => {
-    localStorage.clear()
-    setActivePinia(createPinia())
+  it('has shell.ai keys', () => {
+    expect(enUS.shell.ai.label).toBeTruthy()
+    expect(enUS.shell.ai.expand).toBeTruthy()
+    expect(enUS.shell.ai.collapse).toBeTruthy()
   })
 
-  it('syncs i18n locale from store initial value', () => {
-    localStorage.setItem('gocell-locale', 'en-US')
-    const i18n = createGocellI18n()
-    const localeStore = useLocaleStore()
-    syncI18nLocale(i18n, localeStore)
-    expect(asComposer(i18n).locale.value).toBe('en-US')
-  })
-
-  it('updates i18n locale when store locale changes', async () => {
-    const i18n = createGocellI18n()
-    const localeStore = useLocaleStore()
-    syncI18nLocale(i18n, localeStore)
-
-    localeStore.setLocale('en-US')
-    // Vue watch is flushed async; await nextTick for propagation
-    await nextTick()
-    expect(asComposer(i18n).locale.value).toBe('en-US')
+  it('has command.searchLabel key', () => {
+    expect(enUS.command.searchLabel).toBeTruthy()
   })
 })
 

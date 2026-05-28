@@ -7,6 +7,9 @@
  *   - 'new':      enabled, green-ish pill (new feature)
  *   - 'preview':  enabled but visually weakened
  *   - 'reserved': not yet implemented, disabled / placeholder
+ *
+ * PRD §5.1.1 defines 6 groups:
+ *   meta | plan | build | access | operate | reserved
  */
 
 export type NavPill = 'live' | 'preview' | 'new' | 'reserved'
@@ -45,9 +48,9 @@ export const NAV_GROUPS: NavGroup[] = [
     groupKey: 'build',
     labelKey: 'nav.group.build',
     items: [
-      { key: 'workflows', labelKey: 'nav.workflows', to: '/workflows', pill: 'reserved' },
+      { key: 'workflow', labelKey: 'nav.workflow', to: '/workflow', pill: 'reserved' },
       { key: 'dag', labelKey: 'nav.dag', to: '/dag', pill: 'reserved' },
-      { key: 'ai-studio', labelKey: 'nav.aiStudio', to: '/ai-studio', pill: 'reserved' },
+      { key: 'ai', labelKey: 'nav.ai', to: '/ai', pill: 'reserved' },
       { key: 'sandboxes', labelKey: 'nav.sandboxes', to: '/sandboxes', pill: 'reserved' },
       { key: 'deps', labelKey: 'nav.deps', to: '/deps', pill: 'live' },
       { key: 'contracts', labelKey: 'nav.contracts', to: '/contracts', pill: 'live' },
@@ -72,6 +75,12 @@ export const NAV_GROUPS: NavGroup[] = [
       { key: 'flags', labelKey: 'nav.flags', to: '/flags', pill: 'live' },
       { key: 'cells', labelKey: 'nav.cells', to: '/cells', pill: 'live' },
       { key: 'groups', labelKey: 'nav.groups', to: '/groups', pill: 'live' },
+    ],
+  },
+  {
+    groupKey: 'reserved',
+    labelKey: 'nav.group.reserved',
+    items: [
       { key: 'observe', labelKey: 'nav.observe', to: '/observe', pill: 'preview' },
       { key: 'billing', labelKey: 'nav.billing', to: '/billing', pill: 'preview' },
       { key: 'secrets', labelKey: 'nav.secrets', to: '/secrets', pill: 'preview' },

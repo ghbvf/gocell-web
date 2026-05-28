@@ -17,6 +17,7 @@ const zhCN = {
       build: 'Build',
       access: 'Access',
       operate: 'Operate',
+      reserved: '预留',
     },
     coverage: '覆盖率',
     products: '产品',
@@ -25,7 +26,9 @@ const zhCN = {
     board: '看板',
     sprint: '迭代',
     workflows: '工作流',
+    workflow: '工作流',
     dag: '任务 DAG',
+    ai: 'AI',
     aiStudio: 'AI Studio',
     sandboxes: '沙箱',
     deps: '依赖',
@@ -80,9 +83,16 @@ const zhCN = {
     },
     commandPalette: {
       open: '打开命令面板',
+      close: '关闭命令面板',
+    },
+    ai: {
+      label: 'AI 助手',
+      expand: '展开 AI 助手',
+      collapse: '收起 AI 助手',
     },
   },
   command: {
+    searchLabel: '搜索命令',
     placeholder: '输入命令或搜索…',
     empty: '无结果',
     hint: '输入以搜索',
@@ -105,4 +115,15 @@ const zhCN = {
 } as const
 
 export default zhCN
-export type MessageSchema = typeof zhCN
+
+/**
+ * Recursively map all leaf string-literal types to `string`.
+ * This gives en-US a structural schema to `satisfies` against — enforcing
+ * that all keys exist without requiring identical string values.
+ */
+type Widen<T> =
+  T extends string ? string :
+  T extends Record<string, unknown> ? { [K in keyof T]: Widen<T[K]> } :
+  T
+
+export type MessageSchema = Widen<typeof zhCN>

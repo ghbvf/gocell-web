@@ -3,8 +3,8 @@ import { NAV_GROUPS } from './navConfig'
 import type { NavGroup } from './navConfig'
 
 describe('navConfig', () => {
-  it('exports exactly 5 groups', () => {
-    expect(NAV_GROUPS).toHaveLength(5)
+  it('exports exactly 6 groups (PRD §5.1.1)', () => {
+    expect(NAV_GROUPS).toHaveLength(6)
   })
 
   it('group keys are unique', () => {
@@ -87,6 +87,20 @@ describe('navConfig', () => {
 
     it('contracts → /contracts', () => {
       expect(findItem('build', 'contracts').to).toBe('/contracts')
+    })
+
+    it('workflow → /workflow (not /workflows)', () => {
+      expect(findItem('build', 'workflow').to).toBe('/workflow')
+    })
+
+    it('ai → /ai (not /ai-studio)', () => {
+      expect(findItem('build', 'ai').to).toBe('/ai')
+    })
+
+    it('reserved group has 3 items (observe/billing/secrets)', () => {
+      const group = NAV_GROUPS.find((g) => g.groupKey === 'reserved')
+      expect(group).toBeDefined()
+      expect(group!.items).toHaveLength(3)
     })
   })
 

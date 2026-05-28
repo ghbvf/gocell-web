@@ -19,5 +19,5 @@ export { NAV_GROUPS } from './ui/index'
 export type { NavGroup, NavItem, NavPill } from './ui/index'
 
 // i18n
-export { createGocellI18n, syncI18nLocale } from './i18n/index'
+export { createGocellI18n } from './i18n/index'
 export type { MessageSchema } from './i18n/index'

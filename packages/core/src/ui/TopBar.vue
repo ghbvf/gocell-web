@@ -18,7 +18,7 @@ const localeStore = useLocaleStore()
 /**
  * Derive breadcrumb from current route path + NAV_GROUPS.
  * Returns { group, page } where group is the group label key
- * and page is the item label key, or undefined if not found.
+ * and page is the item label key, or null if not found.
  */
 const breadcrumb = computed<{ groupKey: string; itemKey: string } | null>(() => {
   const path = route.path
@@ -55,15 +55,17 @@ function openCommandPalette(): void {
 
 <template>
   <header class="topbar">
-    <!-- Breadcrumbs -->
-    <nav class="topbar__crumbs" aria-label="breadcrumb">
-      <span class="topbar__crumb topbar__crumb--faint">{{ t('shell.breadcrumb.root') }}</span>
-      <template v-if="breadcrumb">
-        <span class="topbar__sep" aria-hidden="true">/</span>
-        <span class="topbar__crumb topbar__crumb--faint">{{ t(breadcrumb.groupKey) }}</span>
-        <span class="topbar__sep" aria-hidden="true">/</span>
-        <span class="topbar__crumb">{{ t(breadcrumb.itemKey) }}</span>
-      </template>
+    <!-- Breadcrumbs: semantic <ol>/<li> structure per ARIA -->
+    <nav class="topbar__crumbs" :aria-label="t('shell.breadcrumb.root')">
+      <ol class="topbar__crumb-list">
+        <li class="topbar__crumb topbar__crumb--faint">{{ t('shell.breadcrumb.root') }}</li>
+        <template v-if="breadcrumb">
+          <li class="topbar__sep" aria-hidden="true">/</li>
+          <li class="topbar__crumb topbar__crumb--faint">{{ t(breadcrumb.groupKey) }}</li>
+          <li class="topbar__sep" aria-hidden="true">/</li>
+          <li class="topbar__crumb" aria-current="page">{{ t(breadcrumb.itemKey) }}</li>
+        </template>
+      </ol>
     </nav>
 
     <!-- Actions -->
@@ -141,7 +143,7 @@ function openCommandPalette(): void {
 
 <style scoped>
 .topbar {
-  height: var(--topbar-height, 44px);
+  height: var(--topbar-height);
   border-bottom: 1px solid var(--line);
   display: flex;
   align-items: center;
@@ -155,8 +157,17 @@ function openCommandPalette(): void {
 .topbar__crumbs {
   display: flex;
   align-items: center;
+  min-width: 0;
+}
+
+.topbar__crumb-list {
+  display: flex;
+  align-items: center;
   gap: 6px;
   font-size: 13px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
   min-width: 0;
 }
 
@@ -183,7 +194,8 @@ function openCommandPalette(): void {
 }
 
 .topbar__cmd {
-  height: 28px;
+  /* min-height ≥ 30px per PRD §4 btn exception lower bound */
+  min-height: 30px;
   font-size: 12.5px;
 }
 
@@ -193,6 +205,8 @@ function openCommandPalette(): void {
   gap: 4px;
   display: flex;
   align-items: center;
+  /* min-height ≥ 30px per PRD §4 btn exception lower bound */
+  min-height: 30px;
 }
 
 .topbar__locale-label {

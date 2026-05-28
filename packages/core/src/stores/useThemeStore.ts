@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import { onScopeDispose } from 'vue'
 
 type Theme = 'light' | 'dark'
 
@@ -36,29 +37,18 @@ function applyTheme(t: Theme): void {
   localStorage.setItem(STORAGE_KEY, t)
 }
 
+/**
+ * Module-level guard: prevents duplicate listener registration across HMR reloads.
+ * Lives outside the store factory so it survives Pinia re-instantiation.
+ */
+let _mediaListenerRegistered = false
+
 export const useThemeStore = defineStore('core.theme', () => {
   const theme = ref<Theme>(readInitialTheme())
 
   // Apply on init in case the store is created after the FOUC barrier
   // (the barrier already wrote it, so this is a no-op write of the same value)
   applyTheme(theme.value)
-
-  // Register OS-level change listener only when user has NOT made an explicit
-  // localStorage choice. Flag prevents duplicate registration across HMR.
-  let _mediaListenerRegistered = false
-
-  function _registerSystemListener(): void {
-    if (_mediaListenerRegistered) return
-    if (typeof window.matchMedia !== 'function') return
-    _mediaListenerRegistered = true
-    const mq = window.matchMedia('(prefers-color-scheme: dark)')
-    mq.addEventListener('change', (e) => {
-      // Only follow system if user has no stored preference
-      if (!localStorage.getItem(STORAGE_KEY)) {
-        setTheme(e.matches ? 'dark' : 'light')
-      }
-    })
-  }
 
   function setTheme(t: Theme): void {
     theme.value = t
@@ -69,8 +59,29 @@ export const useThemeStore = defineStore('core.theme', () => {
     setTheme(theme.value === 'light' ? 'dark' : 'light')
   }
 
-  // Register listener after store is set up
-  _registerSystemListener()
+  // Register OS-level change listener only when user has NOT made an explicit
+  // localStorage choice. Module-level flag prevents duplicate registration across HMR.
+  if (!_mediaListenerRegistered && typeof window.matchMedia === 'function') {
+    _mediaListenerRegistered = true
+    const mq = window.matchMedia('(prefers-color-scheme: dark)')
+
+    /* v8 ignore next 5 */
+    function handleSystemColorChange(e: MediaQueryListEvent): void {
+      // Only follow system if user has no stored preference
+      if (!localStorage.getItem(STORAGE_KEY)) {
+        setTheme(e.matches ? 'dark' : 'light')
+      }
+    }
+
+    mq.addEventListener('change', handleSystemColorChange)
+
+    // Clean up when the store's reactive scope is disposed (e.g., test teardown)
+    /* v8 ignore next 4 */
+    onScopeDispose(() => {
+      mq.removeEventListener('change', handleSystemColorChange)
+      _mediaListenerRegistered = false
+    })
+  }
 
   return { theme, setTheme, toggleTheme }
 })

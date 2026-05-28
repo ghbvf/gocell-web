@@ -1,8 +1,11 @@
 /**
  * en-US — English messages (framework-level keys)
  *
- * Mirrors zh-CN schema exactly. All keys must be present.
+ * Mirrors zh-CN schema exactly. `satisfies MessageSchema` enforces
+ * compile-time completeness — missing keys will cause a type error.
  */
+import type { MessageSchema } from './zh-CN'
+
 const enUS = {
   nav: {
     group: {
@@ -11,6 +14,7 @@ const enUS = {
       build: 'Build',
       access: 'Access',
       operate: 'Operate',
+      reserved: 'Reserved',
     },
     coverage: 'Coverage',
     products: 'Products',
@@ -19,7 +23,9 @@ const enUS = {
     board: 'Board',
     sprint: 'Sprint',
     workflows: 'Workflows',
+    workflow: 'Workflow',
     dag: 'Task DAG',
+    ai: 'AI',
     aiStudio: 'AI Studio',
     sandboxes: 'Sandboxes',
     deps: 'Dependencies',
@@ -74,9 +80,16 @@ const enUS = {
     },
     commandPalette: {
       open: 'Open command palette',
+      close: 'Close command palette',
+    },
+    ai: {
+      label: 'AI assistant',
+      expand: 'Expand AI assistant',
+      collapse: 'Collapse AI assistant',
     },
   },
   command: {
+    searchLabel: 'Search commands',
     placeholder: 'Type a command or search…',
     empty: 'No results',
     hint: 'Type to search',
@@ -96,6 +109,6 @@ const enUS = {
     ERR_RATE_LIMIT: 'Too many requests. Please slow down.',
     ERR_TIMEOUT: 'Request timed out. Please try again.',
   },
-} as const
+} as const satisfies MessageSchema
 
 export default enUS

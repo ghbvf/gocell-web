@@ -107,43 +107,70 @@ function openCommandPalette(): void {
     <!-- Navigation groups -->
     <nav class="sidebar__nav" aria-label="main navigation">
       <template v-for="group in NAV_GROUPS" :key="group.groupKey">
-        <div class="sidebar__group">
+        <div
+          class="sidebar__group"
+          role="group"
+          :aria-label="t(group.labelKey)"
+        >
           <div
             v-if="!collapsed"
+            :id="`sidebar-group-${group.groupKey}`"
             class="sidebar__group-label"
-            aria-hidden="true"
           >
             {{ t(group.labelKey) }}
           </div>
-          <RouterLink
-            v-for="item in group.items"
-            :key="item.key"
-            :to="item.to"
-            class="sidebar__item"
-            :class="{
-              'sidebar__item--active': isActive(item.to),
-              'sidebar__item--reserved': item.pill === 'reserved',
-            }"
-            :aria-current="isActive(item.to) ? 'page' : undefined"
-            :tabindex="item.pill === 'reserved' ? -1 : undefined"
-            :aria-disabled="item.pill === 'reserved' ? 'true' : undefined"
-            @click.prevent="item.pill === 'reserved' ? undefined : undefined"
-          >
+
+          <template v-for="item in group.items" :key="item.key">
+            <!-- Reserved items: non-interactive span (keyboard Enter must not activate) -->
             <span
-              v-if="!collapsed"
-              class="sidebar__item-label"
+              v-if="item.pill === 'reserved'"
+              class="sidebar__item sidebar__item--reserved"
+              :aria-label="t(item.labelKey)"
+              aria-disabled="true"
             >
-              {{ t(item.labelKey) }}
+              <span
+                v-if="!collapsed"
+                class="sidebar__item-label"
+              >
+                {{ t(item.labelKey) }}
+              </span>
+              <span
+                v-if="!collapsed"
+                class="sidebar__pill"
+                :class="pillClass('reserved')"
+                aria-hidden="true"
+              >
+                {{ t('nav.pill.reserved') }}
+              </span>
             </span>
-            <span
-              v-if="!collapsed && item.pill && item.pill !== 'live'"
-              class="sidebar__pill"
-              :class="pillClass(item.pill)"
-              aria-hidden="true"
+
+            <!-- Live / preview / new items: real RouterLink -->
+            <RouterLink
+              v-else
+              :to="item.to"
+              class="sidebar__item"
+              :class="{
+                'sidebar__item--active': isActive(item.to),
+              }"
+              :aria-label="t(item.labelKey)"
+              :aria-current="isActive(item.to) ? 'page' : undefined"
             >
-              {{ t(`nav.pill.${item.pill}`) }}
-            </span>
-          </RouterLink>
+              <span
+                v-if="!collapsed"
+                class="sidebar__item-label"
+              >
+                {{ t(item.labelKey) }}
+              </span>
+              <span
+                v-if="!collapsed && item.pill && item.pill !== 'live'"
+                class="sidebar__pill"
+                :class="pillClass(item.pill)"
+                aria-hidden="true"
+              >
+                {{ t(`nav.pill.${item.pill}`) }}
+              </span>
+            </RouterLink>
+          </template>
         </div>
       </template>
     </nav>
@@ -169,7 +196,7 @@ function openCommandPalette(): void {
 <style scoped>
 /* ------ Layout ------ */
 .sidebar {
-  width: var(--sidebar-width, 232px);
+  width: var(--sidebar-width);
   height: 100%;
   background: var(--bg-sunken);
   border-right: 1px solid var(--line);
@@ -181,11 +208,14 @@ function openCommandPalette(): void {
 }
 
 .sidebar--collapsed {
-  width: var(--sidebar-collapsed-width, 52px);
+  width: var(--sidebar-collapsed-width);
 }
 
 @media (prefers-reduced-motion: reduce) {
   .sidebar {
+    transition: none;
+  }
+  .sidebar__item {
     transition: none;
   }
 }
@@ -196,7 +226,7 @@ function openCommandPalette(): void {
   align-items: center;
   justify-content: space-between;
   padding: 0 12px;
-  height: var(--topbar-height, 44px);
+  height: var(--topbar-height);
   border-bottom: 1px solid var(--line-soft);
   flex-shrink: 0;
 }
@@ -300,6 +330,7 @@ function openCommandPalette(): void {
   opacity: 0.45;
   cursor: default;
   pointer-events: none;
+  /* span has no href/role=link; keyboard cannot activate */
 }
 
 .sidebar__item-label {

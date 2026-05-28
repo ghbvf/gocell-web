@@ -33,14 +33,14 @@ function collapse(): void {
       'ai-bar--fullscreen': stage === 'fullscreen',
     }"
     role="complementary"
-    aria-label="AI assistant"
+    :aria-label="t('shell.ai.label')"
   >
     <div class="ai-bar__strip">
       <button
         v-if="stage === 'collapsed'"
         type="button"
         class="ai-bar__trigger v1-ghost"
-        :aria-label="t('shell.commandPalette.open')"
+        :aria-label="t('shell.ai.expand')"
         @click="expand"
       >
         <svg
@@ -62,7 +62,7 @@ function collapse(): void {
         v-else
         type="button"
         class="ai-bar__trigger v1-ghost"
-        :aria-label="t('shell.collapse.collapse')"
+        :aria-label="t('shell.ai.collapse')"
         @click="collapse"
       >
         <svg
@@ -118,7 +118,8 @@ function collapse(): void {
   gap: 5px;
   width: auto;
   padding: 0 6px;
-  height: 24px;
+  /* min-height ≥ 30px per PRD §4 btn exception lower bound */
+  min-height: 30px;
 }
 
 .ai-bar__label {

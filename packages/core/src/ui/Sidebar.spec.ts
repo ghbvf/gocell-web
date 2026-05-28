@@ -27,6 +27,8 @@ function makeRouter(initialPath = '/') {
     { path: '/observe', component: { template: '<div/>' } },
     { path: '/billing', component: { template: '<div/>' } },
     { path: '/secrets', component: { template: '<div/>' } },
+    { path: '/workflow', component: { template: '<div/>' } },
+    { path: '/ai', component: { template: '<div/>' } },
   ]
   const router = createRouter({ history: createMemoryHistory(), routes })
   if (initialPath !== '/') {
@@ -68,7 +70,7 @@ describe('Sidebar.vue', () => {
   })
 
   describe('group rendering', () => {
-    it('renders 5 nav groups', () => {
+    it('renders 6 nav groups (PRD §5.1.1)', () => {
       const wrapper = mountSidebar()
       const groups = wrapper.findAll('.sidebar__group')
       expect(groups.length).toBe(NAV_GROUPS.length)

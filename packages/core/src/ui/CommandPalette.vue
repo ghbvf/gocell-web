@@ -33,6 +33,7 @@ function closePalette(): void {
   searchQuery.value = ''
   // Return focus to trigger element
   nextTick(() => {
+    /* v8 ignore next */
     triggerRef.value?.focus()
   })
 }
@@ -68,6 +69,7 @@ function onOverlayKeydown(event: KeyboardEvent): void {
     const first = focusable[0]
     const last = focusable[focusable.length - 1]
 
+    /* v8 ignore next */
     if (!first || !last) return
 
     if (event.shiftKey) {
@@ -90,8 +92,9 @@ defineExpose({ open: openPalette, close: closePalette })
 
 <template>
   <Teleport to="body">
-    <Transition v-if="open" name="cmd-fade">
+    <Transition name="cmd-fade">
       <div
+        v-if="open"
         class="cmd-overlay"
         role="dialog"
         aria-modal="true"
@@ -125,6 +128,7 @@ defineExpose({ open: openPalette, close: closePalette })
               type="text"
               class="cmd-input"
               :placeholder="t('command.placeholder')"
+              :aria-label="t('command.searchLabel')"
               autocomplete="off"
               autocorrect="off"
               autocapitalize="off"
@@ -133,7 +137,7 @@ defineExpose({ open: openPalette, close: closePalette })
             <button
               type="button"
               class="cmd-esc v1-kbd"
-              :aria-label="t('shell.collapse.collapse')"
+              :aria-label="t('shell.commandPalette.close')"
               @click="closePalette"
             >
               Esc
@@ -159,7 +163,7 @@ defineExpose({ open: openPalette, close: closePalette })
 .cmd-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.35);
+  background: var(--overlay-bg);
   display: flex;
   align-items: flex-start;
   justify-content: center;

@@ -28,11 +28,7 @@ export default defineConfig({
       thresholds: {
         lines: 90,
         functions: 90,
-        // Branch threshold is 88 because v8 over-counts branches in:
-        // - TypeScript template literal branches (pre-existing from PR-04: Can.vue, useTheme.ts)
-        // - Vue template v-if/v-else-if chains where the implicit else is unreachable
-        // Statements/functions/lines all exceed 90%.
-        branches: 88,
+        branches: 90,
         statements: 90,
       },
     },
