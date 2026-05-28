@@ -11,6 +11,15 @@ jobs:
   codegen-readonly:
     runs-on: ubuntu-latest
     steps:
+      - name: Assert backend contracts token is configured
+        env:
+          GOCELL_CONTRACTS_TOKEN: ${{ secrets.GOCELL_CONTRACTS_TOKEN }}
+        run: |
+          if [ -z "$GOCELL_CONTRACTS_TOKEN" ]; then
+            echo "::error::GOCELL_CONTRACTS_TOKEN 未配置——codegen 守门需读取私有后端契约仓库 ghbvf/gocell。请在 repo secrets 配置只读 PAT。"
+            exit 1
+          fi
+
       - name: Checkout gocell-web
         uses: actions/checkout@v4
         with:
@@ -45,4 +54,9 @@ jobs:
 
       - name: Assert contracts are read-only (no manual edits)
         run: git diff --exit-code packages/contracts/src/
+        working-directory: gocell-web
+
+      # 守门第二段：生成物未漂移后，确认下游消费端类型未被破坏（package-boundaries §CI 步骤 4）。
+      - name: Typecheck downstream consumers
+        run: pnpm -w typecheck
         working-directory: gocell-web
