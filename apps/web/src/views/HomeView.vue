@@ -1,7 +1,14 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useTheme } from '@gocell/core'
 
 const { theme, toggleTheme } = useTheme()
+
+const toggleLabel = computed(() =>
+  theme.value === 'light' ? 'Switch to dark theme' : 'Switch to light theme',
+)
+
+const toggleText = computed(() => (theme.value === 'light' ? 'Dark' : 'Light'))
 </script>
 
 <template>
@@ -10,10 +17,10 @@ const { theme, toggleTheme } = useTheme()
     <button
       class="v1-btn"
       type="button"
-      :aria-label="`Switch to ${theme === 'light' ? 'dark' : 'light'} theme`"
+      :aria-label="toggleLabel"
       @click="toggleTheme"
     >
-      {{ theme === 'light' ? 'Dark' : 'Light' }}
+      {{ toggleText }}
     </button>
   </main>
 </template>

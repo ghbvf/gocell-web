@@ -3,8 +3,6 @@
    Single source of truth for all design variables.
    ============================================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;600&display=swap');
-
 :root {
   /* type */
   --font-sans: 'Geist', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
@@ -14,7 +12,7 @@
   /* light palette — nearly white with subtle cool tint */
   --bg:          oklch(0.995 0.002 270);
   --bg-sunken:   oklch(0.975 0.003 270);
-  --bg-raised:  #ffffff;
+  --bg-raised:  oklch(1 0 0);
   --line:        oklch(0.92 0.004 270);
   --line-soft:   oklch(0.95 0.003 270);
   --fg:          oklch(0.18 0.008 270);
@@ -32,10 +30,12 @@
   --err:   oklch(0.58 0.22 25);
 
   /* radii / shadow */
+  --r-xs: 3px;
   --r-sm: 4px;
   --r: 6px;
   --r-lg: 10px;
   --r-xl: 14px;
+  --r-pill: 999px;
   --shadow-sm: 0 1px 0 rgba(17, 17, 26, 0.03), 0 0 0 1px rgba(17, 17, 26, 0.04);
   --shadow:    0 1px 2px rgba(17, 17, 26, 0.04), 0 4px 12px rgba(17, 17, 26, 0.06);
   --shadow-lg: 0 8px 28px rgba(17, 17, 26, 0.10), 0 2px 4px rgba(17, 17, 26, 0.04);

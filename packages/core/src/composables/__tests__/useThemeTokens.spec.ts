@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { createPinia, setActivePinia } from 'pinia'
 import { theme as themeAlgorithm } from 'ant-design-vue'
 
 // Helper: mock getComputedStyle to return fixed rgb values for CSS variables
@@ -11,9 +12,8 @@ const setupGetComputedStyle = (vars: Record<string, string>) => {
         if (prop === 'getPropertyValue') {
           return (name: string) => vars[name.trim()] ?? ''
         }
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const val = (target as any)[prop]
-        if (typeof val === 'function') return val.bind(target)
+        const val = Reflect.get(target, prop)
+        if (typeof val === 'function') return (val as (...args: unknown[]) => unknown).bind(target)
         return val
       },
     })
@@ -26,6 +26,8 @@ describe('useThemeTokens', () => {
     vi.restoreAllMocks()
     document.documentElement.removeAttribute('data-theme')
     localStorage.clear()
+    // Fresh Pinia instance before each test so module-reset store state is clean
+    setActivePinia(createPinia())
     Object.defineProperty(window, 'matchMedia', {
       writable: true,
       value: vi.fn().mockImplementation((query: string) => ({
@@ -101,6 +103,17 @@ describe('useThemeTokens', () => {
       const { themeConfig } = mod.useThemeTokens()
       expect(themeConfig.value.token?.borderRadius).toBe(6)
     })
+
+    it('returns undefined for missing CSS variables so AntD ignores them', async () => {
+      // No CSS vars provided — all should be undefined (not empty string)
+      setupGetComputedStyle({})
+
+      const mod = await import('../useThemeTokens')
+      const { themeConfig } = mod.useThemeTokens()
+
+      expect(themeConfig.value.token?.colorPrimary).toBeUndefined()
+      expect(themeConfig.value.token?.colorBgBase).toBeUndefined()
+    })
   })
 
   describe('algorithm switching', () => {
@@ -171,6 +184,52 @@ describe('useThemeTokens', () => {
       setTheme('dark')
 
       expect(themeConfig.value.algorithm).toBe(themeAlgorithm.darkAlgorithm)
+    })
+
+    it('CSS token values update when switching from light to dark', async () => {
+      localStorage.setItem('gocell-theme', 'light')
+
+      // Light mode CSS vars
+      setupGetComputedStyle({
+        '--accent': 'rgb(59, 130, 246)',
+        '--ok': 'rgb(34, 197, 94)',
+        '--warn': 'rgb(234, 179, 8)',
+        '--err': 'rgb(239, 68, 68)',
+        '--bg': 'rgb(254, 254, 255)',
+        '--fg': 'rgb(15, 15, 20)',
+        '--line': 'rgb(230, 232, 240)',
+        '--font-sans': '"Geist", system-ui',
+      })
+
+      const themeModule = await import('../useTheme')
+      const mod = await import('../useThemeTokens')
+      const { themeConfig } = mod.useThemeTokens()
+      const { setTheme } = themeModule.useTheme()
+
+      const lightPrimary = themeConfig.value.token?.colorPrimary
+      const lightBg = themeConfig.value.token?.colorBgBase
+
+      // Switch to dark: update getComputedStyle mock to return dark values
+      setupGetComputedStyle({
+        '--accent': 'rgb(100, 160, 255)',
+        '--ok': 'rgb(34, 197, 94)',
+        '--warn': 'rgb(234, 179, 8)',
+        '--err': 'rgb(239, 68, 68)',
+        '--bg': 'rgb(20, 20, 30)',
+        '--fg': 'rgb(240, 240, 245)',
+        '--line': 'rgb(60, 62, 80)',
+        '--font-sans': '"Geist", system-ui',
+      })
+
+      setTheme('dark')
+
+      const darkPrimary = themeConfig.value.token?.colorPrimary
+      const darkBg = themeConfig.value.token?.colorBgBase
+
+      // colorPrimary should have changed (different accent in dark mode)
+      expect(darkPrimary).not.toBe(lightPrimary)
+      // colorBgBase should have changed (different bg in dark mode)
+      expect(darkBg).not.toBe(lightBg)
     })
   })
 

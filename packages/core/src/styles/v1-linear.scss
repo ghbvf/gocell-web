@@ -84,6 +84,11 @@
   &:hover {
     border-color: var(--fg-faint);
   }
+
+  &:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
 }
 
 .v1-btn-primary {
@@ -92,6 +97,7 @@
   border-color: var(--fg);
 
   &:hover {
+    background: oklch(from var(--fg) calc(l + 0.08) c h);
     border-color: var(--fg);
   }
 }
@@ -109,17 +115,27 @@
     background: var(--line-soft);
     color: var(--fg);
   }
+
+  &:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
 }
 
 .v1-link-btn {
   font-size: 12.5px;
   color: var(--fg-muted);
   padding: 2px 6px;
-  border-radius: 3px;
+  border-radius: var(--r-xs);
 
   &:hover {
     color: var(--fg);
     background: var(--line-soft);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
   }
 }
 
@@ -144,6 +160,11 @@
       background: var(--bg-raised);
       color: var(--fg);
       box-shadow: var(--shadow-sm);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
     }
   }
 }
@@ -184,7 +205,7 @@
   font-size: 11px;
   padding: 1px 5px;
   border: 1px solid var(--line);
-  border-radius: 3px;
+  border-radius: var(--r-xs);
   color: var(--fg-faint);
   background: var(--bg);
 }
@@ -195,7 +216,7 @@
   padding: 1px 7px;
   background: var(--bg-sunken);
   border: 1px solid var(--line);
-  border-radius: 3px;
+  border-radius: var(--r-xs);
   font-size: 11.5px;
   font-weight: 500;
   color: var(--fg-muted);
@@ -209,7 +230,7 @@
   font-weight: 500;
   padding: 1px 5px;
   border: 1px solid var(--line);
-  border-radius: 3px;
+  border-radius: var(--r-xs);
   color: var(--fg-muted);
   font-family: var(--font-mono);
   letter-spacing: 0.02em;
@@ -225,9 +246,9 @@
   flex-shrink: 0;
 }
 
-.v1-dot-ok   { background: var(--ok); }
-.v1-dot-warn { background: var(--warn); }
-.v1-dot-err  { background: var(--err); }
+.v1-dot-ok   { background: var(--ok);   box-shadow: 0 0 0 2px oklch(from var(--ok) l c h / 0.18); }
+.v1-dot-warn { background: var(--warn); box-shadow: 0 0 0 2px oklch(from var(--warn) l c h / 0.18); }
+.v1-dot-err  { background: var(--err);  box-shadow: 0 0 0 2px oklch(from var(--err) l c h / 0.18); }
 
 // ---------- table base ----------
 .v1-table {
@@ -350,13 +371,20 @@
   height: 20px;
 
   input {
-    display: none;
+    // Visually-hidden: keeps keyboard and screen-reader reachability
+    // while removing the native checkbox from the visual flow.
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+    clip: rect(0, 0, 0, 0);
+    pointer-events: none;
   }
 
   span {
     position: absolute;
     inset: 0;
-    border-radius: 999px;
+    border-radius: var(--r-pill);
     background: var(--line);
     transition: 0.2s;
 
@@ -380,5 +408,12 @@
 
   input:checked + span::after {
     left: 18px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .v1-switch span,
+  .v1-switch span::after {
+    transition: none;
   }
 }

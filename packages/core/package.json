@@ -6,6 +6,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./composables": "./src/composables/index.ts",
+    "./stores": "./src/stores/index.ts",
     "./styles/tokens.css": "./src/styles/tokens.css",
     "./styles/v1-linear.scss": "./src/styles/v1-linear.scss"
   },
@@ -17,6 +18,7 @@
   },
   "dependencies": {
     "vue": "catalog:",
+    "pinia": "catalog:",
     "ant-design-vue": "catalog:"
   },
   "devDependencies": {

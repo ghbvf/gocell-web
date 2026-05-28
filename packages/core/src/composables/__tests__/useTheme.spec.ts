@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { createPinia, setActivePinia } from 'pinia'
 
 const mockMatchMedia = (prefersDark: boolean) => {
   Object.defineProperty(window, 'matchMedia', {
@@ -31,7 +32,8 @@ describe('useTheme', () => {
     localStorage.clear()
     // Reset matchMedia mock to default (light)
     mockMatchMedia(false)
-    // Re-import module fresh each test by resetting module cache
+    // Fresh Pinia + fresh module cache for each test
+    setActivePinia(createPinia())
     vi.resetModules()
   })
 
@@ -149,12 +151,13 @@ describe('useTheme', () => {
     })
   })
 
-  describe('shared singleton', () => {
-    it('returns the same theme ref across multiple calls', async () => {
+  describe('shared singleton via store', () => {
+    it('theme value is the same across multiple calls', async () => {
       const mod = await import('../useTheme')
       const a = mod.useTheme()
       const b = mod.useTheme()
-      expect(a.theme).toBe(b.theme)
+      // Both refs point to the same Pinia store state
+      expect(a.theme.value).toBe(b.theme.value)
     })
 
     it('setTheme in one call is reflected in another', async () => {
