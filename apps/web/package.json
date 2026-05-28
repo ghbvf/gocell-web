@@ -15,7 +15,8 @@
     "pinia": "catalog:",
     "ant-design-vue": "catalog:",
     "@ant-design/icons-vue": "catalog:",
-    "@gocell/core": "workspace:*"
+    "@gocell/core": "workspace:*",
+    "vue-i18n": "catalog:"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "catalog:",
