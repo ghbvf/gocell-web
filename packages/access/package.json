@@ -6,6 +6,7 @@
   "exports": {
     ".": "./src/index.ts"
   },
+  "files": ["src"],
   "scripts": {
     "typecheck": "vue-tsc --noEmit"
   }

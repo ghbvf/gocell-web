@@ -8,4 +8,4 @@
 
 ## 边界
 
-依赖规则见仓库根 `CLAUDE.md` §依赖规则。跨包仅经 `@gocell/contracts` 类型 + `@gocell/request` client，禁深路径 import。
+依赖规则见仓库根 `CLAUDE.md` §依赖规则。本包为最底层工具包，**禁止依赖任何 `@gocell/*` 包**（含 contracts/request）；消费方经 `workspace:*` 引用本包。
