@@ -8,9 +8,10 @@ function attachI18nKey(error: AxiosError): void {
   e.i18nKey = toI18nKey(error)
 }
 
-export const http: AxiosInstance = axios.create({
-  baseURL: '/api',
-})
+// 不设 baseURL：调用方传完整契约路径（`/api/v1/...`，与后端 contract.yaml 一致），
+// 由 vite dev proxy / 生产网关按 `/api` 前缀转发。设 baseURL='/api' 会与调用方路径
+// 叠加成 `/api/api/v1/...`（集成时被后端 401）。
+export const http: AxiosInstance = axios.create()
 
 // Track installed interceptor IDs so setupAxios is idempotent.
 let requestInterceptorId: number | null = null

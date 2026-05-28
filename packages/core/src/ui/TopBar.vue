@@ -122,6 +122,7 @@ function openCommandPalette(): void {
       <button
         type="button"
         class="v1-ghost topbar__action-btn"
+        data-testid="theme-toggle"
         :aria-label="themeToggleLabel"
         @click="toggleTheme"
       >

@@ -37,12 +37,8 @@ test.describe('主题切换', () => {
   test('点击主题按钮后 html[data-theme] 变化', async ({ page }) => {
     await page.goto('/')
 
-    // TopBar 主题切换按钮：通过精确的 aria-label 定位（包含 "dark" 或 "light" 关键字）
-    // aria-label 由 TopBar 组件按当前主题动态设置（亮色模式 → label 含 "dark"；暗色 → 含 "light"）
-    // 避免 .last() 位置耦合，改用 aria-label 语义匹配
-    const themeBtn = page
-      .locator('header button[aria-label*="dark"], header button[aria-label*="light"]')
-      .first()
+    // TopBar 主题切换按钮：用 data-testid 稳定定位（与 locale 无关，避免 aria-label i18n 文案耦合）
+    const themeBtn = page.locator('[data-testid="theme-toggle"]')
     await expect(themeBtn).toBeVisible()
 
     // 读取当前主题
@@ -50,9 +46,9 @@ test.describe('主题切换', () => {
 
     await themeBtn.click()
 
-    // 等待 data-theme 变化
+    // 等待 data-theme 变化（点击后 nextTick 写入 html[data-theme]）
+    await expect.poll(async () => page.locator('html').getAttribute('data-theme')).not.toBe(before)
     const after = await page.locator('html').getAttribute('data-theme')
-    expect(after).not.toBe(before)
 
     // 验证值域：只允许 light 或 dark
     expect(['light', 'dark']).toContain(after)
