@@ -1,0 +1,11 @@
+# spec-kit 本地脚手架（脚本/模板/宪法），不纳入版本库
+.specify/
+
+# git worktree 本地工作目录（含独立 checkout，禁止提交）
+worktrees/
+
+# 依赖与构建产物
+node_modules/
+dist/
+*.log
+.DS_Store
