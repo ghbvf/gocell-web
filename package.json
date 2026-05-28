@@ -13,7 +13,8 @@
     "build": "pnpm -F @gocell/web build",
     "typecheck": "pnpm -r --if-present typecheck",
     "lint": "pnpm -r --if-present lint",
-    "test": "pnpm -r --if-present test"
+    "test": "pnpm -r --if-present test",
+    "codegen": "pnpm -F @gocell/codegen generate"
   },
   "devDependencies": {
     "typescript": "catalog:",

@@ -1,0 +1,48 @@
+# SC-009：契约只读守门（AI-robust Hard）。
+# 跑 `pnpm codegen` 后断言 packages/contracts/src/ 无 diff —— 业务包手改生成物即红。
+name: codegen-diff
+
+on:
+  pull_request:
+  push:
+    branches: [develop]
+
+jobs:
+  codegen-readonly:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout gocell-web
+        uses: actions/checkout@v4
+        with:
+          path: gocell-web
+
+      # 后端契约源仓库，checkout 为 gocell-web 的同级目录（codegen 默认读 ../gocell/contracts）。
+      # 私有仓库需在 repo secrets 配置 GOCELL_CONTRACTS_TOKEN（具备 ghbvf/gocell 只读权限的 PAT）。
+      - name: Checkout gocell (backend contracts)
+        uses: actions/checkout@v4
+        with:
+          repository: ghbvf/gocell
+          path: gocell
+          token: ${{ secrets.GOCELL_CONTRACTS_TOKEN }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: gocell-web/pnpm-lock.yaml
+
+      - name: Install (frozen lockfile)
+        run: pnpm install --frozen-lockfile
+        working-directory: gocell-web
+
+      - name: Regenerate contracts
+        run: pnpm codegen
+        working-directory: gocell-web
+
+      - name: Assert contracts are read-only (no manual edits)
+        run: git diff --exit-code packages/contracts/src/
+        working-directory: gocell-web
