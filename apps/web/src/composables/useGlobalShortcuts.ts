@@ -1,3 +1,4 @@
+import { onScopeDispose } from 'vue'
 import { useRouter } from 'vue-router'
 import { useThemeStore } from '@gocell/core'
 import { useUiStore } from '../stores/useUiStore'
@@ -25,22 +26,25 @@ function isInputFocused(): boolean {
   const el = document.activeElement
   if (!el) return false
   const tag = el.tagName.toLowerCase()
-  if (tag === 'input' || tag === 'textarea') return true
+  if (tag === 'input' || tag === 'textarea' || tag === 'select') return true
   if ((el as HTMLElement).isContentEditable) return true
   return false
 }
 
 /**
  * useGlobalShortcuts — registers global keyboard shortcuts and returns a
- * cleanup function. The cleanup is called automatically via onScopeDispose
- * when used inside a component setup(), but the return value allows manual
- * teardown (e.g., in tests).
+ * cleanup function.
+ *
+ * When called inside a component setup() or a composable scope, cleanup is
+ * registered automatically via onScopeDispose (Vue's scope lifecycle hook).
+ * The returned function also allows explicit manual teardown (e.g., in tests
+ * or when called outside a component scope).
  *
  * Registered shortcuts:
  *   ⌘K / Ctrl+K  → open command palette
  *   ⌘J / Ctrl+J  → toggle theme
  *   ⌘\ / Ctrl+\  → toggle sidebar
- *   Esc           → close command palette (works even when input focused)
+ *   Esc           → close command palette (works even when input/select focused)
  *   /             → open command palette (search intent)
  *   G then U      → /access/identities
  *   G then A      → /audit
@@ -146,6 +150,10 @@ export function useGlobalShortcuts(): () => void {
     window.removeEventListener('keydown', handleKeydown)
     clearGPrefix()
   }
+
+  // Auto-cleanup when the owning scope (component or effect scope) is disposed.
+  // This makes the composable self-contained when used inside setup().
+  onScopeDispose(cleanup)
 
   return cleanup
 }

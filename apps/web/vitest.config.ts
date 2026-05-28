@@ -11,7 +11,15 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       include: ['src/**/*.ts', 'src/**/*.vue'],
-      exclude: ['src/**/*.spec.ts', 'src/main.ts'],
+      exclude: [
+        'src/**/*.spec.ts',
+        'src/main.ts',
+        // Bootstrap glue / placeholder views / route config: no independent unit test path.
+        // Coverage provided by integration tests and Playwright e2e smoke tests.
+        'src/App.vue',
+        'src/views/HomeView.vue',
+        'src/router/index.ts',
+      ],
       thresholds: { lines: 80, functions: 80, branches: 80, statements: 80 },
     },
   },

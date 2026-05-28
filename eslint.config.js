@@ -1,18 +1,30 @@
 /**
  * ESLint flat config — gocell-web
- * AI-robust Hard: 边界双锁 (T022)
+ * AI-robust Hard: 边界锁 (T022)
+ *
+ * ── 边界锁方案说明 ────────────────────────────────────────────────────────────
+ * 之前使用 import-x/no-restricted-paths zones，该方案依赖 resolver 把 import
+ * specifier 解析到物理路径，在 pnpm 严格 node_modules 下，被禁的包若未声明为
+ * target 包的依赖，resolver 解析失败 → 规则静默放过（fail-open），边界锁全部失效。
+ *
+ * 新方案：全部改用 no-restricted-imports 的 patterns（regex 匹配 import specifier
+ * 字符串），不依赖 resolver，不受物理路径解析影响。每个包独立一个 files-scoped 配置。
+ *
+ * 注意：在 ESLint flat config 中，当多个 config 块匹配同一文件时，同名规则以最后
+ * 一个 config 块的配置为准（覆盖而非合并）。因此每个包的 config 块必须包含该包
+ * 所有适用的 no-restricted-imports 规则（深路径 + 横向 + 反向 + axios），且放在
+ * 最后，避免被后续 config 块覆盖。
  *
  * ── BLIND SPOTS (ai-robust §盲区自检，此规则不覆盖的形态) ──────────────────────
- * 1. 运行时动态 `import(someVar)` — AST 无法静态析出目标路径，import-x 不报告
+ * 1. 运行时动态 `import(someVar)` — AST 无法静态析出目标路径，无法拦截
  * 2. 字符串拼接路径 `require('./pkg/' + name)` — 同上，动态形态无法拦截
- * 3. `type-only import` (import type { … } from '…') — no-restricted-paths 和
- *    no-restricted-imports 默认也拦截 type-only；若需豁免须在消费侧加 eslint-disable
- * 4. monorepo 内 `workspace:*` 包在 tsconfig paths 解析的别名
- *    —— eslint-import-resolver-typescript 已接管路径解析，但若 tsconfig.json
- *    未正确引用 base，可能漏报深路径（本 config 通过 tsconfigRootDir 指向根解决）
- * 5. `packages/contracts/src/**` 被 ignore，其内部深路径不受 no-internal-modules 检查
- * 6. 跨包 `devDependencies` 的测试文件（*.spec.ts）中的 import 受同样规则约束，
- *    但 fixture 字符串路径在测试文件中是 lintText 模式，只检查 lint 报告
+ * 3. `type-only import` (import type { … } from '…') — no-restricted-imports
+ *    默认也拦截 type-only；若需豁免须在消费侧加 eslint-disable（当前无需豁免）
+ * 4. Re-export 转发：A 从 B 导出，C import A 再转发 B 的内容 — 规则看 specifier
+ *    字符串，转发后的 consumer 侧不受约束（已知盲区，需 review 补偿）
+ * 5. 相对路径绕过：`import '../../packages/audit/src/x'` — monorepo 内相对路径
+ *    跨包在实践中不可达（tsconfig paths 不做这种映射），可接受
+ * 6. `packages/contracts/src/**` 被 ignore，其内部深路径不受 no-internal-modules 检查
  * ─────────────────────────────────────────────────────────────────────────────
  *
  * 反向自检测试：eslint.config.spec.ts (vitest, ESLint Node API)
@@ -32,14 +44,46 @@ import { fileURLToPath } from 'node:url'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
-// ── Absolute paths for zone rules ────────────────────────────────────────────
-const pkg = (name) => path.resolve(__dirname, 'packages', name)
-const apps = path.resolve(__dirname, 'apps')
-const pkgsDir = path.resolve(__dirname, 'packages')
-const toolsDir = path.resolve(__dirname, 'tools')
+// ── Shared patterns (included in every per-package config) ──────────────────
+// These patterns apply universally. Each per-package config MUST include them
+// to avoid being overridden by a later config block that only has these.
 
-// Business cell package names (for no-restricted-imports cross-cell rules)
-const BUSINESS_CELLS = ['access', 'audit', 'config', 'observability', 'devboard']
+/** Deep-path ban: all packages must use package.json#exports, not src/ paths */
+const DEEP_PATH_PATTERN = {
+  regex: '^@gocell/[^/]+/src/',
+  message:
+    '深路径 import 被禁止。请只用 package.json#exports 暴露的入口（如 @gocell/foo, @gocell/foo/composables）。参见 .claude/rules/gocellweb/package-boundaries.md',
+}
+
+/** Reverse-dependency ban: no package/* or tools/* may import the app layer */
+const NO_WEB_PATTERN = {
+  regex: '^@gocell/web(/|$)',
+  message:
+    'packages/* 和 tools/* 禁止反向 import @gocell/web（应用层）。参见 .claude/rules/gocellweb/package-boundaries.md',
+}
+
+/** Axios ban: only @gocell/request may import axios */
+const NO_AXIOS_PATH = {
+  name: 'axios',
+  message:
+    'HTTP 单点：禁止在业务包直接 import axios。请通过 @gocell/request 暴露的 http 实例发请求。',
+}
+
+/** Helper: create a no-restricted-imports rule config combining all given patterns + paths */
+function boundaryRule(extraPatterns = [], extraPaths = []) {
+  return [
+    'error',
+    {
+      patterns: [DEEP_PATH_PATTERN, NO_WEB_PATTERN, ...extraPatterns],
+      paths: [...extraPaths],
+    },
+  ]
+}
+
+/** Message for cross-cell boundary violation */
+function cellMsg(from, forbidden) {
+  return `@gocell/${from} 禁止 import @gocell/${forbidden}。跨域请走 @gocell/contracts + @gocell/request。参见 .claude/rules/gocellweb/package-boundaries.md`
+}
 
 export default tseslint.config(
   // ── Global ignores ──────────────────────────────────────────────────────────
@@ -125,237 +169,190 @@ export default tseslint.config(
       'import-x/no-duplicates': 'error',
       'import-x/no-cycle': ['error', { maxDepth: 3 }],
 
-      // ── 边界锁 2: 深路径禁止 (Hard) ───────────────────────────────────────
+      // ── 全局: 深路径禁止 (Hard) ────────────────────────────────────────────
       // 禁止 @gocell/*/src/** 深路径，强制走 package.json#exports 入口
+      // 使用 no-restricted-imports regex 匹配 specifier 字符串，不依赖 resolver
+      // NOTE: 每个包的 per-package config 也包含此规则，以防被后续 config 块覆盖
       'no-restricted-imports': [
         'error',
         {
-          patterns: [
-            {
-              regex: '^@gocell/[^/]+/src/',
-              message:
-                '深路径 import 被禁止。请只用 package.json#exports 暴露的入口（如 @gocell/foo, @gocell/foo/composables）。',
-            },
-          ],
+          patterns: [DEEP_PATH_PATTERN],
         },
       ],
-
-      // ── no-direct-axios (Hard): 仅 packages/request 可 import axios ──────
-      // 在 packages/request 外再配置覆盖规则
     },
   },
 
-  // ── packages/request: 允许 import axios ────────────────────────────────────
+  // ── 边界锁: packages/shared ────────────────────────────────────────────────
+  // 禁止 import 任何 @gocell/*（包括 contracts、core、request）
   {
-    files: ['packages/request/src/**/*.ts'],
+    files: ['packages/shared/**/*.{ts,vue}'],
     rules: {
-      'no-restricted-imports': 'off',
+      'no-restricted-imports': boundaryRule([
+        {
+          regex: '^@gocell/',
+          message:
+            '@gocell/shared 不允许依赖任何 @gocell/* 包（含 contracts/core）。参见 .claude/rules/gocellweb/package-boundaries.md',
+        },
+      ]),
     },
   },
 
-  // ── packages/request 以外的所有包: 禁止直接 import axios ──────────────────
+  // ── 边界锁: packages/core ──────────────────────────────────────────────────
+  // 禁止 import 业务 cell；允许 contracts/shared/request/vue 等
   {
-    files: [
-      'packages/core/src/**/*.{ts,vue}',
-      'packages/shared/src/**/*.{ts,vue}',
-      'packages/access/src/**/*.{ts,vue}',
-      'packages/audit/src/**/*.{ts,vue}',
-      'packages/config/src/**/*.{ts,vue}',
-      'packages/observability/src/**/*.{ts,vue}',
-      'packages/devboard/src/**/*.{ts,vue}',
-      'apps/web/src/**/*.{ts,vue}',
-    ],
+    files: ['packages/core/**/*.{ts,vue}'],
+    rules: {
+      'no-restricted-imports': boundaryRule([
+        {
+          regex: '^@gocell/(access|audit|config|observability|devboard)(/|$)',
+          message:
+            '@gocell/core 禁止 import 业务 cell（access/audit/config/observability/devboard）。参见 .claude/rules/gocellweb/package-boundaries.md',
+        },
+      ]),
+    },
+  },
+
+  // ── 边界锁: packages/request ──────────────────────────────────────────────
+  // 只许 contracts/shared；禁业务 cell + core
+  // request 是 HTTP 单点，允许 import axios（不加 NO_AXIOS_PATH）
+  {
+    files: ['packages/request/**/*.ts'],
+    rules: {
+      'no-restricted-imports': boundaryRule([
+        {
+          regex: '^@gocell/(core|access|audit|config|observability|devboard)(/|$)',
+          message:
+            '@gocell/request 只允许依赖 @gocell/contracts 和 @gocell/shared，禁止 import core/业务 cell。参见 .claude/rules/gocellweb/package-boundaries.md',
+        },
+      ]),
+    },
+  },
+
+  // ── 边界锁: packages/access ───────────────────────────────────────────────
+  {
+    files: ['packages/access/**/*.{ts,vue}'],
+    rules: {
+      'no-restricted-imports': boundaryRule(
+        [
+          {
+            regex: '^@gocell/(audit|config|observability|devboard)(/|$)',
+            message: cellMsg('access', 'audit/config/observability/devboard'),
+          },
+        ],
+        [NO_AXIOS_PATH],
+      ),
+    },
+  },
+
+  // ── 边界锁: packages/audit ────────────────────────────────────────────────
+  {
+    files: ['packages/audit/**/*.{ts,vue}'],
+    rules: {
+      'no-restricted-imports': boundaryRule(
+        [
+          {
+            regex: '^@gocell/(access|config|observability|devboard)(/|$)',
+            message: cellMsg('audit', 'access/config/observability/devboard'),
+          },
+        ],
+        [NO_AXIOS_PATH],
+      ),
+    },
+  },
+
+  // ── 边界锁: packages/config ───────────────────────────────────────────────
+  {
+    files: ['packages/config/**/*.{ts,vue}'],
+    rules: {
+      'no-restricted-imports': boundaryRule(
+        [
+          {
+            regex: '^@gocell/(access|audit|observability|devboard)(/|$)',
+            message: cellMsg('config', 'access/audit/observability/devboard'),
+          },
+        ],
+        [NO_AXIOS_PATH],
+      ),
+    },
+  },
+
+  // ── 边界锁: packages/observability ────────────────────────────────────────
+  {
+    files: ['packages/observability/**/*.{ts,vue}'],
+    rules: {
+      'no-restricted-imports': boundaryRule(
+        [
+          {
+            regex: '^@gocell/(access|audit|config|devboard)(/|$)',
+            message: cellMsg('observability', 'access/audit/config/devboard'),
+          },
+        ],
+        [NO_AXIOS_PATH],
+      ),
+    },
+  },
+
+  // ── 边界锁: packages/devboard ─────────────────────────────────────────────
+  // 设计性例外：devboard 可消费 access 的 PDP client（<Can>/useDecision）
+  {
+    files: ['packages/devboard/**/*.{ts,vue}'],
+    rules: {
+      'no-restricted-imports': boundaryRule(
+        [
+          {
+            regex: '^@gocell/(audit|config|observability)(/|$)',
+            message:
+              '@gocell/devboard 禁止 import @gocell/audit/config/observability。设计性例外仅 @gocell/access（PDP client）。参见 .claude/rules/gocellweb/package-boundaries.md',
+          },
+        ],
+        [NO_AXIOS_PATH],
+      ),
+    },
+  },
+
+  // ── 边界锁: packages/contracts ────────────────────────────────────────────
+  // contracts/src/** 已在 global ignores 排除（codegen 生成物）
+  // 此规则防止手写的非生成文件（如 tests/utils）反向依赖业务包
+  {
+    files: ['packages/contracts/**/*.ts'],
+    rules: {
+      'no-restricted-imports': boundaryRule([
+        {
+          regex: '^@gocell/',
+          message:
+            '@gocell/contracts 是纯类型包（codegen 派生），禁止 import 任何其他 @gocell/* 包。参见 .claude/rules/gocellweb/package-boundaries.md',
+        },
+      ]),
+    },
+  },
+
+  // ── 边界锁: apps/web ──────────────────────────────────────────────────────
+  // apps/web 可依赖所有 @gocell/* 包；但禁深路径和 axios
+  {
+    files: ['apps/web/**/*.{ts,vue}'],
     rules: {
       'no-restricted-imports': [
         'error',
         {
-          patterns: [
-            {
-              regex: '^@gocell/[^/]+/src/',
-              message:
-                '深路径 import 被禁止。请只用 package.json#exports 暴露的入口（如 @gocell/foo, @gocell/foo/composables）。',
-            },
-          ],
-          paths: [
-            {
-              name: 'axios',
-              message:
-                'HTTP 单点：禁止在业务包直接 import axios。请通过 @gocell/request 暴露的 http 实例发请求。',
-            },
-          ],
+          patterns: [DEEP_PATH_PATTERN],
+          paths: [NO_AXIOS_PATH],
         },
       ],
     },
   },
 
-  // ── 边界锁 1: packages/contracts — 不得 import 任何 packages/* / apps/* ───
-  {
-    files: ['packages/contracts/src/**/*.ts'],
-    rules: {
-      'import-x/no-restricted-paths': [
-        'error',
-        {
-          zones: [
-            {
-              target: path.relative(__dirname, pkg('contracts')),
-              from: pkgsDir,
-              except: ['contracts'],
-              message: '@gocell/contracts 是纯类型包，禁止 import 任何其他 @gocell/* 包。',
-            },
-            {
-              target: path.relative(__dirname, pkg('contracts')),
-              from: apps,
-              message: '@gocell/contracts 是纯类型包，禁止 import apps/*。',
-            },
-          ],
-        },
-      ],
-    },
-  },
-
-  // ── 边界锁 1: packages/shared — 不得 import 任何 @gocell/* ────────────────
-  {
-    files: ['packages/shared/src/**/*.ts'],
-    rules: {
-      'import-x/no-restricted-paths': [
-        'error',
-        {
-          zones: [
-            {
-              target: path.relative(__dirname, pkg('shared')),
-              from: pkgsDir,
-              except: ['shared'],
-              message: '@gocell/shared 不允许依赖任何 @gocell/* 包（含 contracts/core）。',
-            },
-          ],
-        },
-      ],
-    },
-  },
-
-  // ── 边界锁 1: packages/core — 不得 import 业务 cell ─────────────────────
-  {
-    files: ['packages/core/src/**/*.{ts,vue}'],
-    rules: {
-      'import-x/no-restricted-paths': [
-        'error',
-        {
-          zones: BUSINESS_CELLS.map((cell) => ({
-            target: path.relative(__dirname, pkg('core')),
-            from: pkg(cell),
-            message: `@gocell/core 禁止 import 业务 cell @gocell/${cell}。`,
-          })),
-        },
-      ],
-    },
-  },
-
-  // ── 边界锁 1: packages/request — 只许 contracts/shared，禁业务 cell + core ─
-  {
-    files: ['packages/request/src/**/*.ts'],
-    rules: {
-      'import-x/no-restricted-paths': [
-        'error',
-        {
-          zones: [
-            ...BUSINESS_CELLS.map((cell) => ({
-              target: path.relative(__dirname, pkg('request')),
-              from: pkg(cell),
-              message: `@gocell/request 禁止 import 业务 cell @gocell/${cell}。`,
-            })),
-            {
-              target: path.relative(__dirname, pkg('request')),
-              from: pkg('core'),
-              message: '@gocell/request 禁止 import @gocell/core（只许 contracts/shared）。',
-            },
-          ],
-        },
-      ],
-    },
-  },
-
-  // ── 边界锁 1: 业务 cells 之间禁止横向 import ─────────────────────────────
-  // access / audit / config / observability: 禁止 import 其他业务 cell
-  {
-    files: [
-      'packages/access/src/**/*.{ts,vue}',
-      'packages/audit/src/**/*.{ts,vue}',
-      'packages/config/src/**/*.{ts,vue}',
-      'packages/observability/src/**/*.{ts,vue}',
-    ],
-    rules: {
-      'import-x/no-restricted-paths': [
-        'error',
-        {
-          zones: BUSINESS_CELLS.map((cell) => ({
-            // 这些包禁止 import 其他任何业务 cell（自身例外由 from 匹配）
-            target: path.relative(__dirname, pkgsDir),
-            from: pkg(cell),
-            message: `业务 cell 之间禁止横向 import（违反包边界规则）。跨域请走 @gocell/contracts + @gocell/request。`,
-          })),
-        },
-      ],
-    },
-  },
-
-  // ── 边界锁 1: devboard 可 import access（PDP 例外），禁其他业务 cell ──────
-  {
-    files: ['packages/devboard/src/**/*.{ts,vue}'],
-    rules: {
-      'import-x/no-restricted-paths': [
-        'error',
-        {
-          zones: BUSINESS_CELLS.filter((cell) => cell !== 'access' && cell !== 'devboard').map(
-            (cell) => ({
-              target: path.relative(__dirname, pkg('devboard')),
-              from: pkg(cell),
-              message: `@gocell/devboard 禁止 import @gocell/${cell}。设计性例外仅 @gocell/access（PDP client）。`,
-            }),
-          ),
-        },
-      ],
-    },
-  },
-
-  // ── 边界锁 1: 所有 packages/* + tools/* 禁止 import apps/* ──────────────
-  {
-    files: ['packages/**/*.{ts,vue}', 'tools/**/*.ts'],
-    rules: {
-      'import-x/no-restricted-paths': [
-        'error',
-        {
-          zones: [
-            {
-              target: path.relative(__dirname, pkgsDir),
-              from: apps,
-              message: 'packages/* 禁止反向 import apps/*。',
-            },
-            {
-              target: path.relative(__dirname, toolsDir),
-              from: apps,
-              message: 'tools/* 禁止反向 import apps/*。',
-            },
-          ],
-        },
-      ],
-    },
-  },
-
-  // ── tools/codegen — 禁止 import 任何 @gocell/* ────────────────────────────
+  // ── 边界锁: tools/codegen ─────────────────────────────────────────────────
+  // tools 禁止 import 任何 @gocell/* + 反向依赖 @gocell/web
   {
     files: ['tools/**/*.ts'],
     rules: {
-      'no-restricted-imports': [
-        'error',
+      'no-restricted-imports': boundaryRule([
         {
-          patterns: [
-            {
-              regex: '^@gocell/',
-              message: 'tools/codegen 禁止 import @gocell/* 包。',
-            },
-          ],
+          regex: '^@gocell/',
+          message:
+            'tools/codegen 禁止 import @gocell/* 包。参见 .claude/rules/gocellweb/package-boundaries.md',
         },
-      ],
+      ]),
     },
   },
 

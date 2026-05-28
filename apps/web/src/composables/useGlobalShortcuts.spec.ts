@@ -7,6 +7,15 @@ import { useGlobalShortcuts } from './useGlobalShortcuts'
 import { useThemeStore } from '@gocell/core'
 import { useUiStore } from '../stores/useUiStore'
 
+// Mock onScopeDispose to avoid "getCurrentInstance is null" warning in test env
+vi.mock('vue', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('vue')>()
+  return {
+    ...actual,
+    onScopeDispose: vi.fn(),
+  }
+})
+
 // Mock router
 vi.mock('vue-router', async (importOriginal) => {
   const actual = await importOriginal<typeof import('vue-router')>()
@@ -203,6 +212,74 @@ describe('useGlobalShortcuts', () => {
     expect(mockPush).not.toHaveBeenCalled()
 
     document.body.removeChild(input)
+  })
+
+  it('G-prefix times out after 1000ms — second key no longer navigates', async () => {
+    vi.useFakeTimers()
+    setup()
+
+    fireKey('g')
+    // Advance past timeout
+    vi.advanceTimersByTime(1001)
+    fireKey('u')
+
+    await vi.runAllTimersAsync()
+    expect(mockPush).not.toHaveBeenCalled()
+
+    vi.useRealTimers()
+  })
+
+  // ─── / key (command palette) ──────────────────────────────────────────────
+
+  it('/ opens command palette (no modifier)', () => {
+    setup()
+    uiStore.commandPaletteOpen = false
+    fireKey('/')
+    expect(uiStore.commandPaletteOpen).toBe(true)
+  })
+
+  it('/ does not open command palette when input is focused', () => {
+    setup()
+    uiStore.commandPaletteOpen = false
+
+    const input = document.createElement('input')
+    document.body.appendChild(input)
+    input.focus()
+
+    fireKey('/')
+    expect(uiStore.commandPaletteOpen).toBe(false)
+
+    document.body.removeChild(input)
+  })
+
+  // ─── select focus guard ───────────────────────────────────────────────────
+
+  it('ignores shortcuts (except Esc) when a select is focused', () => {
+    setup()
+    const spy = vi.spyOn(themeStore, 'toggleTheme')
+
+    const select = document.createElement('select')
+    document.body.appendChild(select)
+    select.focus()
+
+    fireKey('j', { metaKey: true })
+    expect(spy).not.toHaveBeenCalled()
+
+    document.body.removeChild(select)
+  })
+
+  it('Esc still works when select is focused (closes palette)', () => {
+    setup()
+    uiStore.commandPaletteOpen = true
+
+    const select = document.createElement('select')
+    document.body.appendChild(select)
+    select.focus()
+
+    fireKey('Escape')
+    expect(uiStore.commandPaletteOpen).toBe(false)
+
+    document.body.removeChild(select)
   })
 
   // ─── Cleanup ──────────────────────────────────────────────────────────────

@@ -12,7 +12,8 @@
   ],
   "scripts": {
     "typecheck": "vue-tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@gocell/core": "workspace:*",

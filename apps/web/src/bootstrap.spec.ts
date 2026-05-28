@@ -76,8 +76,14 @@ describe('bootstrap configureAxios', () => {
     expect(result).toBe('new-token')
   })
 
-  it('onAuthFail clears session and attempts push to login', async () => {
-    const { onAuthFail } = await invokeBootstrapSetupAxios()
+  it('onAuthFail clears session and attempts push to login route', async () => {
+    const router = { push: vi.fn().mockResolvedValue(undefined) }
+    const { configureAxios } = await import('./bootstrap')
+    configureAxios(router as unknown as Parameters<typeof configureAxios>[0])
+    const opts = mockedSetupAxios.mock.calls[0]![0] as {
+      onAuthFail: () => void
+    }
+
     const auth = useAuthStore()
     auth.setSession({
       userId: 'u1',
@@ -87,17 +93,17 @@ describe('bootstrap configureAxios', () => {
       expiresAt: '2099-01-01T00:00:00Z',
       sessionId: 'sid-1',
     })
-
     const clearSpy = vi.spyOn(auth, 'clearSession')
 
-    onAuthFail()
+    opts.onAuthFail()
 
     expect(clearSpy).toHaveBeenCalledOnce()
+    expect(router.push).toHaveBeenCalledWith({ name: 'login' })
   })
 
-  it('setupAxios is called with refreshPath containing sessions/refresh', async () => {
+  it('setupAxios is called with exact refreshPath /sessions/refresh', async () => {
     await invokeBootstrapSetupAxios()
     const opts = mockedSetupAxios.mock.calls[0]![0]
-    expect(opts.refreshPath).toContain('refresh')
+    expect(opts.refreshPath).toBe('/sessions/refresh')
   })
 })

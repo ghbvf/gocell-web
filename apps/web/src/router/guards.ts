@@ -7,7 +7,9 @@
  *   3. PDP 授权门：to.meta.requiredAction → PDP can() 评估
  *
  * 设计要点：
- *  - first-run: fail-open（请求失败放行）；结果缓存防止每次导航都打 API
+ *  - first-run: fail-open（请求失败放行）；**只缓存"已完成 setup"（needsSetup=false）
+ *    的结果**；needsSetup=true 时不缓存，每次导航重新查，直到 setup 完成后某次
+ *    查到 false 才缓存，破除 first-run 完成后仍死循环重定向的问题。
  *  - auth: requiresAuth 默认 true；meta.requiresAuth === false 或 meta.public 放行
  *  - PDP: fail-closed；仅当明确 allowed 时通过（ComputedRef.value 读取）
  */
@@ -20,23 +22,36 @@ import type { HttpAuthSetupStatusV1Response } from '@gocell/contracts'
 
 const SETUP_STATUS_URL = '/api/v1/access/setup/status'
 
-/** cached result: undefined = not yet fetched, boolean = fetched */
-let _setupStatusCache: boolean | undefined = undefined
+/**
+ * Cached result: undefined = not yet fetched or setup not done yet;
+ * false = setup is done (hasAdmin=true), safe to cache permanently.
+ *
+ * We ONLY cache the "setup done" state (needsSetup=false).
+ * When needsSetup=true, we do NOT cache so that the next navigation
+ * re-fetches and detects when setup has been completed.
+ * This prevents an infinite redirect loop after first-run completes.
+ */
+let _setupStatusCache: false | undefined = undefined
 
 async function fetchSetupStatus(): Promise<boolean> {
-  if (_setupStatusCache !== undefined) return _setupStatusCache
+  // Only serve from cache when we know setup is done
+  if (_setupStatusCache === false) return false
 
   try {
     const res = await http.get<HttpAuthSetupStatusV1Response>(SETUP_STATUS_URL)
     // hasAdmin: true  → setup done → no redirect
     // hasAdmin: false → needs setup → redirect
     const needsSetup = !res.data.data.hasAdmin
-    _setupStatusCache = needsSetup
+    if (!needsSetup) {
+      // Cache only the "setup done" result — prevents repeated API calls once setup completes
+      _setupStatusCache = false
+    }
+    // needsSetup=true: do NOT cache — re-fetch on next navigation until setup completes
     return needsSetup
   } catch {
     // Request failed / backend not reachable → fail-open: do not block app startup
+    // Do NOT cache failure — retry on next navigation
     console.warn('[guards] setup/status request failed; skipping first-run gate')
-    _setupStatusCache = false
     return false
   }
 }

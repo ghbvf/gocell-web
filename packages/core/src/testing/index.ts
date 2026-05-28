@@ -20,11 +20,17 @@ import type { Router, RouteRecordRaw } from 'vue-router'
  * Pinia 测试工厂。
  *
  * 注意：必须传入 `createSpy: vi.fn`（来自 vitest）。
- * 默认 stubActions:false，保持 action 真实行为便于行为测试。
+ *
+ * 默认 stubActions: false——与 @pinia/testing 的默认值（stubActions: true）相反。
+ * 本封装默认 false 以测试真实 action 行为，使行为测试更接近生产路径。
+ * 若需 stub action（例如隔离副作用），显式传入 { stubActions: true }。
  *
  * @example
  *   import { vi } from 'vitest'
  *   const pinia = createTestPinia({ createSpy: vi.fn })
+ *
+ * @example 显式 stub actions
+ *   const pinia = createTestPinia({ createSpy: vi.fn, stubActions: true })
  */
 export function createTestPinia(opts: TestingOptions) {
   return createTestingPinia({

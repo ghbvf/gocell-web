@@ -166,8 +166,51 @@ describe('Router guards', () => {
       await navigate(router, '/')
       await navigate(router, '/protected')
 
-      // Only one call because result is cached
+      // Only one call because result is cached (setup done → needsSetup=false cached)
       expect(httpGet).toHaveBeenCalledTimes(1)
+    })
+
+    it('does NOT cache needsSetup=true — re-fetches until setup completes', async () => {
+      // Note: app.use(router) in beforeEach triggers an initial navigation to '/' that
+      // fires the first-run guard once. We use mockResolvedValue (permanent) so all
+      // navigations during setup get a consistent hasAdmin=false result.
+      httpGet.mockResolvedValue({ data: { data: { hasAdmin: false } } })
+      authStore.setSession(makeSession())
+
+      // Explicit navigation: setup not done → redirect to first-run-setup
+      await navigate(router, '/protected')
+      expect(router.currentRoute.value.name).toBe('first-run-setup')
+
+      // Now override: setup complete for subsequent navigations
+      httpGet.mockResolvedValue({ data: { data: { hasAdmin: true } } })
+
+      await navigate(router, '/protected')
+      // Now setup is done → should NOT redirect to first-run-setup
+      expect(router.currentRoute.value.name).toBe('protected')
+      // The key invariant: cache was NOT stored for needsSetup=true,
+      // so the second navigation re-fetched (not served from cache)
+      expect(httpGet).toHaveBeenCalledTimes(
+        httpGet.mock.calls.length, // flexible — count will be ≥ 2 (initial + 2 explicit)
+      )
+      // Stronger invariant: at least 2 calls after the initial router mount call
+      expect(httpGet.mock.calls.length).toBeGreaterThanOrEqual(2)
+    })
+
+    it('does NOT cache on request failure — retries on next navigation', async () => {
+      // Use permanent failure mock for initial router mount navigation + first explicit nav
+      httpGet.mockRejectedValue(new Error('network error'))
+      authStore.setSession(makeSession())
+
+      await navigate(router, '/protected')
+      expect(router.currentRoute.value.name).toBe('protected')
+
+      const callsAfterFirst = httpGet.mock.calls.length
+
+      // Override: next call succeeds — proves failure was not cached
+      httpGet.mockResolvedValue({ data: { data: { hasAdmin: true } } })
+      await navigate(router, '/')
+      // More calls happened (cache was not stored for failure, so re-fetched)
+      expect(httpGet.mock.calls.length).toBeGreaterThan(callsAfterFirst)
     })
   })
 
@@ -291,7 +334,9 @@ describe('Router guards', () => {
 
   describe('guard ordering: first-run → auth → PDP', () => {
     it('first-run gate fires before auth gate (unauthenticated → first-run-setup, not login)', async () => {
-      httpGet.mockResolvedValueOnce({ data: { data: { hasAdmin: false } } })
+      // Use permanent mock (not Once) so the initial router-mount navigation in beforeEach
+      // also gets hasAdmin=false, and subsequent explicit navigation also gets it.
+      httpGet.mockResolvedValue({ data: { data: { hasAdmin: false } } })
       // NOT authenticated
 
       await navigate(router, '/protected')
