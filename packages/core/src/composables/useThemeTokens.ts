@@ -15,10 +15,7 @@ export type ThemeConfig = NonNullable<ConfigProviderProps['theme']>
  * Returns undefined when the variable is missing (empty string from getPropertyValue)
  * so AntD ignores the field rather than receiving an empty string.
  */
-function readCssVar(
-  style: CSSStyleDeclaration,
-  name: string,
-): string | undefined {
+function readCssVar(style: CSSStyleDeclaration, name: string): string | undefined {
   const value = style.getPropertyValue(name).trim()
   return value !== '' ? value : undefined
 }

@@ -43,11 +43,7 @@ function openCommandPalette(): void {
 </script>
 
 <template>
-  <aside
-    class="sidebar"
-    :class="{ 'sidebar--collapsed': collapsed }"
-    aria-label="sidebar"
-  >
+  <aside class="sidebar" :class="{ 'sidebar--collapsed': collapsed }" aria-label="sidebar">
     <!-- Brand area -->
     <div class="sidebar__top">
       <div class="sidebar__brand">
@@ -107,11 +103,7 @@ function openCommandPalette(): void {
     <!-- Navigation groups -->
     <nav class="sidebar__nav" aria-label="main navigation">
       <template v-for="group in NAV_GROUPS" :key="group.groupKey">
-        <div
-          class="sidebar__group"
-          role="group"
-          :aria-label="t(group.labelKey)"
-        >
+        <div class="sidebar__group" role="group" :aria-label="t(group.labelKey)">
           <div
             v-if="!collapsed"
             :id="`sidebar-group-${group.groupKey}`"
@@ -128,10 +120,7 @@ function openCommandPalette(): void {
               :aria-label="t(item.labelKey)"
               aria-disabled="true"
             >
-              <span
-                v-if="!collapsed"
-                class="sidebar__item-label"
-              >
+              <span v-if="!collapsed" class="sidebar__item-label">
                 {{ t(item.labelKey) }}
               </span>
               <span
@@ -155,10 +144,7 @@ function openCommandPalette(): void {
               :aria-label="t(item.labelKey)"
               :aria-current="isActive(item.to) ? 'page' : undefined"
             >
-              <span
-                v-if="!collapsed"
-                class="sidebar__item-label"
-              >
+              <span v-if="!collapsed" class="sidebar__item-label">
                 {{ t(item.labelKey) }}
               </span>
               <span
@@ -302,7 +288,9 @@ function openCommandPalette(): void {
   border-radius: var(--r-sm);
   margin: 0 6px;
   text-decoration: none;
-  transition: background 0.1s, color 0.1s;
+  transition:
+    background 0.1s,
+    color 0.1s;
 }
 
 .sidebar__item:hover {

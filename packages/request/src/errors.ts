@@ -16,7 +16,7 @@ function isGoCellErrorEnvelope(data: unknown): data is GoCellHTTPErrorResponse {
     'error' in data &&
     typeof (data as Record<string, unknown>)['error'] === 'object' &&
     (data as Record<string, unknown>)['error'] !== null &&
-    typeof ((data as GoCellHTTPErrorResponse).error).code === 'string'
+    typeof (data as GoCellHTTPErrorResponse).error.code === 'string'
   )
 }
 

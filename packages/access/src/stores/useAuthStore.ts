@@ -59,10 +59,9 @@ export const useAuthStore = defineStore('access.auth', () => {
     }
 
     try {
-      const res = await http.post<HttpAuthRefreshV1Response>(
-        '/api/v1/access/sessions/refresh',
-        { refreshToken: _refreshToken.value },
-      )
+      const res = await http.post<HttpAuthRefreshV1Response>('/api/v1/access/sessions/refresh', {
+        refreshToken: _refreshToken.value,
+      })
       setSession(res.data.data)
       return res.data.data.accessToken
     } catch {

@@ -7,7 +7,9 @@
     ".": "./src/index.ts",
     "./stores": "./src/stores/index.ts"
   },
-  "files": ["src"],
+  "files": [
+    "src"
+  ],
   "scripts": {
     "typecheck": "vue-tsc --noEmit",
     "test": "vitest run"

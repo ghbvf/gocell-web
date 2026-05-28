@@ -246,9 +246,18 @@
   flex-shrink: 0;
 }
 
-.v1-dot-ok   { background: var(--ok);   box-shadow: 0 0 0 2px oklch(from var(--ok) l c h / 0.18); }
-.v1-dot-warn { background: var(--warn); box-shadow: 0 0 0 2px oklch(from var(--warn) l c h / 0.18); }
-.v1-dot-err  { background: var(--err);  box-shadow: 0 0 0 2px oklch(from var(--err) l c h / 0.18); }
+.v1-dot-ok {
+  background: var(--ok);
+  box-shadow: 0 0 0 2px oklch(from var(--ok) l c h / 0.18);
+}
+.v1-dot-warn {
+  background: var(--warn);
+  box-shadow: 0 0 0 2px oklch(from var(--warn) l c h / 0.18);
+}
+.v1-dot-err {
+  background: var(--err);
+  box-shadow: 0 0 0 2px oklch(from var(--err) l c h / 0.18);
+}
 
 // ---------- table base ----------
 .v1-table {

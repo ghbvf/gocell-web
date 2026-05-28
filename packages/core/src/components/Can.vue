@@ -48,13 +48,7 @@ const allowed = useDecision(
       role="group" 给 aria-disabled 提供语义上下文。
       pointer-events 和透明度用 CSS 变量，禁 inline color / 魔法数字。
     -->
-    <div
-      v-else
-      role="group"
-      aria-disabled="true"
-      inert
-      class="gc-can-disabled"
-    >
+    <div v-else role="group" aria-disabled="true" inert class="gc-can-disabled">
       <slot :allowed="allowed" />
     </div>
   </template>

@@ -121,9 +121,10 @@ export default zhCN
  * This gives en-US a structural schema to `satisfies` against — enforcing
  * that all keys exist without requiring identical string values.
  */
-type Widen<T> =
-  T extends string ? string :
-  T extends Record<string, unknown> ? { [K in keyof T]: Widen<T[K]> } :
-  T
+type Widen<T> = T extends string
+  ? string
+  : T extends Record<string, unknown>
+    ? { [K in keyof T]: Widen<T[K]> }
+    : T
 
 export type MessageSchema = Widen<typeof zhCN>

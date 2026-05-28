@@ -123,9 +123,7 @@ describe('AppShell.vue', () => {
       expect(overlay).not.toBeNull()
 
       // Press Esc to close (triggers CommandPalette close() → emits update:open=false)
-      overlay!.dispatchEvent(
-        new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }),
-      )
+      overlay!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
       await nextTick()
 
       // The CommandPalette component's open prop should now be false

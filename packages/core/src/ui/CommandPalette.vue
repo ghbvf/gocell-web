@@ -22,9 +22,7 @@ const overlayRef = ref<HTMLDivElement | null>(null)
  * so focus can be returned on close (a11y: ARIA APG dialog pattern).
  */
 function openPalette(): void {
-  triggerRef.value = document.activeElement instanceof HTMLElement
-    ? document.activeElement
-    : null
+  triggerRef.value = document.activeElement instanceof HTMLElement ? document.activeElement : null
   emit('update:open', true)
 }
 
@@ -102,10 +100,7 @@ defineExpose({ open: openPalette, close: closePalette })
         @click.self="closePalette"
         @keydown="onOverlayKeydown"
       >
-        <div
-          ref="overlayRef"
-          class="cmd-panel"
-        >
+        <div ref="overlayRef" class="cmd-panel">
           <!-- Search input -->
           <div class="cmd-search">
             <svg
