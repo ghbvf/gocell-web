@@ -9,3 +9,10 @@ node_modules/
 dist/
 *.log
 .DS_Store
+
+# 测试 / 覆盖率 / E2E 产物
+coverage/
+.vitest/
+playwright-report/
+test-results/
+.playwright/

@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { computed, ref } from 'vue'
+import { computed, ref, defineComponent, provide } from 'vue'
 import { mount } from '@vue/test-utils'
-import { defineComponent, provide } from 'vue'
 import type { PdpClient } from './types'
 import { PDP_INJECTION_KEY } from './types'
 import { useDecision, _resetWarnFlagForTesting } from './useDecision'
@@ -25,7 +24,11 @@ function createDecisionTest(
       const resource = makeResource ? makeResource() : undefined
       result = useDecision(
         typeof action === 'function' ? action : () => action,
-        typeof resource === 'function' ? resource : resource !== undefined ? () => resource : undefined,
+        typeof resource === 'function'
+          ? resource
+          : resource !== undefined
+            ? () => resource
+            : undefined,
       )
       return {}
     },
@@ -70,7 +73,11 @@ describe('useDecision', () => {
 
   describe('no provider (fail-closed)', () => {
     it('returns false when no PDP provider is injected', () => {
-      const result = createDecisionTest(null, () => 'read', () => 'resource:*')
+      const result = createDecisionTest(
+        null,
+        () => 'read',
+        () => 'resource:*',
+      )
       expect(result.value).toBe(false)
     })
 
@@ -97,7 +104,11 @@ describe('useDecision', () => {
       const client: PdpClient = {
         can: () => computed(() => true),
       }
-      const result = createDecisionTest(client, () => 'write', () => 'resource:123')
+      const result = createDecisionTest(
+        client,
+        () => 'write',
+        () => 'resource:123',
+      )
       expect(result.value).toBe(true)
     })
   })
@@ -107,7 +118,11 @@ describe('useDecision', () => {
       const client: PdpClient = {
         can: () => computed(() => false),
       }
-      const result = createDecisionTest(client, () => 'delete', () => 'resource:456')
+      const result = createDecisionTest(
+        client,
+        () => 'delete',
+        () => 'resource:456',
+      )
       expect(result.value).toBe(false)
     })
   })

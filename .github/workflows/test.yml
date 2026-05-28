@@ -1,0 +1,78 @@
+# T023/T028: 单测 + lint + 构建 + Playwright 冒烟 CI
+# on PR + push develop
+name: test
+
+on:
+  pull_request:
+  push:
+    branches: [develop]
+
+jobs:
+  # ── 单测 + lint + 构建 ─────────────────────────────────────────────────────
+  unit:
+    name: typecheck / lint / test / build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install (frozen lockfile)
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Unit tests (with coverage)
+        run: pnpm test:coverage
+
+      - name: Build web
+        run: pnpm -F @gocell/web build
+
+  # ── Playwright 冒烟（shell + 主题切换，无后端依赖） ─────────────────────────
+  e2e:
+    name: Playwright smoke
+    runs-on: ubuntu-latest
+    needs: unit
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install (frozen lockfile)
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers (chromium only)
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run E2E smoke tests
+        run: pnpm test:e2e
+        env:
+          CI: true
+
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7

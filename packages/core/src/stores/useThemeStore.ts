@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
-import { onScopeDispose } from 'vue'
+import { ref, onScopeDispose } from 'vue'
 
 type Theme = 'light' | 'dark'
 

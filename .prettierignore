@@ -1,0 +1,15 @@
+# Codegen 生成物（只读，不 format）
+packages/contracts/src/
+
+# 构建产物
+**/dist/
+**/coverage/
+
+# pnpm lockfile
+pnpm-lock.yaml
+
+# Worktree 工作区
+worktrees/
+
+# 设计稿 JSX 非源码
+docs/design/**/*.jsx
