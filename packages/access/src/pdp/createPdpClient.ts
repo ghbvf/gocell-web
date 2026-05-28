@@ -41,10 +41,15 @@ function cacheKey(action: string, resource: string | undefined): string {
  *   `data.allowed === true` flips the entry to true.
  * - TTL = 5 min; expired entries are deleted and re-fetched on next access.
  * - In-flight guard: single concurrent request per key (no double-fire).
+ * - ComputedRef cache: same key always returns the same ComputedRef instance,
+ *   preventing heap accumulation from repeated can() calls.
  */
 export function createPdpClient(): PdpClient {
   const store = reactive<Cache>({ entries: {} })
   const inFlight = new Set<string>()
+  // Cache of ComputedRef instances keyed by action|resource to avoid creating
+  // new computed refs on every can() call.
+  const computedCache = new Map<string, ComputedRef<boolean>>()
 
   function isExpired(entry: CacheEntry): boolean {
     return Date.now() - entry.fetchedAt > TTL_MS
@@ -61,7 +66,7 @@ export function createPdpClient(): PdpClient {
         { action, resource },
       )
       // Only true when backend explicitly says so — fail-closed
-      const allowed = res.data?.data?.allowed === true
+      const allowed = res.data.data.allowed === true
       store.entries[key] = { allowed, fetchedAt: Date.now() }
     } catch {
       // Network error / 404 / any failure → fail-closed
@@ -73,8 +78,11 @@ export function createPdpClient(): PdpClient {
   }
 
   function can(action: string, resource?: string): ComputedRef<boolean> {
-    return computed(() => {
-      const key = cacheKey(action, resource)
+    const key = cacheKey(action, resource)
+    const cached = computedCache.get(key)
+    if (cached) return cached
+
+    const ref = computed(() => {
       const entry = store.entries[key]
 
       if (!entry || isExpired(entry)) {
@@ -89,6 +97,9 @@ export function createPdpClient(): PdpClient {
 
       return entry.allowed
     })
+
+    computedCache.set(key, ref)
+    return ref
   }
 
   return { can }

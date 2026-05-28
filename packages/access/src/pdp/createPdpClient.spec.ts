@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
-import { nextTick } from 'vue'
+import { flushPromises } from '@vue/test-utils'
 
 vi.mock('@gocell/request', () => ({
   http: {
@@ -11,17 +11,6 @@ import { http } from '@gocell/request'
 import { createPdpClient } from './createPdpClient'
 
 const mockHttp = http as unknown as { post: ReturnType<typeof vi.fn> }
-
-/**
- * Flush all microtasks and Vue scheduler ticks.
- * Runs multiple rounds to handle chained async operations.
- */
-async function flushPromises(): Promise<void> {
-  // Flush microtask queue (settled promises)
-  await new Promise<void>((resolve) => setTimeout(resolve, 0))
-  await nextTick()
-  await nextTick()
-}
 
 describe('createPdpClient (fail-closed PDP stub)', () => {
   beforeEach(() => {
@@ -97,8 +86,9 @@ describe('createPdpClient (fail-closed PDP stub)', () => {
     await flushPromises()
     expect(result1.value).toBe(true) // cache populated
 
-    // Second can() with same key — cache hit, no new request
+    // Second can() with same key — returns the same ComputedRef instance
     const result2 = client.can('read', 'cells')
+    expect(result2).toBe(result1) // same ComputedRef instance (identity check)
     expect(result2.value).toBe(true) // immediately true from cache
     await flushPromises()
 
@@ -124,6 +114,38 @@ describe('createPdpClient (fail-closed PDP stub)', () => {
     expect(mockHttp.post).toHaveBeenCalledTimes(2)
   })
 
+  it('concurrent in-flight: two can().value calls while fetch pending only fire one http.post', async () => {
+    // Create a controlled promise to keep fetch in-flight
+    let resolveDecide!: (value: { data: { data: { allowed: boolean } } }) => void
+    const decidePending = new Promise<{ data: { data: { allowed: boolean } } }>((resolve) => {
+      resolveDecide = resolve
+    })
+    mockHttp.post.mockReturnValueOnce(decidePending)
+
+    const client = createPdpClient()
+
+    // Both calls while fetch is pending
+    const ref1 = client.can('read', 'cells')
+    const ref2 = client.can('read', 'cells')
+
+    // Both should be the same ref instance (ComputedRef cache)
+    expect(ref1).toBe(ref2)
+    // Both false while in-flight
+    expect(ref1.value).toBe(false)
+    expect(ref2.value).toBe(false)
+
+    // Only one http.post fired
+    expect(mockHttp.post).toHaveBeenCalledTimes(1)
+
+    // Resolve the pending fetch
+    resolveDecide({ data: { data: { allowed: true } } })
+    await flushPromises()
+
+    expect(ref1.value).toBe(true)
+    // Still only one http.post call total
+    expect(mockHttp.post).toHaveBeenCalledTimes(1)
+  })
+
   it('TTL expiry causes a new http.post call after 5 minutes', async () => {
     vi.useFakeTimers()
     mockHttp.post.mockResolvedValue({ data: { data: { allowed: true } } })
@@ -144,6 +166,8 @@ describe('createPdpClient (fail-closed PDP stub)', () => {
     await vi.runAllTimersAsync()
 
     expect(mockHttp.post).toHaveBeenCalledTimes(2)
+    // After re-fetch, the result is true again
+    expect(result.value).toBe(true)
   })
 
   it('can() without resource argument calls http.post with undefined resource', async () => {

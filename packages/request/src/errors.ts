@@ -32,7 +32,8 @@ export function toI18nKey(err: unknown): string {
 
   const data: unknown = err.response.data
   if (isGoCellErrorEnvelope(data)) {
-    return `errors.${data.error.code}`
+    const safeCode = data.error.code.replace(/[^A-Z0-9_]/g, '_')
+    return `errors.${safeCode}`
   }
 
   return 'errors.unknown'

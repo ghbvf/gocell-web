@@ -45,10 +45,12 @@ const allowed = useDecision(
     <slot v-if="allowed" :allowed="allowed" />
     <!--
       denied: 包一层 <div> 实现 aria-disabled + inert。
+      role="group" 给 aria-disabled 提供语义上下文。
       pointer-events 和透明度用 CSS 变量，禁 inline color / 魔法数字。
     -->
     <div
       v-else
+      role="group"
       aria-disabled="true"
       inert
       class="gc-can-disabled"
@@ -61,11 +63,11 @@ const allowed = useDecision(
 <style scoped>
 /*
   denied 容器：pointer-events 禁用 + 降透明度。
-  只用 CSS 变量或已知语义值，禁魔法数字 / inline color。
+  只用 tokens.css 暴露的 CSS 变量，禁魔法数字 / inline color。
+  cursor: not-allowed 是死代码（pointer-events:none + inert 下永不触发），已删除。
 */
 .gc-can-disabled {
   pointer-events: none;
-  opacity: var(--opacity-disabled, 0.4);
-  cursor: not-allowed;
+  opacity: var(--opacity-disabled);
 }
 </style>

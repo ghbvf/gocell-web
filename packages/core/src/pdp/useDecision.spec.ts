@@ -4,7 +4,7 @@ import { mount } from '@vue/test-utils'
 import { defineComponent, provide } from 'vue'
 import type { PdpClient } from './types'
 import { PDP_INJECTION_KEY } from './types'
-import { useDecision } from './useDecision'
+import { useDecision, _resetWarnFlagForTesting } from './useDecision'
 
 /**
  * Vue's provide/inject is parent→child only.
@@ -60,6 +60,8 @@ describe('useDecision', () => {
 
   beforeEach(() => {
     warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    // Reset module-level warn-once flag so each test starts clean
+    _resetWarnFlagForTesting()
   })
 
   afterEach(() => {

@@ -1,12 +1,10 @@
 import axios from 'axios'
-import type { AxiosInstance, AxiosRequestConfig } from 'axios'
+import type { AxiosError, AxiosInstance, InternalAxiosRequestConfig } from 'axios'
 import { toI18nKey } from './errors'
 import type { SetupAxiosOptions, GoCellRequestError } from './types'
 
-function attachI18nKey(error: unknown): void {
-  // Cast through unknown first to satisfy strict TS — we are intentionally
-  // adding a property to an AxiosError at the boundary.
-  const e = error as unknown as GoCellRequestError
+function attachI18nKey(error: AxiosError): void {
+  const e = error as GoCellRequestError
   e.i18nKey = toI18nKey(error)
 }
 
@@ -18,28 +16,9 @@ export const http: AxiosInstance = axios.create({
 let requestInterceptorId: number | null = null
 let responseInterceptorId: number | null = null
 
-// Refresh single-flight state
-let isRefreshing = false
+// Standard single-flight: all concurrent 401s share one Promise.
+// No queue needed — all callers simply await the same Promise.
 let refreshPromise: Promise<string | null> | null = null
-type QueueEntry = {
-  resolve: (token: string) => void
-  reject: (err: unknown) => void
-}
-let waitQueue: QueueEntry[] = []
-
-function flushQueue(token: string): void {
-  for (const entry of waitQueue) {
-    entry.resolve(token)
-  }
-  waitQueue = []
-}
-
-function rejectQueue(err: unknown): void {
-  for (const entry of waitQueue) {
-    entry.reject(err)
-  }
-  waitQueue = []
-}
 
 /**
  * Exposed only for testing — resets interceptors and refresh state so each
@@ -54,12 +33,14 @@ export function _resetForTesting(): void {
     http.interceptors.response.eject(responseInterceptorId)
     responseInterceptorId = null
   }
-  isRefreshing = false
   refreshPromise = null
-  waitQueue = []
 }
 
-const REFRESH_PATH = '/auth/refresh/v1'
+const DEFAULT_REFRESH_PATH = '/sessions/refresh'
+
+function isRefreshPath(config: InternalAxiosRequestConfig, refreshPath: string): boolean {
+  return (config.url ?? '').includes(refreshPath)
+}
 
 /**
  * Installs request + response interceptors on the shared `http` instance.
@@ -67,6 +48,8 @@ const REFRESH_PATH = '/auth/refresh/v1'
  * ejected first if already installed).
  */
 export function setupAxios(opts: SetupAxiosOptions): void {
+  const refreshPath = opts.refreshPath ?? DEFAULT_REFRESH_PATH
+
   // Eject previous interceptors to guarantee exactly one set is active.
   if (requestInterceptorId !== null) {
     http.interceptors.request.eject(requestInterceptorId)
@@ -93,89 +76,54 @@ export function setupAxios(opts: SetupAxiosOptions): void {
   responseInterceptorId = http.interceptors.response.use(
     (response) => response,
     async (error: unknown) => {
-      // Narrow to AxiosError
+      // Narrow to AxiosError — non-axios errors pass through
       if (!axios.isAxiosError(error)) {
         return Promise.reject(error)
       }
 
-      const config = error.config as (AxiosRequestConfig & { __isRetry?: boolean }) | undefined
+      const config = error.config
 
-      // Non-401 or already a retry or missing config → attach i18nKey and reject
+      // Non-401, already a retry, refresh endpoint itself, or missing config
+      // → attach i18nKey and reject immediately
       const status = error.response?.status
       if (
         status !== 401 ||
         config === undefined ||
-        config.__isRetry === true
+        config.__isRetry === true ||
+        isRefreshPath(config, refreshPath)
       ) {
         attachI18nKey(error)
         return Promise.reject(error)
       }
 
-      // Detect refresh endpoint itself — avoid recursive refresh
-      const url = config.url ?? ''
-      const isRefreshEndpoint = url.includes(REFRESH_PATH)
-      if (isRefreshEndpoint) {
-        attachI18nKey(error)
-        return Promise.reject(error)
+      // Standard single-flight: if no refresh is in-flight, start one.
+      // All concurrent 401s await the same Promise — natural deduplication,
+      // no queue required, no resolve(null) race.
+      if (!refreshPromise) {
+        refreshPromise = Promise.resolve(opts.onRefresh()).finally(() => {
+          refreshPromise = null
+        })
       }
 
-      // First 401: start refresh; subsequent 401s: queue and wait
-      if (!isRefreshing) {
-        isRefreshing = true
-        refreshPromise = opts
-          .onRefresh()
-          .then((newToken) => {
-            isRefreshing = false
-            refreshPromise = null
-            if (newToken === null) {
-              rejectQueue(error)
-              opts.onAuthFail()
-              return null
-            }
-            flushQueue(newToken)
-            return newToken
-          })
-          .catch((refreshErr: unknown) => {
-            isRefreshing = false
-            refreshPromise = null
-            rejectQueue(refreshErr)
-            opts.onAuthFail()
-            return null
-          })
+      let token: string | null
+      try {
+        token = await refreshPromise
+      } catch {
+        token = null
       }
 
-      // Wait for the in-flight refresh
-      const newToken = await new Promise<string | null>((resolve, reject) => {
-        if (!isRefreshing && refreshPromise === null) {
-          // Refresh already completed (resolved or rejected) before we queued.
-          // This shouldn't normally happen but guard defensively.
-          resolve(null)
-        } else {
-          waitQueue.push({
-            resolve: (tok) => resolve(tok),
-            reject: (err) => reject(err),
-          })
-        }
-      }).catch((_err: unknown) => null)
-
-      // refreshPromise may have resolved without going through the queue
-      // (first caller path) — read the result directly for the initial caller.
-      const resolvedToken = newToken ?? (await refreshPromise)
-
-      if (resolvedToken === null) {
+      if (!token) {
+        opts.onAuthFail()
         attachI18nKey(error)
         return Promise.reject(error)
       }
 
       // Replay original request with new token
-      const retryConfig: AxiosRequestConfig & { __isRetry?: boolean } = {
+      const retryConfig: InternalAxiosRequestConfig = {
         ...config,
         __isRetry: true,
-        headers: {
-          ...(config.headers as Record<string, string> | undefined),
-          Authorization: `Bearer ${resolvedToken}`,
-        },
       }
+      retryConfig.headers.set('Authorization', `Bearer ${token}`)
       return http(retryConfig)
     },
   )

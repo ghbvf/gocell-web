@@ -5,29 +5,22 @@ import type { HttpAuthRefreshV1Response } from '@gocell/contracts'
 
 /**
  * Session view-model (not a wire contract).
- * accessToken / refreshToken live only in Pinia state — never written to
+ * accessToken lives only in Pinia state — never written to
  * localStorage or sessionStorage (security iron rule §7.1).
  */
 export interface AuthUser {
   id: string
-  username?: string
 }
 
-/** Payload shape shared by login and refresh response .data */
-interface SessionData {
-  accessToken: string
-  refreshToken: string
-  expiresAt: string
-  sessionId: string
-  userId: string
-  passwordResetRequired: boolean
-}
+/** Payload shape derived from the refresh response contract */
+type SessionData = HttpAuthRefreshV1Response['data']
 
 export const useAuthStore = defineStore('access.auth', () => {
   // ─── state (all in-memory, never persisted) ───────────────────────────────
   const user = ref<AuthUser | null>(null)
   const accessToken = ref<string | null>(null)
-  const refreshToken = ref<string | null>(null)
+  // refreshToken is write-only from outside; only refresh() reads it internally
+  const _refreshToken = ref<string | null>(null)
   const passwordResetRequired = ref(false)
 
   // ─── getters ──────────────────────────────────────────────────────────────
@@ -39,7 +32,7 @@ export const useAuthStore = defineStore('access.auth', () => {
   function setSession(payload: SessionData): void {
     user.value = { id: payload.userId }
     accessToken.value = payload.accessToken
-    refreshToken.value = payload.refreshToken
+    _refreshToken.value = payload.refreshToken
     passwordResetRequired.value = payload.passwordResetRequired
   }
 
@@ -47,12 +40,12 @@ export const useAuthStore = defineStore('access.auth', () => {
   function clearSession(): void {
     user.value = null
     accessToken.value = null
-    refreshToken.value = null
+    _refreshToken.value = null
     passwordResetRequired.value = false
   }
 
   /**
-   * Attempt to exchange the current refreshToken for a new accessToken.
+   * Attempt to exchange the current refresh token for a new access token.
    *
    * Returns the new accessToken on success, null otherwise.
    * On network/server failure: clearSession() + return null.
@@ -61,14 +54,14 @@ export const useAuthStore = defineStore('access.auth', () => {
    * Do NOT call setupAxios here — that is the app assembly layer's job.
    */
   async function refresh(): Promise<string | null> {
-    if (!refreshToken.value) {
+    if (!_refreshToken.value) {
       return null
     }
 
     try {
       const res = await http.post<HttpAuthRefreshV1Response>(
         '/api/v1/access/sessions/refresh',
-        { refreshToken: refreshToken.value },
+        { refreshToken: _refreshToken.value },
       )
       setSession(res.data.data)
       return res.data.data.accessToken
@@ -82,7 +75,6 @@ export const useAuthStore = defineStore('access.auth', () => {
     // state (expose as readonly refs via Pinia's reactive proxy)
     user,
     accessToken,
-    refreshToken,
     passwordResetRequired,
     // getters
     isAuthenticated,

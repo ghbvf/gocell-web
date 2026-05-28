@@ -9,7 +9,9 @@ import type { SetupAxiosOptions, GoCellRequestError } from './types'
 // internal `_resetForTesting` helper exposed only in tests.
 import { _resetForTesting } from './http'
 
-const REFRESH_URL = '/api/auth/refresh/v1'
+// The real refresh URL used by the backend
+const REAL_REFRESH_URL = '/api/v1/access/sessions/refresh'
+const REAL_REFRESH_PATH = '/sessions/refresh'
 
 describe('request interceptors', () => {
   let mock: MockAdapter
@@ -22,6 +24,7 @@ describe('request interceptors', () => {
       getToken,
       onRefresh,
       onAuthFail,
+      refreshPath: REAL_REFRESH_PATH,
       ...overrides,
     }
   }
@@ -176,7 +179,9 @@ describe('request interceptors', () => {
         expect(r.status).toBe('rejected')
       }
       expect(onRefresh).toHaveBeenCalledTimes(1)
-      expect(onAuthFail).toHaveBeenCalledTimes(1)
+      // onAuthFail must be called once per rejected caller (all 3 callers each
+      // observe token=null and call onAuthFail independently in the new design)
+      expect(onAuthFail).toHaveBeenCalledTimes(3)
     })
   })
 
@@ -203,22 +208,46 @@ describe('request interceptors', () => {
   describe('refresh endpoint 401 does not trigger recursive refresh', () => {
     it('rejects immediately without calling onRefresh when refresh endpoint itself 401s', async () => {
       getToken.mockReturnValue('old-token')
+      // onRefresh calls the real refresh endpoint which returns 401
       onRefresh.mockImplementation(async () => {
-        // The refresh call itself will get 401 from the mock
-        await http.post(REFRESH_URL, {})
+        // The refresh call itself will get 401 from the mock — must not recurse
+        await http.post(REAL_REFRESH_URL, {})
         return 'new-token'
       })
       onAuthFail.mockReturnValue(undefined)
-      setupAxios(buildOpts())
+      setupAxios(buildOpts({ refreshPath: REAL_REFRESH_PATH }))
 
-      // All requests return 401
       mock.onGet('/api/me').reply(401, {})
-      mock.onPost(REFRESH_URL).reply(401, {})
+      // Refresh endpoint returns 401 — must not trigger another onRefresh call
+      mock.onPost(REAL_REFRESH_URL).reply(401, {})
 
       await expect(http.get('/api/me')).rejects.toThrow()
-      // onRefresh is called once for /api/me's 401; the refresh endpoint's own 401
-      // must not recursively trigger onRefresh again
+      // onRefresh is called once; the refresh endpoint 401 must NOT trigger recursion
       expect(onRefresh).toHaveBeenCalledTimes(1)
+    })
+
+    it('refreshPath option correctly identifies the refresh endpoint URL', async () => {
+      // Integration test: verify that a custom refreshPath prevents recursion
+      getToken.mockReturnValue('old-token')
+      let refreshCallCount = 0
+      onRefresh.mockImplementation(async () => {
+        refreshCallCount++
+        // Simulate the refresh endpoint itself getting 401
+        await http.post(REAL_REFRESH_URL, {}).catch(() => null)
+        return null
+      })
+      onAuthFail.mockReturnValue(undefined)
+      setupAxios(buildOpts({ refreshPath: REAL_REFRESH_PATH }))
+
+      mock.onGet('/api/resource').reply(401, {})
+      mock.onPost(REAL_REFRESH_URL).reply(401, {})
+
+      await expect(http.get('/api/resource')).rejects.toThrow()
+
+      // onRefresh called exactly once — the refresh endpoint 401 is blocked
+      // by isRefreshPath check and does not re-trigger onRefresh
+      expect(refreshCallCount).toBe(1)
+      expect(onAuthFail).toHaveBeenCalledTimes(1)
     })
   })
 

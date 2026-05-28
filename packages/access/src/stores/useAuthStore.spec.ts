@@ -40,18 +40,18 @@ describe('useAuthStore', () => {
     expect(store.isAuthenticated).toBe(false)
     expect(store.user).toBeNull()
     expect(store.accessToken).toBeNull()
-    expect(store.refreshToken).toBeNull()
+    // refreshToken is internal (write-only from outside) — not exposed on store
     expect(store.passwordResetRequired).toBe(false)
   })
 
-  it('setSession sets user, tokens and passwordResetRequired correctly', () => {
+  it('setSession sets user, accessToken and passwordResetRequired correctly', () => {
     const store = useAuthStore()
     store.setSession(sessionPayload)
 
     expect(store.isAuthenticated).toBe(true)
     expect(store.user).toEqual({ id: 'user-123' })
     expect(store.accessToken).toBe('access-tok-1')
-    expect(store.refreshToken).toBe('refresh-tok-1')
+    // refreshToken is internal — validated indirectly via refresh() call below
     expect(store.passwordResetRequired).toBe(false)
   })
 
@@ -69,7 +69,6 @@ describe('useAuthStore', () => {
     expect(store.isAuthenticated).toBe(false)
     expect(store.user).toBeNull()
     expect(store.accessToken).toBeNull()
-    expect(store.refreshToken).toBeNull()
     expect(store.passwordResetRequired).toBe(false)
   })
 
@@ -117,13 +116,20 @@ describe('useAuthStore', () => {
 
       const result = await store.refresh()
 
+      // Validates that the internal refreshToken was correctly stored from setSession
       expect(mockHttp.post).toHaveBeenCalledWith(
         '/api/v1/access/sessions/refresh',
         { refreshToken: 'refresh-tok-1' },
       )
       expect(result).toBe('access-tok-new')
       expect(store.accessToken).toBe('access-tok-new')
-      expect(store.refreshToken).toBe('refresh-tok-new')
+      // refreshToken is internal; verify it works by doing a second refresh
+      mockHttp.post.mockResolvedValueOnce({ data: { data: { ...newPayload, accessToken: 'access-tok-3' } } })
+      await store.refresh()
+      expect(mockHttp.post).toHaveBeenLastCalledWith(
+        '/api/v1/access/sessions/refresh',
+        { refreshToken: 'refresh-tok-new' },
+      )
     })
 
     it('clearSession and returns null when http.post rejects', async () => {

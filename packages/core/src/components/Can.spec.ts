@@ -1,8 +1,9 @@
 import { describe, it, expect } from 'vitest'
-import { computed, defineComponent, provide } from 'vue'
+import { computed, ref, defineComponent, provide, nextTick } from 'vue'
 import { mount } from '@vue/test-utils'
 import type { PdpClient } from '../pdp/types'
 import { PDP_INJECTION_KEY } from '../pdp/types'
+import { _resetWarnFlagForTesting } from '../pdp/useDecision'
 import Can from './Can.vue'
 
 function makeMockClient(allowed: boolean): PdpClient {
@@ -138,6 +139,49 @@ describe('Can.vue', () => {
       // Without explicit mode, denied means hidden
       const wrapper = mountCanDirect({ action: 'read', clientAllowed: false })
       expect(wrapper.find('[data-testid="content"]').exists()).toBe(false)
+    })
+  })
+
+  describe('reactive allowed transition', () => {
+    it('transitions from denied to allowed when client computed changes from false to true', async () => {
+      // Reset warn-once flag so no-provider tests in other suites don't interfere
+      _resetWarnFlagForTesting()
+
+      const allowedRef = ref(false)
+
+      // Client whose can() returns a computed backed by allowedRef
+      const client: PdpClient = {
+        can: () => computed(() => allowedRef.value),
+      }
+
+      const Wrapper = defineComponent({
+        setup() {
+          provide(PDP_INJECTION_KEY, client)
+          return {}
+        },
+        components: { Can },
+        template: `
+          <Can action="read" mode="disable">
+            <template #default="{ allowed }">
+              <span data-testid="content" :data-allowed="String(allowed)">content</span>
+            </template>
+          </Can>
+        `,
+      })
+
+      const wrapper = mount(Wrapper, { attachTo: document.body })
+
+      // Initially denied — inert container should be present
+      expect(wrapper.find('[inert]').exists()).toBe(true)
+      expect(wrapper.find('[data-testid="content"]').attributes('data-allowed')).toBe('false')
+
+      // Flip to allowed
+      allowedRef.value = true
+      await nextTick()
+
+      // inert container should be gone; content rendered directly
+      expect(wrapper.find('[inert]').exists()).toBe(false)
+      expect(wrapper.find('[data-testid="content"]').attributes('data-allowed')).toBe('true')
     })
   })
 })
