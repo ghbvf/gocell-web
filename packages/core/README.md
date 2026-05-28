@@ -4,9 +4,10 @@
 
 ## 对外 exports
 
-- `.` → `src/index.ts` — 所有公开 Composable + Store 汇总
+- `.` → `src/index.ts` — 所有公开 Composable + Store + PDP 契约汇总
 - `./composables` → `src/composables/index.ts` — Composable 子入口
 - `./stores` → `src/stores/index.ts` — Pinia store 子入口（`useThemeStore`）
+- `./components` → `src/components/index.ts` — UI 组件子入口（`Can`）
 - `./styles/tokens.css` → `src/styles/tokens.css` — 设计 token（oklch，亮/暗双主题）
 - `./styles/v1-linear.scss` → `src/styles/v1-linear.scss` — V1 Linear 风格全局 SCSS 层
 
@@ -17,6 +18,38 @@
 | `useThemeStore` | Pinia store `core.theme` | 主题状态单一来源；持有 `theme` ref + `setTheme`/`toggleTheme` actions |
 | `useTheme` | `() => { theme, setTheme, toggleTheme }` | `useThemeStore` 的薄封装，对消费方屏蔽 store 实现细节 |
 | `useThemeTokens` | `() => { themeConfig: ComputedRef<ThemeConfig> }` | 读 CSS 变量映射为 AntD seed token；随主题切换 algorithm |
+| `PDP_INJECTION_KEY` | `InjectionKey<PdpClient>` | Vue inject key；`@gocell/access` 在 app root provide 实现，`<Can>` / `useDecision` inject |
+| `PdpClient` | interface（类型） | PDP client 契约；实现在 `@gocell/access`，core 只持有接口 |
+| `useDecision` | `(action, resource?) => ComputedRef<boolean>` | 响应式权限判断；fail-closed（无 provider / pending / error → false） |
+| `Can` | Vue SFC 组件 | 授权 UI 壳；`mode='hide'`（默认）或 `mode='disable'`；scoped slot 传 `{ allowed }` |
+
+### PDP 注入契约（供 `@gocell/access` 实现）
+
+```ts
+import { PDP_INJECTION_KEY, type PdpClient } from '@gocell/core'
+
+// 在 @gocell/access 的装配入口：
+app.provide(PDP_INJECTION_KEY, pdpClientImpl)
+```
+
+### `<Can>` 用法示例
+
+```vue
+<!-- mode=hide（默认）：无权限时隐藏 -->
+<Can action="cell.read" resource="cell:123">
+  <template #default="{ allowed }">
+    <button :disabled="!allowed">查看</button>
+  </template>
+  <template #denied>
+    <span>无权限</span>
+  </template>
+</Can>
+
+<!-- mode=disable：无权限时灰化 + inert -->
+<Can action="cell.delete" mode="disable">
+  <DeleteButton />
+</Can>
+```
 
 ## 依赖的 contract
 
