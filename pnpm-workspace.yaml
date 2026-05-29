@@ -20,3 +20,10 @@ catalog:
   typescript: ^5.7.3
   vue-tsc: ^2.2.0
   '@types/node': ^22.10.5
+  # —— codegen 工具链（tools/codegen）——
+  # 注：codegen 工具链升版后须本地重跑 `pnpm codegen && git add packages/contracts/src/`，
+  # 否则 formatter 输出微变会触发 CI codegen-diff 误红。
+  json-schema-to-typescript: ^15.0.4
+  tsx: ^4.19.2
+  # —— 测试 ——
+  vitest: ^3.0.4
