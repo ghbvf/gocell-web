@@ -113,11 +113,22 @@ const { t } = useI18n()
   border-color: var(--fg);
 }
 
+/* Variant-specific hovers override the generic .confirm__btn:hover (which would
+   otherwise turn the filled buttons --bg-sunken → invisible/colorless). */
+.confirm__btn--primary:hover:not(:disabled) {
+  background: var(--fg-hover);
+}
+
 .confirm__btn--danger {
   /* --bg inverts per theme so text stays high-contrast on the themed --err-strong fill */
   color: var(--bg);
   background: var(--err-strong);
   border-color: var(--err-strong);
+}
+
+.confirm__btn--danger:hover:not(:disabled) {
+  background: var(--err-strong);
+  filter: brightness(0.92);
 }
 
 .confirm__btn:disabled {

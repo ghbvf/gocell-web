@@ -69,6 +69,9 @@
   --fg: oklch(0.96 0.004 270);
   --fg-muted: oklch(0.68 0.008 270);
   --fg-faint: oklch(0.48 0.008 270);
+  /* Dark theme: --fg is near-white, so lightening for hover is imperceptible —
+     darken instead for a visible hover on solid (--fg-backed) buttons. */
+  --fg-hover: oklch(from var(--fg) calc(l - 0.06) c h);
 
   --accent: oklch(0.72 0.17 268);
   --accent-soft: oklch(0.28 0.08 268);

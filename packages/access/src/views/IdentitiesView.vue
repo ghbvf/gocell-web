@@ -31,11 +31,13 @@ onMounted(() => {
   void store.fetchList()
 })
 
-/** Locale-aware timestamp (Intl, never a hand-rolled format string). */
+/** Locale-aware timestamp (Intl, never a hand-rolled format string). One formatter
+ *  instance reused across all rows/renders — constructing it per call is ~10× costlier. */
+const dateFormat = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' })
 function formatDate(iso: string): string {
   const d = new Date(iso)
   if (Number.isNaN(d.getTime())) return iso
-  return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(d)
+  return dateFormat.format(d)
 }
 
 /** Screen-reader name for a row action button: action verb + the row's username
@@ -95,6 +97,11 @@ async function onConfirm(): Promise<void> {
     if (action === 'lock') await store.lock(user.id)
     else if (action === 'unlock') await store.unlock(user.id)
     else if (action === 'delete') await store.remove(user.id)
+    else {
+      // Compile-time exhaustiveness: a new ConfirmAction must add a branch above.
+      const _never: never = action
+      void _never
+    }
     confirmState.value = null
   } catch (err: unknown) {
     confirmErrorKey.value = isGoCellRequestError(err)
@@ -484,7 +491,7 @@ async function onConfirm(): Promise<void> {
 }
 
 .identities__action {
-  height: 28px;
+  min-height: 30px;
   padding: 0 10px;
   font-size: 12px;
   color: var(--fg-muted);

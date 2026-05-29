@@ -61,8 +61,10 @@ watch(
   { immediate: true },
 )
 
-function fieldError(field: keyof CreateIdentityErrors): string | null {
-  return submitted.value ? errors.value[field] : null
+/** Submitted error for a field as a plain string ('' = none) — lets the template
+ *  guard with v-if and pass straight to t() without a `string | null` cast. */
+function fieldError(field: keyof CreateIdentityErrors): string {
+  return submitted.value ? (errors.value[field] ?? '') : ''
 }
 
 async function onSubmit(): Promise<void> {
@@ -123,7 +125,7 @@ async function onSubmit(): Promise<void> {
           class="modal__error"
           role="alert"
         >
-          {{ t(fieldError('username') as string) }}
+          {{ t(fieldError('username')) }}
         </p>
       </div>
 
@@ -142,7 +144,7 @@ async function onSubmit(): Promise<void> {
           :aria-describedby="fieldError('email') ? 'identity-email-error' : undefined"
         />
         <p v-if="fieldError('email')" id="identity-email-error" class="modal__error" role="alert">
-          {{ t(fieldError('email') as string) }}
+          {{ t(fieldError('email')) }}
         </p>
       </div>
 
@@ -166,11 +168,11 @@ async function onSubmit(): Promise<void> {
           class="modal__error"
           role="alert"
         >
-          {{ t(fieldError('password') as string) }}
+          {{ t(fieldError('password')) }}
         </p>
       </div>
 
-      <label class="modal__checkbox">
+      <label class="modal__checkbox" for="identity-require-password-reset">
         <input
           id="identity-require-password-reset"
           v-model="form.requirePasswordReset"

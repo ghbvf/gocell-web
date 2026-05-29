@@ -41,8 +41,10 @@ watch(
   { immediate: true },
 )
 
-function fieldError(field: keyof ChangePasswordErrors): string | null {
-  return submitted.value ? errors.value[field] : null
+/** Submitted error for a field as a plain string ('' = none) — lets the template
+ *  guard with v-if and pass straight to t() without a `string | null` cast. */
+function fieldError(field: keyof ChangePasswordErrors): string {
+  return submitted.value ? (errors.value[field] ?? '') : ''
 }
 
 async function onSubmit(): Promise<void> {
@@ -90,7 +92,7 @@ async function onSubmit(): Promise<void> {
           :aria-describedby="fieldError('oldPassword') ? 'cp-old-error' : undefined"
         />
         <p v-if="fieldError('oldPassword')" id="cp-old-error" class="cp__error" role="alert">
-          {{ t(fieldError('oldPassword') as string) }}
+          {{ t(fieldError('oldPassword')) }}
         </p>
       </div>
 
@@ -108,7 +110,7 @@ async function onSubmit(): Promise<void> {
           :aria-describedby="fieldError('newPassword') ? 'cp-new-error' : undefined"
         />
         <p v-if="fieldError('newPassword')" id="cp-new-error" class="cp__error" role="alert">
-          {{ t(fieldError('newPassword') as string) }}
+          {{ t(fieldError('newPassword')) }}
         </p>
       </div>
 
@@ -126,7 +128,7 @@ async function onSubmit(): Promise<void> {
           :aria-describedby="fieldError('confirm') ? 'cp-confirm-error' : undefined"
         />
         <p v-if="fieldError('confirm')" id="cp-confirm-error" class="cp__error" role="alert">
-          {{ t(fieldError('confirm') as string) }}
+          {{ t(fieldError('confirm')) }}
         </p>
       </div>
 
@@ -233,6 +235,12 @@ async function onSubmit(): Promise<void> {
   color: var(--bg);
   background: var(--fg);
   border-color: var(--fg);
+}
+
+/* Override the generic .cp__btn:hover (which would turn the filled primary
+   button --bg-sunken → white text on grey = invisible). */
+.cp__btn--primary:hover:not(:disabled) {
+  background: var(--fg-hover);
 }
 
 .cp__btn:disabled {
