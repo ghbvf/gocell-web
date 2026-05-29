@@ -6,12 +6,16 @@ import { useAuthStore } from './useAuthStore'
 vi.mock('@gocell/request', () => ({
   http: {
     post: vi.fn(),
+    delete: vi.fn(),
   },
 }))
 
 import { http } from '@gocell/request'
 
-const mockHttp = http as unknown as { post: ReturnType<typeof vi.fn> }
+const mockHttp = http as unknown as {
+  post: ReturnType<typeof vi.fn>
+  delete: ReturnType<typeof vi.fn>
+}
 
 const sessionPayload = {
   accessToken: 'access-tok-1',
@@ -154,6 +158,93 @@ describe('useAuthStore', () => {
       })
       await store.refresh()
       expect(localStorage.length).toBe(0)
+    })
+  })
+
+  describe('login()', () => {
+    const credentials = { username: 'admin', password: 'SecretPass!23' }
+
+    it('posts credentials and stores the session on success', async () => {
+      const store = useAuthStore()
+      mockHttp.post.mockResolvedValueOnce({ data: { data: sessionPayload } })
+
+      await store.login(credentials)
+
+      expect(store.isAuthenticated).toBe(true)
+      expect(store.user).toEqual({ id: 'user-123' })
+      expect(store.accessToken).toBe('access-tok-1')
+    })
+
+    it('calls the login endpoint with __skipAuthRefresh so a 401 does not refresh', async () => {
+      const store = useAuthStore()
+      mockHttp.post.mockResolvedValueOnce({ data: { data: sessionPayload } })
+
+      await store.login(credentials)
+
+      expect(mockHttp.post).toHaveBeenCalledWith('/api/v1/access/sessions/login', credentials, {
+        __skipAuthRefresh: true,
+      })
+    })
+
+    it('propagates passwordResetRequired from the login response', async () => {
+      const store = useAuthStore()
+      mockHttp.post.mockResolvedValueOnce({
+        data: { data: { ...sessionPayload, passwordResetRequired: true } },
+      })
+
+      await store.login(credentials)
+      expect(store.passwordResetRequired).toBe(true)
+    })
+
+    it('rethrows on failure and leaves the store unauthenticated', async () => {
+      const store = useAuthStore()
+      mockHttp.post.mockRejectedValueOnce(new Error('401'))
+
+      await expect(store.login(credentials)).rejects.toThrow()
+      expect(store.isAuthenticated).toBe(false)
+      expect(store.user).toBeNull()
+    })
+
+    it('never persists the access token to storage', async () => {
+      const spy = vi.spyOn(Storage.prototype, 'setItem')
+      const store = useAuthStore()
+      mockHttp.post.mockResolvedValueOnce({ data: { data: sessionPayload } })
+      await store.login(credentials)
+      expect(spy).not.toHaveBeenCalled()
+      expect(localStorage.length).toBe(0)
+      spy.mockRestore()
+    })
+  })
+
+  describe('logout()', () => {
+    it('deletes the current session by id then clears the store', async () => {
+      const store = useAuthStore()
+      store.setSession(sessionPayload)
+      mockHttp.delete.mockResolvedValueOnce({ data: {} })
+
+      await store.logout()
+
+      expect(mockHttp.delete).toHaveBeenCalledWith('/api/v1/access/sessions/sess-1')
+      expect(store.isAuthenticated).toBe(false)
+      expect(store.user).toBeNull()
+    })
+
+    it('still clears the store when the DELETE request fails (best-effort)', async () => {
+      const store = useAuthStore()
+      store.setSession(sessionPayload)
+      mockHttp.delete.mockRejectedValueOnce(new Error('network'))
+
+      await store.logout()
+
+      expect(store.isAuthenticated).toBe(false)
+      expect(store.accessToken).toBeNull()
+    })
+
+    it('is a no-op DELETE when there is no active session', async () => {
+      const store = useAuthStore()
+      await store.logout()
+      expect(mockHttp.delete).not.toHaveBeenCalled()
+      expect(store.isAuthenticated).toBe(false)
     })
   })
 })

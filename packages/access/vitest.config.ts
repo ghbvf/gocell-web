@@ -1,6 +1,8 @@
 import { defineConfig } from 'vitest/config'
+import vue from '@vitejs/plugin-vue'
 
 export default defineConfig({
+  plugins: [vue()],
   test: {
     environment: 'jsdom',
     include: ['src/**/*.spec.ts'],
@@ -14,6 +16,7 @@ export default defineConfig({
         'src/index.ts',
         'src/pdp/index.ts',
         'src/stores/index.ts',
+        'src/views/index.ts',
       ],
       thresholds: {
         lines: 80,
