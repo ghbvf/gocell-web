@@ -41,10 +41,12 @@ function formatDate(iso: string): string {
 
     <div class="identities__tabs" role="tablist" :aria-label="t('access.identities.tabs.label')">
       <button
+        id="identities-tab-users"
         type="button"
         role="tab"
         class="identities__tab identities__tab--active"
         :aria-selected="true"
+        aria-controls="identities-panel-users"
         tabindex="0"
       >
         {{ t('access.identities.tabs.users') }}
@@ -62,63 +64,74 @@ function formatDate(iso: string): string {
       </button>
     </div>
 
-    <div class="identities__toolbar">
-      <label class="identities__filter-label" for="identities-filter">
-        {{ t('access.identities.filter.label') }}
-      </label>
-      <input
-        id="identities-filter"
-        v-model="filter"
-        class="identities__filter"
-        type="search"
-        autocomplete="off"
-        :placeholder="t('access.identities.filter.placeholder')"
-      />
-    </div>
+    <div
+      id="identities-panel-users"
+      role="tabpanel"
+      aria-labelledby="identities-tab-users"
+      class="identities__panel"
+    >
+      <div class="identities__toolbar">
+        <label class="identities__filter-label" for="identities-filter">
+          {{ t('access.identities.filter.label') }}
+        </label>
+        <input
+          id="identities-filter"
+          v-model="filter"
+          class="identities__filter"
+          type="search"
+          autocomplete="off"
+          :placeholder="t('access.identities.filter.placeholder')"
+        />
+      </div>
 
-    <p v-if="errorKey" class="identities__error" role="alert">{{ t(errorKey) }}</p>
+      <p v-if="errorKey" class="identities__error" role="alert">{{ t(errorKey) }}</p>
 
-    <p v-else-if="loading && filteredUsers.length === 0" class="identities__loading" role="status">
-      {{ t('access.identities.loading') }}
-    </p>
-
-    <p v-else-if="filteredUsers.length === 0" class="identities__empty">
-      {{ t('access.identities.empty') }}
-    </p>
-
-    <template v-else>
-      <table class="identities__table" :aria-label="t('access.identities.table.label')">
-        <thead>
-          <tr>
-            <th scope="col">{{ t('access.identities.table.username') }}</th>
-            <th scope="col">{{ t('access.identities.table.email') }}</th>
-            <th scope="col">{{ t('access.identities.table.status') }}</th>
-            <th scope="col">{{ t('access.identities.table.createdAt') }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="u in filteredUsers" :key="u.id" class="identities__row">
-            <td class="identities__cell identities__cell--name">{{ u.username }}</td>
-            <td class="identities__cell">{{ u.email }}</td>
-            <td class="identities__cell"><IdentityStatusPill :status="u.status" /></td>
-            <td class="identities__cell">
-              <time :datetime="u.createdAt">{{ formatDate(u.createdAt) }}</time>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-
-      <button
-        v-if="hasMore"
-        type="button"
-        class="identities__more"
-        data-action="load-more"
-        :disabled="loading"
-        @click="store.loadMore()"
+      <p
+        v-else-if="loading && filteredUsers.length === 0"
+        class="identities__loading"
+        role="status"
       >
-        {{ t('access.identities.loadMore') }}
-      </button>
-    </template>
+        {{ t('access.identities.loading') }}
+      </p>
+
+      <p v-else-if="filteredUsers.length === 0" class="identities__empty" role="status">
+        {{ t('access.identities.empty') }}
+      </p>
+
+      <template v-else>
+        <table class="identities__table" :aria-label="t('access.identities.table.label')">
+          <thead>
+            <tr>
+              <th scope="col">{{ t('access.identities.table.username') }}</th>
+              <th scope="col">{{ t('access.identities.table.email') }}</th>
+              <th scope="col">{{ t('access.identities.table.status') }}</th>
+              <th scope="col">{{ t('access.identities.table.createdAt') }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="u in filteredUsers" :key="u.id" class="identities__row">
+              <td class="identities__cell identities__cell--name">{{ u.username }}</td>
+              <td class="identities__cell">{{ u.email }}</td>
+              <td class="identities__cell"><IdentityStatusPill :status="u.status" /></td>
+              <td class="identities__cell">
+                <time :datetime="u.createdAt">{{ formatDate(u.createdAt) }}</time>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <button
+          v-if="hasMore"
+          type="button"
+          class="identities__more"
+          data-action="load-more"
+          :disabled="loading"
+          @click="store.loadMore()"
+        >
+          {{ t('access.identities.loadMore') }}
+        </button>
+      </template>
+    </div>
   </section>
 </template>
 
@@ -135,7 +148,7 @@ function formatDate(iso: string): string {
 .identities__title {
   margin: 0 0 4px;
   font-family: var(--font-serif);
-  font-size: 28px;
+  font-size: 26px;
   font-weight: 400;
   letter-spacing: -0.01em;
   color: var(--fg);

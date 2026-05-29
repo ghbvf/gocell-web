@@ -3,11 +3,12 @@ import { mount, flushPromises } from '@vue/test-utils'
 import { nextTick } from 'vue'
 import { createTestingPinia } from '@pinia/testing'
 import { useIdentitiesStore } from '../stores/useIdentitiesStore'
+import type { Identity } from '../api/identities'
 import IdentitiesView from './IdentitiesView.vue'
 
 vi.mock('vue-i18n', () => ({ useI18n: () => ({ t: (k: string) => k }) }))
 
-const mkUser = (over: Partial<Record<string, string>> = {}) => ({
+const mkUser = (over: Partial<Identity> = {}): Identity => ({
   id: 'u-1',
   username: 'alice',
   email: 'alice@corp.example',
@@ -132,6 +133,15 @@ describe('IdentitiesView', () => {
       .find((t) => t.attributes('aria-selected') === 'true')
     expect(selected).toBeDefined()
     expect(selected!.attributes('tabindex')).toBe('0')
+  })
+
+  it('wires the active tab to a labelled tabpanel', () => {
+    const { wrapper } = mountView({ users: [mkUser()] })
+    const tab = wrapper.get('#identities-tab-users')
+    expect(tab.attributes('aria-controls')).toBe('identities-panel-users')
+    const panel = wrapper.get('#identities-panel-users')
+    expect(panel.attributes('role')).toBe('tabpanel')
+    expect(panel.attributes('aria-labelledby')).toBe('identities-tab-users')
   })
 
   it('shows a load-more control only when more pages exist and calls loadMore', async () => {

@@ -3,9 +3,9 @@ import { setActivePinia, createPinia } from 'pinia'
 import MockAdapter from 'axios-mock-adapter'
 import { http } from '@gocell/request'
 import { useIdentitiesStore } from './useIdentitiesStore'
-import { USERS_URL } from '../api/identities'
+import { USERS_URL, type Identity } from '../api/identities'
 
-const mkUser = (over: Partial<Record<string, string>> = {}) => ({
+const mkUser = (over: Partial<Identity> = {}): Identity => ({
   id: 'u-1',
   username: 'alice',
   email: 'alice@corp.example',
