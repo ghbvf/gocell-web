@@ -294,6 +294,7 @@ const enUS = {
       loading: 'Loading users…',
       empty: 'No users yet',
       loadMore: 'Load more',
+      resultCount: '{count} users',
     },
   },
   errors: {

@@ -52,11 +52,13 @@ function formatDate(iso: string): string {
         {{ t('access.identities.tabs.users') }}
       </button>
       <button
+        id="identities-tab-service-accounts"
         type="button"
         role="tab"
         class="identities__tab identities__tab--disabled"
         :aria-selected="false"
         aria-disabled="true"
+        aria-controls="identities-panel-service-accounts"
         tabindex="-1"
         :title="t('access.identities.tabs.serviceAccountsHint')"
       >
@@ -99,6 +101,10 @@ function formatDate(iso: string): string {
       </p>
 
       <template v-else>
+        <!-- SR-only live region: announces the (filtered) result count as the user types. -->
+        <p class="sr-only" role="status">
+          {{ t('access.identities.resultCount', { count: filteredUsers.length }) }}
+        </p>
         <table class="identities__table" :aria-label="t('access.identities.table.label')">
           <thead>
             <tr>
@@ -131,6 +137,16 @@ function formatDate(iso: string): string {
           {{ t('access.identities.loadMore') }}
         </button>
       </template>
+    </div>
+
+    <!-- Disabled placeholder panel completes the tablist widget (FR-030, Wave 2+). -->
+    <div
+      id="identities-panel-service-accounts"
+      role="tabpanel"
+      aria-labelledby="identities-tab-service-accounts"
+      hidden
+    >
+      {{ t('access.identities.tabs.serviceAccountsHint') }}
     </div>
   </section>
 </template>
@@ -223,7 +239,8 @@ function formatDate(iso: string): string {
 }
 
 .identities__filter:focus-visible {
-  outline: none;
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
   border-color: var(--accent);
 }
 

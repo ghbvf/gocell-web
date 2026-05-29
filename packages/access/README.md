@@ -48,9 +48,9 @@ contract 来源：`@gocell/contracts`（codegen 派生，只读）。
   - `refresh(): Promise<string | null>`：`@gocell/request` 的 `onRefresh` 回调
 - 安全铁律：access token / refresh token **仅内存**，绝不写 localStorage / sessionStorage。
 
-### `LoginView` / `FirstRunSetupView` (`./views`)
+### `LoginView` / `FirstRunSetupView` (`./views/login` · `./views/first-run`)
 
-- 全屏独立布局（不在 `AppShell` 内）；`apps/web` 路由 `() => import('@gocell/access/views')` 懒加载。
+- 全屏独立布局（不在 `AppShell` 内）；`apps/web` 路由各自懒加载独立子路径（`() => import('@gocell/access/views/login')` / `'@gocell/access/views/first-run'`）—— 无 `./views` 聚合入口。
 - `LoginView`：用户名+密码登录；oracle-safe 错误文案（统一 `ERR_AUTH_LOGIN_FAILED`，不暗示账号存在，PRD R3）。
 - `FirstRunSetupView`：5 步引导向导（Preflight `setup/status` → Two planes → Operator(Basic Auth) → Admin(body) → Submit/Done `setup/admin`）；410 静默跳 `/login`（R9）。
 
