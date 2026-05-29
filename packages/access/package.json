@@ -5,7 +5,9 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./stores": "./src/stores/index.ts"
+    "./stores": "./src/stores/index.ts",
+    "./views/login": "./src/views/LoginView.vue",
+    "./views/first-run": "./src/views/FirstRunSetupView.vue"
   },
   "files": [
     "src"
@@ -19,13 +21,17 @@
     "@gocell/core": "workspace:*",
     "@gocell/request": "workspace:*",
     "@gocell/contracts": "workspace:*",
-    "@gocell/shared": "workspace:*",
     "pinia": "catalog:",
-    "vue": "catalog:"
+    "vue": "catalog:",
+    "vue-i18n": "catalog:",
+    "vue-router": "catalog:"
   },
   "devDependencies": {
     "vitest": "catalog:",
+    "@pinia/testing": "catalog:",
+    "@vitejs/plugin-vue": "catalog:",
     "@vue/test-utils": "catalog:",
+    "axios-mock-adapter": "catalog:",
     "jsdom": "catalog:",
     "@vitest/coverage-v8": "catalog:"
   }

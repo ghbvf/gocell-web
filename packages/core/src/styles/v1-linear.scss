@@ -4,6 +4,21 @@
 // Page-specific selectors belong in per-page SCSS files.
 // ============================================================
 
+// ---------- a11y utilities ----------
+// Visually hidden but reachable by screen readers / aria-live announcers.
+// Use for sr-only labels and password strength / check announcements.
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 // ---------- typography ----------
 .v1-h1 {
   font-family: var(--font-serif);

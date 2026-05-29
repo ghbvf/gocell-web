@@ -8,7 +8,7 @@ import App from './App.vue'
 import { router } from './router'
 import { createGocellI18n, PDP_INJECTION_KEY } from '@gocell/core'
 import { createPdpClient } from '@gocell/access'
-import { configureAxios } from './bootstrap'
+import { configureAxios, bootstrapSession } from './bootstrap'
 import { registerGuards } from './router/guards'
 
 const app = createApp(App)
@@ -30,4 +30,6 @@ app.provide(PDP_INJECTION_KEY, pdpClient)
 // 5. Route guards (three-stage: first-run → auth → PDP)
 registerGuards(router, app, pdpClient)
 
-app.mount('#app')
+// 6. Attempt silent session restore before the first navigation, then mount.
+//    No-op on a cold load until the backend ships a refresh cookie (#12 H2).
+void bootstrapSession().finally(() => app.mount('#app'))

@@ -1,5 +1,6 @@
 import type { AxiosError } from 'axios'
 import type { GoCellHTTPErrorResponse } from '@gocell/contracts'
+import type { GoCellRequestError } from './types'
 
 function isAxiosError(err: unknown): err is AxiosError {
   return (
@@ -7,6 +8,16 @@ function isAxiosError(err: unknown): err is AxiosError {
     err !== null &&
     (err as Record<string, unknown>)['isAxiosError'] === true
   )
+}
+
+/**
+ * Type guard for caught `unknown` errors originating from the `http` instance.
+ * Lets callers narrow before reading `.i18nKey` / `.response` instead of an
+ * unchecked `as` cast (every interceptor-rejected error carries `i18nKey`,
+ * which is optional on the type, so an AxiosError satisfies GoCellRequestError).
+ */
+export function isGoCellRequestError(err: unknown): err is GoCellRequestError {
+  return isAxiosError(err)
 }
 
 function isGoCellErrorEnvelope(data: unknown): data is GoCellHTTPErrorResponse {
