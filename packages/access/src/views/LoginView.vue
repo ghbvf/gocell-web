@@ -32,14 +32,22 @@ const canSubmit = computed(
 
 onMounted(() => usernameInput.value?.focus())
 
+/**
+ * Open-redirect guard: only honour same-origin, root-relative paths. Absolute
+ * (`https://evil.com`) and protocol-relative (`//evil.com`) targets fall back
+ * to `/` so a crafted `?redirect=` cannot bounce the user off-site post-login.
+ */
+function safeRedirect(raw: unknown): string {
+  return typeof raw === 'string' && raw.startsWith('/') && !raw.startsWith('//') ? raw : '/'
+}
+
 async function onSubmit(): Promise<void> {
   if (!canSubmit.value) return
   loading.value = true
   errorKey.value = null
   try {
     await auth.login({ username: username.value, password: password.value })
-    const redirect = route.query.redirect
-    await router.push(typeof redirect === 'string' ? redirect : '/')
+    await router.push(safeRedirect(route.query.redirect))
   } catch (err: unknown) {
     errorKey.value = isGoCellRequestError(err)
       ? (err.i18nKey ?? 'errors.unknown')
@@ -77,6 +85,8 @@ async function onSubmit(): Promise<void> {
             type="text"
             autocomplete="username"
             :placeholder="t('access.login.username.placeholder')"
+            :aria-invalid="!!errorKey || undefined"
+            :aria-describedby="errorKey ? 'login-error' : undefined"
           />
         </div>
 
@@ -92,6 +102,8 @@ async function onSubmit(): Promise<void> {
               :type="showPassword ? 'text' : 'password'"
               autocomplete="current-password"
               :placeholder="t('access.login.password.placeholder')"
+              :aria-invalid="!!errorKey || undefined"
+              :aria-describedby="errorKey ? 'login-error' : undefined"
             />
             <button
               type="button"
@@ -110,7 +122,7 @@ async function onSubmit(): Promise<void> {
         <!-- Persistent live region (not v-if): the alert node must exist before
              its text changes so screen readers reliably re-announce, incl. a
              repeated identical error on a second failed submit. -->
-        <p class="login__error" role="alert" aria-live="assertive">
+        <p id="login-error" class="login__error" role="alert" aria-live="assertive">
           {{ errorKey ? t(errorKey) : '' }}
         </p>
 

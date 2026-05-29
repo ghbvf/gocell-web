@@ -168,6 +168,55 @@ describe('FirstRunSetupView', () => {
     expect(wrapper.text()).toContain('access.firstRun.steps.submit.title')
   })
 
+  it('shows an inline error and stays on submit when the admin already exists (409)', async () => {
+    const wrapper = await mountReady()
+    await walkToSubmit(wrapper)
+    mockedCreate.mockRejectedValue({
+      isAxiosError: true,
+      response: { status: 409 },
+      i18nKey: 'errors.ERR_AUTH_ADMIN_ALREADY_EXISTS',
+    })
+    await wrapper.find('.wizard__submit').trigger('click')
+    await flushPromises()
+    expect(wrapper.find('[role="alert"]').text()).toContain('errors.ERR_AUTH_ADMIN_ALREADY_EXISTS')
+    expect(replace).not.toHaveBeenCalled()
+    expect(wrapper.text()).toContain('access.firstRun.steps.submit.title')
+  })
+
+  it('shows an inline error and stays on submit when rate limited (429)', async () => {
+    const wrapper = await mountReady()
+    await walkToSubmit(wrapper)
+    mockedCreate.mockRejectedValue({
+      isAxiosError: true,
+      response: { status: 429 },
+      i18nKey: 'errors.ERR_RATE_LIMITED',
+    })
+    await wrapper.find('.wizard__submit').trigger('click')
+    await flushPromises()
+    expect(wrapper.find('[role="alert"]').text()).toContain('errors.ERR_RATE_LIMITED')
+    expect(replace).not.toHaveBeenCalled()
+    expect(wrapper.text()).toContain('access.firstRun.steps.submit.title')
+  })
+
+  it('advances on Enter (form submit) when the operator step is valid', async () => {
+    const wrapper = await mountReady()
+    await wrapper.find('.wizard__next').trigger('click') // preflight → planes
+    await wrapper.find('.wizard__next').trigger('click') // planes → operator
+    await fillOperator(wrapper)
+    await wrapper.find('form.frs-card').trigger('submit')
+    await flushPromises()
+    expect(wrapper.text()).toContain('access.firstRun.steps.admin.title')
+  })
+
+  it('does not advance on Enter while the operator step is incomplete', async () => {
+    const wrapper = await mountReady()
+    await wrapper.find('.wizard__next').trigger('click')
+    await wrapper.find('.wizard__next').trigger('click') // operator, empty
+    await wrapper.find('form.frs-card').trigger('submit')
+    await flushPromises()
+    expect(wrapper.text()).toContain('access.firstRun.steps.operator.title')
+  })
+
   it('silently redirects to /login on 410 (already initialized)', async () => {
     const wrapper = await mountReady()
     await walkToSubmit(wrapper)

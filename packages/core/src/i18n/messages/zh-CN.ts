@@ -241,11 +241,15 @@ const zhCN = {
           num: '含数字',
           sym: '含符号',
         },
+        checkMet: '已满足',
+        checkUnmet: '未满足',
       },
       submit: {
         reviewTitle: '复核请求',
         reviewTag: '明文密码不会被记录',
         wireMethod: 'POST',
+        wireAuthorization: 'Authorization: Basic ••••••••',
+        wireContentType: 'Content-Type: application/json',
         submitBtn: '提交 setup/admin',
         submitPending: '提交中…',
         successTransition: '管理员已创建，正在跳转…',
@@ -276,6 +280,7 @@ const zhCN = {
     ERR_INTERNAL: '服务器内部错误，请联系管理员',
     ERR_RATE_LIMIT: '请求过于频繁，请稍后重试',
     ERR_TIMEOUT: '请求超时，请稍后重试',
+    ERR_REQUEST_TOO_LARGE: '请求体过大，请减小后重试',
   },
 } as const
 

@@ -248,11 +248,15 @@ const enUS = {
           num: 'digit',
           sym: 'symbol',
         },
+        checkMet: 'met',
+        checkUnmet: 'not met',
       },
       submit: {
         reviewTitle: 'Review request',
         reviewTag: 'no plaintext password is logged',
         wireMethod: 'POST',
+        wireAuthorization: 'Authorization: Basic ••••••••',
+        wireContentType: 'Content-Type: application/json',
         submitBtn: 'Submit setup/admin',
         submitPending: 'Submitting…',
         successTransition: 'Admin created, redirecting…',
@@ -283,6 +287,7 @@ const enUS = {
     ERR_INTERNAL: 'Internal server error. Please contact your administrator.',
     ERR_RATE_LIMIT: 'Too many requests. Please slow down.',
     ERR_TIMEOUT: 'Request timed out. Please try again.',
+    ERR_REQUEST_TOO_LARGE: 'Request body is too large. Please reduce it and try again.',
   },
 } as const satisfies MessageSchema
 

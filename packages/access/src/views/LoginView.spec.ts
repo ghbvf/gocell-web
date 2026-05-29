@@ -81,6 +81,34 @@ describe('LoginView', () => {
     expect(push).toHaveBeenCalledWith('/')
   })
 
+  it('ignores an off-site redirect target and falls back to / (open-redirect guard)', async () => {
+    for (const evil of ['//evil.com', 'https://evil.com', 'javascript:alert(1)']) {
+      push.mockClear()
+      routeQuery = { redirect: evil }
+      const { wrapper, auth } = mountView()
+      vi.mocked(auth.login).mockResolvedValue(undefined)
+      await fill(wrapper)
+      await wrapper.find('form').trigger('submit')
+      await flushPromises()
+      expect(push).toHaveBeenCalledWith('/')
+    }
+  })
+
+  it('marks both inputs aria-invalid and links the error region on failure', async () => {
+    const { wrapper, auth } = mountView()
+    vi.mocked(auth.login).mockRejectedValue({
+      isAxiosError: true,
+      i18nKey: 'errors.ERR_AUTH_LOGIN_FAILED',
+    })
+    await fill(wrapper)
+    await wrapper.find('form').trigger('submit')
+    await flushPromises()
+    expect(wrapper.find('#login-username').attributes('aria-invalid')).toBe('true')
+    expect(wrapper.find('#login-password').attributes('aria-invalid')).toBe('true')
+    expect(wrapper.find('#login-username').attributes('aria-describedby')).toBe('login-error')
+    expect(wrapper.find('#login-error').exists()).toBe(true)
+  })
+
   it('shows the error i18n key in an alert region when login fails', async () => {
     const { wrapper, auth } = mountView()
     vi.mocked(auth.login).mockRejectedValue({

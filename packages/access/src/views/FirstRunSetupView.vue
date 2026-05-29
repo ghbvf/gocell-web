@@ -117,6 +117,11 @@ function goLogin(): void {
   void router.push('/login')
 }
 
+/** Enter inside a credential step submits its form → advance when the step is valid. */
+function onStepEnter(): void {
+  if (wizard.canGoNext.value) wizard.goNext()
+}
+
 function stepMark(step: SetupStep, index: number): string {
   return wizard.isStepDone(step) ? '✓' : String(index)
 }
@@ -205,7 +210,12 @@ function stepMark(step: SetupStep, index: number): string {
         </section>
 
         <!-- Operator credentials -->
-        <section v-else-if="wizard.currentStep.value === 'operator'" class="frs-card">
+        <form
+          v-else-if="wizard.currentStep.value === 'operator'"
+          class="frs-card"
+          novalidate
+          @submit.prevent="onStepEnter"
+        >
           <div class="frs-field">
             <label class="frs-label" for="op-username">{{
               t('access.firstRun.operator.username.label')
@@ -277,10 +287,25 @@ function stepMark(step: SetupStep, index: number): string {
             <p class="frs-help frs-help--hint">{{ t('access.firstRun.operator.password.hint') }}</p>
           </div>
           <p class="frs-help">{{ t('access.firstRun.operator.trimNote') }}</p>
-        </section>
+          <!-- Enables Enter-to-advance for this multi-input step; visible Next button lives in the shared action bar. -->
+          <button
+            type="submit"
+            class="sr-only"
+            tabindex="-1"
+            aria-hidden="true"
+            :disabled="!wizard.canGoNext.value"
+          >
+            {{ t('access.firstRun.nextBtn') }}
+          </button>
+        </form>
 
         <!-- Admin identity -->
-        <section v-else-if="wizard.currentStep.value === 'admin'" class="frs-card">
+        <form
+          v-else-if="wizard.currentStep.value === 'admin'"
+          class="frs-card"
+          novalidate
+          @submit.prevent="onStepEnter"
+        >
           <div class="frs-field-pair">
             <div class="frs-field">
               <label class="frs-label" for="admin-username">{{
@@ -389,6 +414,12 @@ function stepMark(step: SetupStep, index: number): string {
             <ul class="frs-pw-checks">
               <li v-for="row in checkRows" :key="row.key" :data-ok="row.ok || undefined">
                 {{ t(`access.firstRun.admin.checks.${row.key}`) }}
+                <!-- non-color state for screen readers (WCAG 1.4.1) -->
+                <span class="sr-only">{{
+                  row.ok
+                    ? t('access.firstRun.admin.checkMet')
+                    : t('access.firstRun.admin.checkUnmet')
+                }}</span>
               </li>
             </ul>
             <p class="frs-help frs-help--hint">{{ t('access.firstRun.admin.password.hint') }}</p>
@@ -417,7 +448,17 @@ function stepMark(step: SetupStep, index: number): string {
               {{ t(adminErrors.confirm) }}
             </p>
           </div>
-        </section>
+          <!-- Enables Enter-to-advance for this multi-input step; visible Next button lives in the shared action bar. -->
+          <button
+            type="submit"
+            class="sr-only"
+            tabindex="-1"
+            aria-hidden="true"
+            :disabled="!wizard.canGoNext.value"
+          >
+            {{ t('access.firstRun.nextBtn') }}
+          </button>
+        </form>
 
         <!-- Submit -->
         <section v-else-if="wizard.currentStep.value === 'submit'" class="frs-card">
@@ -428,8 +469,8 @@ function stepMark(step: SetupStep, index: number): string {
           <pre
             class="frs-wire"
           ><span class="frs-wire__method">{{ t('access.firstRun.submit.wireMethod') }}</span> {{ SETUP_ADMIN_URL }}
-Authorization: Basic ••••••••
-Content-Type: application/json
+{{ t('access.firstRun.submit.wireAuthorization') }}
+{{ t('access.firstRun.submit.wireContentType') }}
 
 {{ maskedBody }}</pre>
           <!-- Persistent live region (not v-if) — see LoginView for the rationale. -->

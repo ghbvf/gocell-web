@@ -16,7 +16,6 @@ export default defineConfig({
         'src/index.ts',
         'src/pdp/index.ts',
         'src/stores/index.ts',
-        'src/views/index.ts',
       ],
       thresholds: {
         lines: 80,
