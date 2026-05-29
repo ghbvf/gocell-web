@@ -7,6 +7,7 @@
     ".": "./src/index.ts",
     "./composables": "./src/composables/index.ts",
     "./stores": "./src/stores/index.ts",
+    "./components": "./src/components/index.ts",
     "./styles/tokens.css": "./src/styles/tokens.css",
     "./styles/v1-linear.scss": "./src/styles/v1-linear.scss"
   },
@@ -24,6 +25,7 @@
   "devDependencies": {
     "vitest": "catalog:",
     "@vue/test-utils": "catalog:",
+    "@vitejs/plugin-vue": "catalog:",
     "jsdom": "catalog:",
     "@vitest/coverage-v8": "catalog:"
   }

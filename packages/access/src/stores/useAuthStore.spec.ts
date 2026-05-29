@@ -1,0 +1,157 @@
+import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
+import { setActivePinia, createPinia } from 'pinia'
+import { useAuthStore } from './useAuthStore'
+
+// Mock @gocell/request — http is the only thing we need
+vi.mock('@gocell/request', () => ({
+  http: {
+    post: vi.fn(),
+  },
+}))
+
+import { http } from '@gocell/request'
+
+const mockHttp = http as unknown as { post: ReturnType<typeof vi.fn> }
+
+const sessionPayload = {
+  accessToken: 'access-tok-1',
+  refreshToken: 'refresh-tok-1',
+  expiresAt: '2026-06-01T00:00:00Z',
+  sessionId: 'sess-1',
+  userId: 'user-123',
+  passwordResetRequired: false,
+}
+
+describe('useAuthStore', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    localStorage.clear()
+    sessionStorage.clear()
+    vi.clearAllMocks()
+  })
+
+  afterEach(() => {
+    localStorage.clear()
+    sessionStorage.clear()
+  })
+
+  it('starts unauthenticated with null state', () => {
+    const store = useAuthStore()
+    expect(store.isAuthenticated).toBe(false)
+    expect(store.user).toBeNull()
+    expect(store.accessToken).toBeNull()
+    // refreshToken is internal (write-only from outside) — not exposed on store
+    expect(store.passwordResetRequired).toBe(false)
+  })
+
+  it('setSession sets user, accessToken and passwordResetRequired correctly', () => {
+    const store = useAuthStore()
+    store.setSession(sessionPayload)
+
+    expect(store.isAuthenticated).toBe(true)
+    expect(store.user).toEqual({ id: 'user-123' })
+    expect(store.accessToken).toBe('access-tok-1')
+    // refreshToken is internal — validated indirectly via refresh() call below
+    expect(store.passwordResetRequired).toBe(false)
+  })
+
+  it('setSession with passwordResetRequired=true reflects in state', () => {
+    const store = useAuthStore()
+    store.setSession({ ...sessionPayload, passwordResetRequired: true })
+    expect(store.passwordResetRequired).toBe(true)
+  })
+
+  it('clearSession resets all state to null/false', () => {
+    const store = useAuthStore()
+    store.setSession(sessionPayload)
+    store.clearSession()
+
+    expect(store.isAuthenticated).toBe(false)
+    expect(store.user).toBeNull()
+    expect(store.accessToken).toBeNull()
+    expect(store.passwordResetRequired).toBe(false)
+  })
+
+  // Security: access token must NEVER touch localStorage
+  it('localStorage is always empty after setSession (token not persisted)', () => {
+    const store = useAuthStore()
+    store.setSession(sessionPayload)
+    expect(localStorage.length).toBe(0)
+  })
+
+  it('localStorage.setItem is never called', () => {
+    const spy = vi.spyOn(Storage.prototype, 'setItem')
+    const store = useAuthStore()
+    store.setSession(sessionPayload)
+    store.clearSession()
+    expect(spy).not.toHaveBeenCalled()
+    spy.mockRestore()
+  })
+
+  it('sessionStorage is always empty after setSession (token not persisted)', () => {
+    const store = useAuthStore()
+    store.setSession(sessionPayload)
+    expect(sessionStorage.length).toBe(0)
+  })
+
+  describe('refresh()', () => {
+    it('returns null when there is no refreshToken', async () => {
+      const store = useAuthStore()
+      const result = await store.refresh()
+      expect(result).toBeNull()
+      expect(mockHttp.post).not.toHaveBeenCalled()
+    })
+
+    it('calls http.post with refreshToken and returns new accessToken on success', async () => {
+      const store = useAuthStore()
+      store.setSession(sessionPayload)
+
+      const newPayload = {
+        ...sessionPayload,
+        accessToken: 'access-tok-new',
+        refreshToken: 'refresh-tok-new',
+      }
+      // Axios response shape: res.data = { data: { ...sessionData } }
+      mockHttp.post.mockResolvedValueOnce({ data: { data: newPayload } })
+
+      const result = await store.refresh()
+
+      // Validates that the internal refreshToken was correctly stored from setSession
+      expect(mockHttp.post).toHaveBeenCalledWith(
+        '/api/v1/access/sessions/refresh',
+        { refreshToken: 'refresh-tok-1' },
+      )
+      expect(result).toBe('access-tok-new')
+      expect(store.accessToken).toBe('access-tok-new')
+      // refreshToken is internal; verify it works by doing a second refresh
+      mockHttp.post.mockResolvedValueOnce({ data: { data: { ...newPayload, accessToken: 'access-tok-3' } } })
+      await store.refresh()
+      expect(mockHttp.post).toHaveBeenLastCalledWith(
+        '/api/v1/access/sessions/refresh',
+        { refreshToken: 'refresh-tok-new' },
+      )
+    })
+
+    it('clearSession and returns null when http.post rejects', async () => {
+      const store = useAuthStore()
+      store.setSession(sessionPayload)
+
+      mockHttp.post.mockRejectedValueOnce(new Error('network error'))
+
+      const result = await store.refresh()
+
+      expect(result).toBeNull()
+      expect(store.isAuthenticated).toBe(false)
+      expect(store.user).toBeNull()
+      expect(store.accessToken).toBeNull()
+    })
+
+    it('localStorage still empty after successful refresh', async () => {
+      const store = useAuthStore()
+      store.setSession(sessionPayload)
+      mockHttp.post.mockResolvedValueOnce({ data: { data: { ...sessionPayload, accessToken: 'tok-2' } } })
+      await store.refresh()
+      expect(localStorage.length).toBe(0)
+    })
+  })
+})

@@ -8,6 +8,17 @@
   },
   "files": ["src"],
   "scripts": {
-    "typecheck": "vue-tsc --noEmit"
+    "typecheck": "vue-tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "axios": "catalog:",
+    "@gocell/contracts": "workspace:*",
+    "@gocell/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "vitest": "catalog:",
+    "axios-mock-adapter": "catalog:",
+    "@vitest/coverage-v8": "catalog:"
   }
 }

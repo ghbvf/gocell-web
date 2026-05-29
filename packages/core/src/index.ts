@@ -1,2 +1,5 @@
 export { useTheme, useThemeTokens } from './composables/index'
 export { useThemeStore } from './stores/index'
+export { useDecision, PDP_INJECTION_KEY } from './pdp/index'
+export type { PdpClient } from './pdp/index'
+export { Can } from './components/index'
