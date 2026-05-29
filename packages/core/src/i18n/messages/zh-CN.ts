@@ -295,6 +295,8 @@ const zhCN = {
         lock: '锁定',
         unlock: '解锁',
         delete: '删除',
+        // 行操作按钮的读屏后缀：拼在动作名后给出用户名上下文（如「编辑 alice」）
+        rowSuffix: ' {username}',
       },
       form: {
         createTitle: '新建用户',

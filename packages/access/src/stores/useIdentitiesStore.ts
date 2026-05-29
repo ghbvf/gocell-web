@@ -85,31 +85,52 @@ export const useIdentitiesStore = defineStore('access.identities', () => {
     }
   }
 
-  // ─── mutation actions (re-throw on failure; refetch on success) ───────────
+  /**
+   * Re-fetch the rows currently in view (not just page 1) so a mutation never
+   * silently collapses pages the user expanded via loadMore. One request, fresh
+   * server truth, no optimistic drift. Errors surface inline like fetchList.
+   */
+  async function refreshLoaded(): Promise<void> {
+    const limit = Math.max(users.value.length, PAGE_SIZE)
+    loading.value = true
+    errorKey.value = null
+    try {
+      const page = await listUsers({ limit })
+      users.value = page.data
+      nextCursor.value = page.nextCursor
+      hasMore.value = page.hasMore
+    } catch (err: unknown) {
+      errorKey.value = toI18nKey(err)
+    } finally {
+      loading.value = false
+    }
+  }
+
+  // ─── mutation actions (re-throw on failure; refresh loaded extent on success) ──
 
   async function create(body: HttpAuthUserCreateV1Request): Promise<void> {
     await createUser(body)
-    await fetchList()
+    await refreshLoaded()
   }
 
   async function edit(id: string, body: HttpAuthUserPatchV1Request): Promise<void> {
     await patchUser(id, body)
-    await fetchList()
+    await refreshLoaded()
   }
 
   async function lock(id: string): Promise<void> {
     await lockUser(id)
-    await fetchList()
+    await refreshLoaded()
   }
 
   async function unlock(id: string): Promise<void> {
     await unlockUser(id)
-    await fetchList()
+    await refreshLoaded()
   }
 
   async function remove(id: string): Promise<void> {
     await deleteUser(id)
-    await fetchList()
+    await refreshLoaded()
   }
 
   /** Change password — no list refetch (the row's visible fields don't change). */

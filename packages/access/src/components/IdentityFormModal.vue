@@ -18,7 +18,7 @@ import {
   validateEditIdentity,
   type CreateIdentityErrors,
 } from '../lib/identityValidation'
-import ModalShell from './ModalShell.vue'
+import { ModalShell } from '@gocell/core/components'
 
 const props = withDefaults(defineProps<{ open: boolean; user?: Identity | null }>(), {
   user: null,
@@ -300,7 +300,7 @@ async function onSubmit(): Promise<void> {
 }
 
 .modal__btn--primary:hover:not(:disabled) {
-  background: oklch(from var(--fg) calc(l + 0.08) c h);
+  background: var(--fg-hover);
 }
 
 .modal__btn:disabled {

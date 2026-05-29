@@ -1,12 +1,12 @@
 <script setup lang="ts">
 /**
- * ModalShell — accessible modal primitive (access-private; extract to @gocell/core
- * when a second cell needs it).
+ * ModalShell — accessible modal primitive (design-system UI shell, no business).
  *
  * Hand-rolled focus management (jsdom lacks HTMLDialogElement.showModal): on open
- * it records the opener, traps Tab within the panel, closes on Escape / backdrop
- * click, and restores focus to the opener on close. role/aria-modal/aria-labelledby
- * make it announce correctly; `alertdialog` is used for destructive confirmations.
+ * it records the opener, traps Tab within the panel, marks the rest of the page
+ * `inert`, closes on Escape / backdrop click, and restores focus to the opener on
+ * close. role/aria-modal/aria-labelledby/aria-describedby make it announce
+ * correctly; `alertdialog` is used for destructive confirmations.
  */
 import { ref, watch, nextTick, onBeforeUnmount } from 'vue'
 
@@ -33,6 +33,34 @@ const FOCUSABLE =
 function focusables(): HTMLElement[] {
   if (!panel.value) return []
   return Array.from(panel.value.querySelectorAll<HTMLElement>(FOCUSABLE))
+}
+
+// Elements we set `inert` on while open, so we can undo exactly those on close.
+const inerted: HTMLElement[] = []
+
+/**
+ * Mark everything visually behind the modal `inert` (not focusable / hidden from
+ * the a11y tree) by walking panel→<body> and inert-ing each ancestor's other
+ * children. Complements aria-modal for ATs (e.g. NVDA) that don't honour it on a
+ * non-native dialog. Works without Teleport since the modal's own chain is skipped.
+ */
+function setBackgroundInert(on: boolean): void {
+  if (on) {
+    let node: HTMLElement | null = panel.value
+    while (node && node.parentElement && node !== document.body) {
+      const parent = node.parentElement
+      for (const sib of Array.from(parent.children)) {
+        if (sib !== node && sib instanceof HTMLElement && !sib.inert) {
+          sib.inert = true
+          inerted.push(sib)
+        }
+      }
+      node = parent
+    }
+  } else {
+    for (const el of inerted) el.inert = false
+    inerted.length = 0
+  }
 }
 
 function onKeydown(e: KeyboardEvent): void {
@@ -70,11 +98,13 @@ watch(
       opener = document.activeElement instanceof HTMLElement ? document.activeElement : null
       document.addEventListener('keydown', onKeydown, true)
       void nextTick(() => {
+        setBackgroundInert(true)
         const els = focusables()
         ;(els[0] ?? panel.value)?.focus()
       })
     } else {
       document.removeEventListener('keydown', onKeydown, true)
+      setBackgroundInert(false)
       opener?.focus?.()
       opener = null
     }
@@ -86,6 +116,7 @@ watch(
 
 onBeforeUnmount(() => {
   document.removeEventListener('keydown', onKeydown, true)
+  setBackgroundInert(false)
 })
 </script>
 
@@ -109,7 +140,7 @@ onBeforeUnmount(() => {
 .modal__backdrop {
   position: fixed;
   inset: 0;
-  z-index: 1000;
+  z-index: var(--z-modal);
   display: flex;
   align-items: center;
   justify-content: center;

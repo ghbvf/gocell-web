@@ -18,6 +18,9 @@
   --fg: oklch(0.18 0.008 270);
   --fg-muted: oklch(0.45 0.008 270);
   --fg-faint: oklch(0.62 0.006 270);
+  /* Hover shade of --fg for solid/inverted buttons — references --fg lazily so it
+     tracks the theme. Replaces ad-hoc oklch(from var(--fg) ...) in button hovers. */
+  --fg-hover: oklch(from var(--fg) calc(l + 0.08) c h);
 
   /* single accent */
   --accent: oklch(0.58 0.19 268);
@@ -49,6 +52,9 @@
   --sidebar-width: 232px;
   --sidebar-collapsed-width: 52px;
   --topbar-height: 44px;
+
+  /* stacking layers */
+  --z-modal: 1000;
 
   /* overlay backdrop */
   --overlay-bg: oklch(0 0 0 / 0.35);

@@ -216,6 +216,28 @@ describe('useIdentitiesStore', () => {
       expect(mock.history.get).toHaveLength(0)
     })
 
+    it('refreshes the full loaded extent after a mutation (no collapse to page 1)', async () => {
+      const many = (n: number, p: string) =>
+        Array.from({ length: n }, (_, i) => mkUser({ id: `${p}-${i}`, username: `u${p}${i}` }))
+      const store = useIdentitiesStore()
+      mock.onGet(USERS_URL).replyOnce(200, { data: many(50, 'a'), nextCursor: 'c2', hasMore: true })
+      await store.fetchList()
+      mock.onGet(USERS_URL).replyOnce(200, { data: many(50, 'b'), nextCursor: '', hasMore: false })
+      await store.loadMore()
+      expect(store.users).toHaveLength(100)
+
+      let seenLimit: unknown
+      mock.onPost(`${USERS_URL}/a-0/lock`).reply(200, { data: { status: 'locked' } })
+      mock.onGet(USERS_URL).reply((c) => {
+        seenLimit = (c.params as Record<string, unknown>).limit
+        return [200, { data: many(100, 'a'), nextCursor: '', hasMore: false }]
+      })
+      await store.lock('a-0')
+      // refetch covers the loaded extent (100), not just the first page (50)
+      expect(seenLimit).toBe(100)
+      expect(store.users).toHaveLength(100)
+    })
+
     it('re-throws and does NOT refetch when a mutation fails', async () => {
       mock.onPost(USERS_URL).networkError()
       const store = useIdentitiesStore()

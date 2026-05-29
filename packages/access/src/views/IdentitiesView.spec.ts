@@ -207,6 +207,12 @@ describe('IdentitiesView · operations (Can + modals)', () => {
     expect(actionBtn(wrapper, 'access.identities.actions.delete')).toBeDefined()
   })
 
+  it('gives each row action button an aria-label (username-scoped for screen readers)', () => {
+    const { wrapper } = mountWithPdp(true)
+    const edit = actionBtn(wrapper, 'access.identities.actions.edit')!
+    expect(edit.attributes('aria-label')).toContain('access.identities.actions.edit')
+  })
+
   it('hides all row action buttons fail-closed when the PDP denies', () => {
     const { wrapper } = mountWithPdp(false)
     expect(wrapper.findAll('.identities__action')).toHaveLength(0)

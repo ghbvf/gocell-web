@@ -38,6 +38,12 @@ function formatDate(iso: string): string {
   return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(d)
 }
 
+/** Screen-reader name for a row action button: action verb + the row's username
+ *  (so repeated buttons aren't announced as a bare "Edit, Edit, Edit…"). */
+function actionLabel(verbKey: string, username: string): string {
+  return t(verbKey) + t('access.identities.actions.rowSuffix', { username })
+}
+
 // ─── operation modals ───────────────────────────────────────────────────────
 const formOpen = ref(false)
 const formUser = ref<Identity | null>(null)
@@ -194,22 +200,44 @@ async function onConfirm(): Promise<void> {
               </td>
               <td class="identities__cell identities__cell--actions">
                 <Can action="update" resource="identity">
-                  <button type="button" class="identities__action" @click="openEdit(u)">
+                  <button
+                    type="button"
+                    class="identities__action"
+                    :aria-label="actionLabel('access.identities.actions.edit', u.username)"
+                    @click="openEdit(u)"
+                  >
                     {{ t('access.identities.actions.edit') }}
                   </button>
                 </Can>
                 <Can action="change-password" resource="identity">
-                  <button type="button" class="identities__action" @click="openChangePassword(u)">
+                  <button
+                    type="button"
+                    class="identities__action"
+                    :aria-label="
+                      actionLabel('access.identities.actions.changePassword', u.username)
+                    "
+                    @click="openChangePassword(u)"
+                  >
                     {{ t('access.identities.actions.changePassword') }}
                   </button>
                 </Can>
                 <Can v-if="u.status !== 'locked'" action="lock" resource="identity">
-                  <button type="button" class="identities__action" @click="askConfirm('lock', u)">
+                  <button
+                    type="button"
+                    class="identities__action"
+                    :aria-label="actionLabel('access.identities.actions.lock', u.username)"
+                    @click="askConfirm('lock', u)"
+                  >
                     {{ t('access.identities.actions.lock') }}
                   </button>
                 </Can>
                 <Can v-else action="unlock" resource="identity">
-                  <button type="button" class="identities__action" @click="askConfirm('unlock', u)">
+                  <button
+                    type="button"
+                    class="identities__action"
+                    :aria-label="actionLabel('access.identities.actions.unlock', u.username)"
+                    @click="askConfirm('unlock', u)"
+                  >
                     {{ t('access.identities.actions.unlock') }}
                   </button>
                 </Can>
@@ -217,6 +245,7 @@ async function onConfirm(): Promise<void> {
                   <button
                     type="button"
                     class="identities__action identities__action--danger"
+                    :aria-label="actionLabel('access.identities.actions.delete', u.username)"
                     @click="askConfirm('delete', u)"
                   >
                     {{ t('access.identities.actions.delete') }}
@@ -308,7 +337,7 @@ async function onConfirm(): Promise<void> {
 }
 
 .identities__create:hover {
-  background: oklch(from var(--fg) calc(l + 0.08) c h);
+  background: var(--fg-hover);
 }
 
 .identities__create:focus-visible {

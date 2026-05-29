@@ -16,9 +16,10 @@ auth store（全内存 token）+ first-run / login 视图 + Identities 列表 + 
 
 > 每个 view 各为独立 export 子路径 → 各自独立 async chunk（访问 `/login` 不连带加载 first-run 向导 / identities 表）。
 > `api/setup`、`api/identities`、`composables/useSetupWizard`、`lib/validation`、`lib/identityValidation`、
-> `components/{IdentityStatusPill,ModalShell,IdentityFormModal,ChangePasswordModal,ConfirmDialog}.vue`
-> 是包内私有模块（不在 `exports`），仅供本包 views / store 消费。`ModalShell` 是 a11y modal 原语
-> （focus-trap + ESC + 焦点回归），第二个 cell 需要时再上提到 `@gocell/core`。
+> `components/{IdentityStatusPill,IdentityFormModal,ChangePasswordModal,ConfirmDialog}.vue`
+> 是包内私有模块（不在 `exports`），仅供本包 views / store 消费。
+> a11y modal 原语 `ModalShell`（focus-trap + ESC + backdrop + 背景 inert + 焦点回归）已归属
+> `@gocell/core/components`，三个 modal 经 `import { ModalShell } from '@gocell/core/components'` 消费。
 
 ## 依赖的 contract
 

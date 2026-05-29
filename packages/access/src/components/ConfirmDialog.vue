@@ -7,7 +7,7 @@
  * title/message labelling make it demand an explicit decision.
  */
 import { useI18n } from 'vue-i18n'
-import ModalShell from './ModalShell.vue'
+import { ModalShell } from '@gocell/core/components'
 
 withDefaults(
   defineProps<{
@@ -19,6 +19,8 @@ withDefaults(
     busy?: boolean
     /** Server-error i18n key shown inline; keeps the dialog open on failure. */
     errorKey?: string | null
+    /** Cancel-button i18n key — overridable so the dialog isn't bound to one cell. */
+    cancelKey?: string
   }>(),
   { danger: false, busy: false, errorKey: null },
 )
@@ -42,7 +44,7 @@ const { t } = useI18n()
 
     <div class="confirm__actions">
       <button type="button" class="confirm__btn" @click="emit('cancel')">
-        {{ t('access.identities.confirm.cancel') }}
+        {{ t(cancelKey ?? 'access.identities.confirm.cancel') }}
       </button>
       <button
         type="button"

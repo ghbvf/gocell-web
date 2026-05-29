@@ -12,7 +12,7 @@ import { isGoCellRequestError } from '@gocell/request'
 import { useIdentitiesStore } from '../stores/useIdentitiesStore'
 import type { Identity } from '../api/identities'
 import { validateChangePassword, type ChangePasswordErrors } from '../lib/identityValidation'
-import ModalShell from './ModalShell.vue'
+import { ModalShell } from '@gocell/core/components'
 
 const props = defineProps<{ open: boolean; user: Identity | null }>()
 const emit = defineEmits<{ close: []; saved: [] }>()

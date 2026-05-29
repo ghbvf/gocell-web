@@ -32,6 +32,12 @@ describe('ModalShell', () => {
     expect(panel.attributes('aria-labelledby')).toBe('t')
   })
 
+  it('reflects descriptionId as aria-describedby (for alertdialog)', async () => {
+    const w = mountShell({ open: true, role: 'alertdialog', descriptionId: 'd' })
+    await flushPromises()
+    expect(w.find('.modal__panel').attributes('aria-describedby')).toBe('d')
+  })
+
   it('uses role=alertdialog when requested', async () => {
     const w = mountShell({ open: true, role: 'alertdialog' })
     await flushPromises()
@@ -71,6 +77,18 @@ describe('ModalShell', () => {
     await flushPromises()
     await w.setProps({ open: false })
     expect(document.activeElement?.id).toBe('opener')
+  })
+
+  it('marks background siblings inert while open and restores them on close', async () => {
+    const bg = document.createElement('div')
+    bg.id = 'bg'
+    document.body.appendChild(bg)
+    const w = mountShell({ open: false })
+    await w.setProps({ open: true })
+    await flushPromises()
+    expect(bg.inert).toBe(true)
+    await w.setProps({ open: false })
+    expect(bg.inert).toBe(false)
   })
 
   it('traps Tab from the last focusable back to the first', async () => {

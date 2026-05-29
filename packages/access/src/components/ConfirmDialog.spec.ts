@@ -40,6 +40,15 @@ describe('ConfirmDialog', () => {
     expect(w.emitted('cancel')).toBeTruthy()
   })
 
+  it('uses the default cancel key, overridable via the cancelKey prop', () => {
+    expect(mountDialog().findAll('.confirm__btn')[0]!.text()).toBe(
+      'access.identities.confirm.cancel',
+    )
+    expect(mountDialog({ cancelKey: 'common.cancel' }).findAll('.confirm__btn')[0]!.text()).toBe(
+      'common.cancel',
+    )
+  })
+
   it('applies the danger style only when danger=true', () => {
     expect(mountDialog({ danger: true }).find('.confirm__btn--danger').exists()).toBe(true)
     expect(mountDialog({ danger: false }).find('.confirm__btn--danger').exists()).toBe(false)

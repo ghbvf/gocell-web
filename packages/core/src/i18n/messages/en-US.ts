@@ -302,6 +302,8 @@ const enUS = {
         lock: 'Lock',
         unlock: 'Unlock',
         delete: 'Delete',
+        // Screen-reader suffix for row action buttons — appends the username for context (e.g. "Edit alice")
+        rowSuffix: ' {username}',
       },
       form: {
         createTitle: 'New user',
