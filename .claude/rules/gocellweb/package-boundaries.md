@@ -73,7 +73,8 @@ paths:
 
 ### 允许的横向消费
 
-- `@gocell/devboard` 可消费 `@gocell/access` 的 PDP client（`<Can>`、`useDecision`）；这是设计性例外，因为 devboard 内的所有页面都需要 PDP
+- `<Can>` 组件 + `useDecision()` 注入点（`PDP_INJECTION_KEY`）归属 `@gocell/core`（UI 壳，全包可消费）；PDP client 实现（`createPdpClient`）归属 `@gocell/access`，由 `apps/web` 装配层经注入点 `provide` 注入（PRD §9/§211）
+- `@gocell/devboard` 可依赖 `@gocell/access`（消费其 PDP client 能力）；这是设计性例外，因为 devboard 内的所有页面都需要 PDP。`<Can>`/`useDecision` 本身来自 `@gocell/core`
 - 其他横向需求 → 先拆到 `@gocell/core` 或 `@gocell/shared`
 
 ### HTTP 单点
