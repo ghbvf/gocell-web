@@ -28,6 +28,9 @@ jobs:
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
+        with:
+          # gocell-web checkout 在子目录，需显式指向其 package.json 读取 packageManager 版本
+          package_json_file: gocell-web/package.json
 
       - name: Setup Node
         uses: actions/setup-node@v4
