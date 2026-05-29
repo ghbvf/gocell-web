@@ -267,6 +267,34 @@ const enUS = {
         loginBtn: 'Go to sign in',
       },
     },
+    identities: {
+      title: 'Identities',
+      subtitle: 'Manage user principals — create, edit, lock and reset passwords',
+      tabs: {
+        label: 'Principal type',
+        users: 'Users',
+        serviceAccounts: 'Service accounts',
+        serviceAccountsHint: 'Service accounts are managed via API — not available yet',
+      },
+      filter: {
+        label: 'Filter',
+        placeholder: 'Search by username or email…',
+      },
+      table: {
+        label: 'User list',
+        username: 'Username',
+        email: 'Email',
+        status: 'Status',
+        createdAt: 'Created',
+      },
+      status: {
+        active: 'Active',
+        locked: 'Locked',
+      },
+      loading: 'Loading users…',
+      empty: 'No users yet',
+      loadMore: 'Load more',
+    },
   },
   errors: {
     unknown: 'An unknown error occurred. Please try again.',

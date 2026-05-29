@@ -11,6 +11,7 @@
 | [BR-002](./BR-002-system-info.md) | 系统元信息端点 | 待评审 | MVP Health overview |
 | [BR-003](./BR-003-observability-lgtm.md) | LGTM 可观测栈接入 | 待评审 | Observability v1 |
 | [BR-004](./BR-004-access-pdp-evolution.md) | Access 子系统从 RBAC 演进到 ABAC | 待评审 | `/access/decide` 端点 MVP 阻塞；ABAC 演进 Wave 2+ |
+| [BR-005](./BR-005-user-list.md) | 用户主体列表端点（`http.auth.user.list`） | 待评审 | `/access/identities` 列表（Batch 2 PR-09） |
 
 ## 状态约定
 

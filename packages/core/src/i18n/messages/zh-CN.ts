@@ -260,6 +260,34 @@ const zhCN = {
         loginBtn: '前往登录',
       },
     },
+    identities: {
+      title: '身份',
+      subtitle: '管理用户主体 — 创建、编辑、锁定与改密',
+      tabs: {
+        label: '主体类型',
+        users: '用户',
+        serviceAccounts: '服务账号',
+        serviceAccountsHint: '服务账号经 API 管理，暂未开放',
+      },
+      filter: {
+        label: '筛选',
+        placeholder: '按用户名或邮箱搜索…',
+      },
+      table: {
+        label: '用户列表',
+        username: '用户名',
+        email: '邮箱',
+        status: '状态',
+        createdAt: '创建时间',
+      },
+      status: {
+        active: '正常',
+        locked: '已锁定',
+      },
+      loading: '正在加载用户…',
+      empty: '暂无用户',
+      loadMore: '加载更多',
+    },
   },
   errors: {
     unknown: '发生未知错误，请稍后重试',

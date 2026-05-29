@@ -2,19 +2,20 @@
 
 > 对应后端 cell：`cells/accesscore`
 
-auth store（全内存 token）+ first-run / login 视图 + PDP client（fail-closed stub）的实现包。
+auth store（全内存 token）+ first-run / login 视图 + Identities 列表 + PDP client（fail-closed stub）的实现包。
 
 ## 对外 exports
 
 | 入口 | 内容 |
 |---|---|
 | `.` (`src/index.ts`) | `useAuthStore`、`AuthUser`（type）、`createPdpClient` |
-| `./stores` (`src/stores/index.ts`) | `useAuthStore`、`AuthUser`（type）（按需导入 store 时用） |
+| `./stores` (`src/stores/index.ts`) | `useAuthStore`、`AuthUser`（type）、`useIdentitiesStore` |
 | `./views/login` (`src/views/LoginView.vue`) | `LoginView`（默认导出，`apps/web` 路由懒加载） |
 | `./views/first-run` (`src/views/FirstRunSetupView.vue`) | `FirstRunSetupView`（默认导出，`apps/web` 路由懒加载） |
+| `./views/identities` (`src/views/IdentitiesView.vue`) | `IdentitiesView`（`/access/identities` 列表页，路由懒加载） |
 
-> 两个 view 各为独立 export 子路径 → 各自独立 async chunk（访问 `/login` 不连带加载 first-run 向导）。
-> `api/setup`、`composables/useSetupWizard`、`lib/validation` 是包内私有模块（不在 `exports`），仅供本包 views 消费。
+> 每个 view 各为独立 export 子路径 → 各自独立 async chunk（访问 `/login` 不连带加载 first-run 向导 / identities 表）。
+> `api/setup`、`api/identities`、`composables/useSetupWizard`、`lib/validation`、`components/IdentityStatusPill.vue` 是包内私有模块（不在 `exports`），仅供本包 views / store 消费。
 
 ## 依赖的 contract
 
@@ -24,6 +25,13 @@ auth store（全内存 token）+ first-run / login 视图 + PDP client（fail-cl
 | `HttpAuthRefreshV1Response` | `useAuthStore.refresh()` 内部消费 |
 | `HttpAuthSetupStatusV1Response` | `api/setup.fetchSetupStatus()` first-run 门控 |
 | `HttpAuthSetupAdminV1Request/Response` | `api/setup.createAdmin()` 首位 admin 创建 |
+| `HttpAuthUserGetV1Response`（`['data']`） | `api/identities` 的 `Identity` 行类型（list 行字段复用 get 契约） |
+
+> **BR-005 pending**：`http.auth.user.list` 后端尚未交付（`/users` 路由仅 8 handler，无 list）。
+> `api/identities.ts` 的 `UserListPage` 信封（`{ data, nextCursor, hasMore }`，cursor 分页，对齐
+> `HttpAuditListV1Response` / `HttpAuthRoleListV1Response` 约定）是**临时本地类型**；后端交付 schema、
+> `pnpm codegen` 派生 `HttpAuthUserListV1Response` 后即删除并切换。详见
+> `docs/backend-requirements/BR-005-user-list.md`。
 
 contract 来源：`@gocell/contracts`（codegen 派生，只读）。
 
@@ -46,6 +54,14 @@ contract 来源：`@gocell/contracts`（codegen 派生，只读）。
 - `LoginView`：用户名+密码登录；oracle-safe 错误文案（统一 `ERR_AUTH_LOGIN_FAILED`，不暗示账号存在，PRD R3）。
 - `FirstRunSetupView`：5 步引导向导（Preflight `setup/status` → Two planes → Operator(Basic Auth) → Admin(body) → Submit/Done `setup/admin`）；410 静默跳 `/login`（R9）。
 
+### `useIdentitiesStore` (Pinia store `access.identities`) + `IdentitiesView` (`./views/identities`)
+
+- **store state**：`users`、`loading`、`errorKey`、`nextCursor`、`hasMore`、`filter`（client-side quick-filter）
+- **store getter**：`filteredUsers`（按 username / email 子串过滤当前已加载页）
+- **store actions**：`fetchList()`（首页，replace）、`loadMore()`（cursor 续页，append；无下页或在途时 no-op）；错误经 `toI18nKey` 落 `errorKey`，不抛中文字面量
+- **`IdentitiesView`**：`AppShell` 内子路由 `/access/identities`；hand-rolled 语义 `<table>` + status pill + 客户端筛选 + 禁用「服务账号」tab 占位（FR-030，`aria-disabled` + `tabindex="-1"`）。MVP 只读；行操作 modal + `<Can>` 见 PR-10。
+- **BR-005**：list 端点未交付，`api/identities` 用临时信封类型（见上「依赖的 contract」）。
+
 ### `createPdpClient(): PdpClient`
 
 - 实现 `@gocell/core` 的 `PdpClient` interface（`PDP_INJECTION_KEY`）。
@@ -65,4 +81,4 @@ pnpm -F @gocell/access test
 pnpm -F @gocell/access typecheck
 ```
 
-覆盖：`useAuthStore`（含 login/logout）、`createPdpClient`（fail-closed + cache + TTL）、`api/setup`、`lib/validation`、`useSetupWizard`、`LoginView`、`FirstRunSetupView`。整包 ≥ 80%（实测 ~97% lines）。
+覆盖：`useAuthStore`（含 login/logout）、`createPdpClient`（fail-closed + cache + TTL）、`api/setup`、`api/identities`、`useIdentitiesStore`、`IdentityStatusPill`、`IdentitiesView`、`lib/validation`、`useSetupWizard`、`LoginView`、`FirstRunSetupView`。整包 ≥ 80%（实测 ~97% lines）。
