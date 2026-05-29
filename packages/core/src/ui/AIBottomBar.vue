@@ -58,7 +58,7 @@ function collapse(): void {
             d="M12 2v4 M5 8h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2 M9 14h.01 M15 14h.01 M9 17h6"
           />
         </svg>
-        <span class="ai-bar__label">AI</span>
+        <span class="ai-bar__label">{{ t('shell.ai.name') }}</span>
       </button>
       <button
         v-else
@@ -80,14 +80,14 @@ function collapse(): void {
         >
           <path d="M19 9l-7 7-7-7" />
         </svg>
-        <span class="ai-bar__label">AI</span>
+        <span class="ai-bar__label">{{ t('shell.ai.name') }}</span>
       </button>
     </div>
 
     <!-- Docked panel placeholder -->
     <div v-if="stage === 'docked'" class="ai-bar__panel">
       <div class="ai-bar__placeholder">
-        <span class="v1-mute">AI Studio — {{ t('command.hint') }}</span>
+        <span class="v1-mute">{{ t('shell.ai.studioPlaceholder') }}</span>
       </div>
     </div>
   </div>

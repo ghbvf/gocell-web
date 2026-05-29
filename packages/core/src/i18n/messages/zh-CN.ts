@@ -84,18 +84,30 @@ const zhCN = {
     commandPalette: {
       open: '打开命令面板',
       close: '关闭命令面板',
+      title: '命令面板',
+      escKey: 'Esc',
+    },
+    sidebar: {
+      label: '侧边栏',
+    },
+    nav: {
+      label: '主导航',
     },
     ai: {
       label: 'AI 助手',
       expand: '展开 AI 助手',
       collapse: '收起 AI 助手',
+      name: 'AI',
+      studioPlaceholder: 'AI Studio · 即将推出',
     },
+    skipToContent: '跳到主内容',
   },
   command: {
     searchLabel: '搜索命令',
     placeholder: '输入命令或搜索…',
     empty: '无结果',
     hint: '输入以搜索',
+    resultsLabel: '搜索结果',
   },
   errors: {
     unknown: '发生未知错误，请稍后重试',

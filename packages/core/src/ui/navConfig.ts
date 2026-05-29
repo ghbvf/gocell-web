@@ -62,8 +62,7 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { key: 'identities', labelKey: 'nav.identities', to: '/access/identities', pill: 'live' },
       { key: 'policies', labelKey: 'nav.policies', to: '/access/policies', pill: 'live' },
-      { key: 'decisions', labelKey: 'nav.decisions', to: '/access/decisions', pill: 'preview' },
-      { key: 'reviews', labelKey: 'nav.reviews', to: '/access/reviews', pill: 'preview' },
+      { key: 'decisions', labelKey: 'nav.decisions', to: '/access/decisions', pill: 'reserved' },
     ],
   },
   {

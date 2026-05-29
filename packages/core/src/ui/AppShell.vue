@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import Sidebar from './Sidebar.vue'
 import TopBar from './TopBar.vue'
 import CommandPalette from './CommandPalette.vue'
@@ -32,9 +33,12 @@ const emit = defineEmits<{
   (e: 'update:sidebarCollapsed', value: boolean): void
 }>()
 
+const { t } = useI18n()
+
 // Internal state — authoritative when no external prop is supplied
 const sidebarCollapsed = ref(false)
 const commandPaletteOpen = ref(false)
+const commandPaletteRef = ref<InstanceType<typeof CommandPalette>>()
 
 // When external prop changes, sync internal state (controlled mode)
 watch(
@@ -64,9 +68,14 @@ const backgroundInert = computed<true | undefined>(() =>
   commandPaletteOpen.value ? true : undefined,
 )
 
+/**
+ * Open the command palette via the exposed open() method so that triggerRef
+ * is properly set and focus returns to the triggering element on close.
+ * Opening through the child cascades back via @update:open → setCommandPaletteOpen,
+ * which also emits update:commandPaletteOpen for external v-model consumers.
+ */
 function openCommandPalette(): void {
-  commandPaletteOpen.value = true
-  emit('update:commandPaletteOpen', true)
+  commandPaletteRef.value?.open()
 }
 
 function setCommandPaletteOpen(value: boolean): void {
@@ -82,6 +91,8 @@ function setSidebarCollapsed(value: boolean): void {
 
 <template>
   <div class="shell">
+    <a class="shell__skip-link" href="#shell-content">{{ t('shell.skipToContent') }}</a>
+
     <Sidebar
       :collapsed="sidebarCollapsed"
       :inert="backgroundInert"
@@ -92,14 +103,18 @@ function setSidebarCollapsed(value: boolean): void {
     <div class="shell__main" :inert="backgroundInert">
       <TopBar @open-command-palette="openCommandPalette" />
 
-      <main class="shell__content">
+      <main id="shell-content" class="shell__content">
         <slot />
       </main>
 
       <AIBottomBar />
     </div>
 
-    <CommandPalette :open="commandPaletteOpen" @update:open="setCommandPaletteOpen" />
+    <CommandPalette
+      ref="commandPaletteRef"
+      :open="commandPaletteOpen"
+      @update:open="setCommandPaletteOpen"
+    />
   </div>
 </template>
 
@@ -109,6 +124,32 @@ function setSidebarCollapsed(value: boolean): void {
   height: 100dvh;
   overflow: hidden;
   background: var(--bg);
+}
+
+.shell__skip-link {
+  position: absolute;
+  left: -9999px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  z-index: 9999;
+  background: var(--bg-raised);
+  color: var(--accent);
+  padding: 8px 16px;
+  border-radius: var(--r-sm);
+  font-size: 13px;
+  text-decoration: none;
+}
+
+.shell__skip-link:focus-visible {
+  left: 16px;
+  top: 16px;
+  width: auto;
+  height: auto;
+  overflow: visible;
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .shell__main {

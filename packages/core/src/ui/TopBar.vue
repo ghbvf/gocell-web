@@ -98,6 +98,7 @@ function openCommandPalette(): void {
         type="button"
         class="v1-ghost topbar__action-btn"
         :aria-label="t('shell.locale.toggle')"
+        :aria-pressed="localeStore.locale === 'en-US'"
         @click="toggleLocale"
       >
         <svg
@@ -124,6 +125,7 @@ function openCommandPalette(): void {
         class="v1-ghost topbar__action-btn"
         data-testid="theme-toggle"
         :aria-label="themeToggleLabel"
+        :aria-pressed="themeStore.theme === 'dark'"
         @click="toggleTheme"
       >
         <svg

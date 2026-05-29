@@ -81,18 +81,30 @@ const enUS = {
     commandPalette: {
       open: 'Open command palette',
       close: 'Close command palette',
+      title: 'Command palette',
+      escKey: 'Esc',
+    },
+    sidebar: {
+      label: 'Sidebar',
+    },
+    nav: {
+      label: 'Main navigation',
     },
     ai: {
       label: 'AI assistant',
       expand: 'Expand AI assistant',
       collapse: 'Collapse AI assistant',
+      name: 'AI',
+      studioPlaceholder: 'AI Studio — coming soon',
     },
+    skipToContent: 'Skip to content',
   },
   command: {
     searchLabel: 'Search commands',
     placeholder: 'Type a command or search…',
     empty: 'No results',
     hint: 'Type to search',
+    resultsLabel: 'Search results',
   },
   errors: {
     unknown: 'An unknown error occurred. Please try again.',

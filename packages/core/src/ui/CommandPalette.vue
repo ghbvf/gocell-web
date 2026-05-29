@@ -96,7 +96,7 @@ defineExpose({ open: openPalette, close: closePalette })
         class="cmd-overlay"
         role="dialog"
         aria-modal="true"
-        :aria-label="t('shell.commandPalette.open')"
+        :aria-label="t('shell.commandPalette.title')"
         @click.self="closePalette"
         @keydown="onOverlayKeydown"
       >
@@ -124,6 +124,10 @@ defineExpose({ open: openPalette, close: closePalette })
               class="cmd-input"
               :placeholder="t('command.placeholder')"
               :aria-label="t('command.searchLabel')"
+              role="combobox"
+              aria-controls="cmd-listbox"
+              aria-expanded="false"
+              aria-autocomplete="list"
               autocomplete="off"
               autocorrect="off"
               autocapitalize="off"
@@ -135,14 +139,19 @@ defineExpose({ open: openPalette, close: closePalette })
               :aria-label="t('shell.commandPalette.close')"
               @click="closePalette"
             >
-              Esc
+              {{ t('shell.commandPalette.escKey') }}
             </button>
           </div>
 
           <hr class="v1-divider" />
 
           <!-- Results area (placeholder) -->
-          <div class="cmd-results" role="listbox" aria-label="results">
+          <div
+            id="cmd-listbox"
+            class="cmd-results"
+            role="listbox"
+            :aria-label="t('command.resultsLabel')"
+          >
             <div class="cmd-empty">
               <span class="cmd-empty-text">{{ t('command.hint') }}</span>
             </div>
