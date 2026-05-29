@@ -1,8 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { theme as themeAlgorithm } from 'ant-design-vue'
+import { useThemeTokens } from '../useThemeTokens'
+import { useTheme } from '../useTheme'
 
-// Helper: mock getComputedStyle to return fixed rgb values for CSS variables
+// Helper: mock getComputedStyle to return fixed values for CSS variables
 const setupGetComputedStyle = (vars: Record<string, string>) => {
   const original = window.getComputedStyle.bind(window)
   vi.spyOn(window, 'getComputedStyle').mockImplementation((el: Element, pseudo?: string | null) => {
@@ -22,11 +24,10 @@ const setupGetComputedStyle = (vars: Record<string, string>) => {
 
 describe('useThemeTokens', () => {
   beforeEach(() => {
-    vi.resetModules()
     vi.restoreAllMocks()
     document.documentElement.removeAttribute('data-theme')
     localStorage.clear()
-    // Fresh Pinia instance before each test so module-reset store state is clean
+    // Fresh Pinia instance before each test so store state is clean
     setActivePinia(createPinia())
     Object.defineProperty(window, 'matchMedia', {
       writable: true,
@@ -44,7 +45,7 @@ describe('useThemeTokens', () => {
   })
 
   describe('token mapping', () => {
-    it('maps CSS variables to AntD seed tokens correctly', async () => {
+    it('maps CSS variables to AntD seed tokens correctly', () => {
       setupGetComputedStyle({
         '--accent': 'rgb(59, 130, 246)',
         '--ok': 'rgb(34, 197, 94)',
@@ -55,10 +56,10 @@ describe('useThemeTokens', () => {
         '--fg': 'rgb(15, 15, 20)',
         '--line': 'rgb(230, 232, 240)',
         '--font-sans': '"Geist", system-ui',
+        '--r': '6px',
       })
 
-      const mod = await import('../useThemeTokens')
-      const { themeConfig } = mod.useThemeTokens()
+      const { themeConfig } = useThemeTokens()
 
       expect(themeConfig.value.token?.colorPrimary).toContain('rgb')
       expect(themeConfig.value.token?.colorSuccess).toContain('rgb')
@@ -67,7 +68,7 @@ describe('useThemeTokens', () => {
       expect(themeConfig.value.token?.borderRadius).toBe(6)
     })
 
-    it('sets colorPrimary from --accent', async () => {
+    it('sets colorPrimary from --accent', () => {
       setupGetComputedStyle({
         '--accent': 'rgb(59, 130, 246)',
         '--ok': 'rgb(34, 197, 94)',
@@ -78,15 +79,15 @@ describe('useThemeTokens', () => {
         '--fg': 'rgb(15, 15, 20)',
         '--line': 'rgb(230, 232, 240)',
         '--font-sans': '"Geist", system-ui',
+        '--r': '6px',
       })
 
-      const mod = await import('../useThemeTokens')
-      const { themeConfig } = mod.useThemeTokens()
+      const { themeConfig } = useThemeTokens()
 
       expect(themeConfig.value.token?.colorPrimary).toBe('rgb(59, 130, 246)')
     })
 
-    it('sets borderRadius to 6', async () => {
+    it('reads borderRadius from --r CSS variable', () => {
       setupGetComputedStyle({
         '--accent': 'rgb(0, 0, 255)',
         '--ok': 'rgb(0, 255, 0)',
@@ -97,19 +98,29 @@ describe('useThemeTokens', () => {
         '--fg': 'rgb(0, 0, 0)',
         '--line': 'rgb(200, 200, 200)',
         '--font-sans': 'sans-serif',
+        '--r': '6px',
       })
 
-      const mod = await import('../useThemeTokens')
-      const { themeConfig } = mod.useThemeTokens()
+      const { themeConfig } = useThemeTokens()
       expect(themeConfig.value.token?.borderRadius).toBe(6)
     })
 
-    it('returns undefined for missing CSS variables so AntD ignores them', async () => {
+    it('falls back to borderRadius 6 when --r is absent', () => {
+      // No --r provided — should fallback to 6
+      setupGetComputedStyle({
+        '--accent': 'rgb(0, 0, 255)',
+        '--fg': 'rgb(0, 0, 0)',
+      })
+
+      const { themeConfig } = useThemeTokens()
+      expect(themeConfig.value.token?.borderRadius).toBe(6)
+    })
+
+    it('returns undefined for missing CSS variables so AntD ignores them', () => {
       // No CSS vars provided — all should be undefined (not empty string)
       setupGetComputedStyle({})
 
-      const mod = await import('../useThemeTokens')
-      const { themeConfig } = mod.useThemeTokens()
+      const { themeConfig } = useThemeTokens()
 
       expect(themeConfig.value.token?.colorPrimary).toBeUndefined()
       expect(themeConfig.value.token?.colorBgBase).toBeUndefined()
@@ -117,7 +128,7 @@ describe('useThemeTokens', () => {
   })
 
   describe('algorithm switching', () => {
-    it('uses defaultAlgorithm for light theme', async () => {
+    it('uses defaultAlgorithm for light theme', () => {
       localStorage.setItem('gocell-theme', 'light')
 
       setupGetComputedStyle({
@@ -130,15 +141,15 @@ describe('useThemeTokens', () => {
         '--fg': 'rgb(15, 15, 20)',
         '--line': 'rgb(230, 232, 240)',
         '--font-sans': '"Geist", system-ui',
+        '--r': '6px',
       })
 
-      const mod = await import('../useThemeTokens')
-      const { themeConfig } = mod.useThemeTokens()
+      const { themeConfig } = useThemeTokens()
 
       expect(themeConfig.value.algorithm).toBe(themeAlgorithm.defaultAlgorithm)
     })
 
-    it('uses darkAlgorithm for dark theme', async () => {
+    it('uses darkAlgorithm for dark theme', () => {
       localStorage.setItem('gocell-theme', 'dark')
 
       setupGetComputedStyle({
@@ -151,15 +162,15 @@ describe('useThemeTokens', () => {
         '--fg': 'rgb(240, 240, 245)',
         '--line': 'rgb(60, 62, 80)',
         '--font-sans': '"Geist", system-ui',
+        '--r': '6px',
       })
 
-      const mod = await import('../useThemeTokens')
-      const { themeConfig } = mod.useThemeTokens()
+      const { themeConfig } = useThemeTokens()
 
       expect(themeConfig.value.algorithm).toBe(themeAlgorithm.darkAlgorithm)
     })
 
-    it('switches algorithm when theme changes', async () => {
+    it('switches algorithm when theme changes', () => {
       localStorage.setItem('gocell-theme', 'light')
 
       setupGetComputedStyle({
@@ -172,12 +183,11 @@ describe('useThemeTokens', () => {
         '--fg': 'rgb(15, 15, 20)',
         '--line': 'rgb(230, 232, 240)',
         '--font-sans': '"Geist", system-ui',
+        '--r': '6px',
       })
 
-      const themeModule = await import('../useTheme')
-      const mod = await import('../useThemeTokens')
-      const { themeConfig } = mod.useThemeTokens()
-      const { setTheme } = themeModule.useTheme()
+      const { themeConfig } = useThemeTokens()
+      const { setTheme } = useTheme()
 
       expect(themeConfig.value.algorithm).toBe(themeAlgorithm.defaultAlgorithm)
 
@@ -186,7 +196,7 @@ describe('useThemeTokens', () => {
       expect(themeConfig.value.algorithm).toBe(themeAlgorithm.darkAlgorithm)
     })
 
-    it('CSS token values update when switching from light to dark', async () => {
+    it('CSS token values update when switching from light to dark', () => {
       localStorage.setItem('gocell-theme', 'light')
 
       // Light mode CSS vars
@@ -199,12 +209,11 @@ describe('useThemeTokens', () => {
         '--fg': 'rgb(15, 15, 20)',
         '--line': 'rgb(230, 232, 240)',
         '--font-sans': '"Geist", system-ui',
+        '--r': '6px',
       })
 
-      const themeModule = await import('../useTheme')
-      const mod = await import('../useThemeTokens')
-      const { themeConfig } = mod.useThemeTokens()
-      const { setTheme } = themeModule.useTheme()
+      const { themeConfig } = useThemeTokens()
+      const { setTheme } = useTheme()
 
       const lightPrimary = themeConfig.value.token?.colorPrimary
       const lightBg = themeConfig.value.token?.colorBgBase
@@ -219,6 +228,7 @@ describe('useThemeTokens', () => {
         '--fg': 'rgb(240, 240, 245)',
         '--line': 'rgb(60, 62, 80)',
         '--font-sans': '"Geist", system-ui',
+        '--r': '6px',
       })
 
       setTheme('dark')
@@ -233,8 +243,8 @@ describe('useThemeTokens', () => {
     })
   })
 
-  describe('shared singleton', () => {
-    it('returns same themeConfig ref across calls', async () => {
+  describe('shared singleton via store', () => {
+    it('themeConfig value is consistent across multiple calls (Pinia store is the singleton)', () => {
       setupGetComputedStyle({
         '--accent': 'rgb(59, 130, 246)',
         '--ok': 'rgb(34, 197, 94)',
@@ -245,12 +255,17 @@ describe('useThemeTokens', () => {
         '--fg': 'rgb(15, 15, 20)',
         '--line': 'rgb(230, 232, 240)',
         '--font-sans': '"Geist", system-ui',
+        '--r': '6px',
       })
 
-      const mod = await import('../useThemeTokens')
-      const a = mod.useThemeTokens()
-      const b = mod.useThemeTokens()
-      expect(a.themeConfig).toBe(b.themeConfig)
+      const a = useThemeTokens()
+      const b = useThemeTokens()
+      // Both read from the same Pinia store computed — values are equal
+      expect(a.themeConfig.value).toEqual(b.themeConfig.value)
+      // A theme change via store is reflected in both refs
+      const { setTheme } = useTheme()
+      setTheme('dark')
+      expect(a.themeConfig.value.algorithm).toBe(b.themeConfig.value.algorithm)
     })
   })
 })
