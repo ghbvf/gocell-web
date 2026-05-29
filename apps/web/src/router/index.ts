@@ -7,13 +7,15 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/login',
     name: 'login',
-    component: () => import('@gocell/access/views').then((m) => m.LoginView),
+    // Per-view subpath imports → each view is its own async chunk (visiting
+    // /login must not also pull the first-run wizard).
+    component: () => import('@gocell/access/views/login'),
     meta: { requiresAuth: false, public: true },
   },
   {
     path: '/first-run-setup',
     name: 'first-run-setup',
-    component: () => import('@gocell/access/views').then((m) => m.FirstRunSetupView),
+    component: () => import('@gocell/access/views/first-run'),
     meta: { requiresAuth: false, public: true },
   },
   {

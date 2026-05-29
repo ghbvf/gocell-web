@@ -11,11 +11,11 @@
  * On mount we GET setup/status; an already-provisioned system (hasAdmin) or a
  * 410 on submit silently redirects to /login (PRD R9 — no first-run oracle).
  */
-import { computed, onMounted, ref } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
-import type { GoCellRequestError } from '@gocell/request'
-import { createAdmin, fetchSetupStatus } from '../api/setup'
+import { isGoCellRequestError } from '@gocell/request'
+import { createAdmin, fetchSetupStatus, SETUP_ADMIN_URL } from '../api/setup'
 import { useSetupWizard, type SetupStep } from '../composables/useSetupWizard'
 import {
   pwChecks,
@@ -35,6 +35,14 @@ const submitting = ref(false)
 const submitErrorKey = ref<string | null>(null)
 const showOpPassword = ref(false)
 const showAdminPassword = ref(false)
+const stepHeading = ref<HTMLElement | null>(null)
+
+// a11y: on each step change move focus to the step heading so screen-reader
+// users get the new-context signal (SPA soft-navigation pattern).
+watch(
+  () => wizard.currentStep.value,
+  () => void nextTick(() => stepHeading.value?.focus()),
+)
 
 const opErrors = computed(() => validateOperator(wizard.operator))
 const adminErrors = computed(() => validateAdmin(wizard.admin))
@@ -92,13 +100,14 @@ async function onSubmit(): Promise<void> {
     )
     wizard.complete()
   } catch (err: unknown) {
-    const e = err as GoCellRequestError
-    if (e.response?.status === 410) {
+    if (isGoCellRequestError(err) && err.response?.status === 410) {
       // First-run window already closed — silent redirect, no oracle (R9).
       await router.replace('/login')
       return
     }
-    submitErrorKey.value = e.i18nKey ?? 'errors.unknown'
+    submitErrorKey.value = isGoCellRequestError(err)
+      ? (err.i18nKey ?? 'errors.unknown')
+      : 'errors.unknown'
   } finally {
     submitting.value = false
   }
@@ -153,7 +162,7 @@ function stepMark(step: SetupStep, index: number): string {
         <p class="wizard__eyebrow">
           {{ t(`access.firstRun.steps.${wizard.currentStep.value}.eyebrow`) }}
         </p>
-        <h1 class="wizard__title">
+        <h1 ref="stepHeading" tabindex="-1" class="wizard__title">
           {{ t(`access.firstRun.steps.${wizard.currentStep.value}.title`) }}
         </h1>
         <p class="wizard__deck">
@@ -335,6 +344,10 @@ function stepMark(step: SetupStep, index: number): string {
                 :type="showAdminPassword ? 'text' : 'password'"
                 autocomplete="new-password"
                 :placeholder="t('access.firstRun.admin.password.placeholder')"
+                :aria-invalid="!!(wizard.admin.password && adminErrors.password) || undefined"
+                :aria-describedby="
+                  wizard.admin.password && adminErrors.password ? 'admin-password-err' : undefined
+                "
               />
               <button
                 type="button"
@@ -354,6 +367,13 @@ function stepMark(step: SetupStep, index: number): string {
                 }}
               </button>
             </div>
+            <p
+              v-if="wizard.admin.password && adminErrors.password"
+              id="admin-password-err"
+              class="frs-help frs-help--err"
+            >
+              {{ t(adminErrors.password) }}
+            </p>
             <div class="frs-pw-bars" aria-hidden="true">
               <span
                 v-for="(band, i) in strengthBars"
@@ -407,18 +427,14 @@ function stepMark(step: SetupStep, index: number): string {
           </h2>
           <pre
             class="frs-wire"
-          ><span class="frs-wire__method">{{ t('access.firstRun.submit.wireMethod') }}</span> /api/v1/access/setup/admin
+          ><span class="frs-wire__method">{{ t('access.firstRun.submit.wireMethod') }}</span> {{ SETUP_ADMIN_URL }}
 Authorization: Basic ••••••••
 Content-Type: application/json
 
 {{ maskedBody }}</pre>
-          <p
-            v-if="submitErrorKey"
-            class="frs-help frs-help--err frs-submit-err"
-            role="alert"
-            aria-live="assertive"
-          >
-            {{ t(submitErrorKey) }}
+          <!-- Persistent live region (not v-if) — see LoginView for the rationale. -->
+          <p class="frs-help frs-help--err frs-submit-err" role="alert" aria-live="assertive">
+            {{ submitErrorKey ? t(submitErrorKey) : '' }}
           </p>
         </section>
 
@@ -468,7 +484,7 @@ Content-Type: application/json
             :disabled="!wizard.canGoNext.value"
             @click="wizard.goNext()"
           >
-            {{ t(`access.firstRun.${wizard.currentStep.value}.continueBtn`) }}
+            {{ t('access.firstRun.nextBtn') }}
           </button>
         </div>
       </main>
@@ -765,7 +781,7 @@ Content-Type: application/json
 .frs-pw__toggle {
   position: absolute;
   right: 6px;
-  height: 24px;
+  height: 30px;
   padding: 0 8px;
   font-size: 11px;
   color: var(--fg-muted);

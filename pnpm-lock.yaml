@@ -240,9 +240,6 @@ importers:
       '@gocell/request':
         specifier: workspace:*
         version: link:../request
-      '@gocell/shared':
-        specifier: workspace:*
-        version: link:../shared
       pinia:
         specifier: 'catalog:'
         version: 3.0.4(typescript@5.7.3)(vue@3.5.35(typescript@5.7.3))

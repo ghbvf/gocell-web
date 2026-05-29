@@ -13,6 +13,7 @@ vi.mock('vue-i18n', () => ({ useI18n: () => ({ t: (k: string) => k }) }))
 vi.mock('../api/setup', () => ({
   fetchSetupStatus: vi.fn(),
   createAdmin: vi.fn(),
+  SETUP_ADMIN_URL: '/api/v1/access/setup/admin',
 }))
 
 const mockedFetch = vi.mocked(fetchSetupStatus)
@@ -155,6 +156,7 @@ describe('FirstRunSetupView', () => {
     const wrapper = await mountReady()
     await walkToSubmit(wrapper)
     mockedCreate.mockRejectedValue({
+      isAxiosError: true,
       response: { status: 401 },
       i18nKey: 'errors.ERR_AUTH_BOOTSTRAP_FAILED',
     })
@@ -170,6 +172,7 @@ describe('FirstRunSetupView', () => {
     const wrapper = await mountReady()
     await walkToSubmit(wrapper)
     mockedCreate.mockRejectedValue({
+      isAxiosError: true,
       response: { status: 410 },
       i18nKey: 'errors.ERR_SETUP_ALREADY_INITIALIZED',
     })
@@ -182,5 +185,15 @@ describe('FirstRunSetupView', () => {
     const wrapper = await mountReady()
     const current = wrapper.find('.wizard__step[aria-current="step"]')
     expect(current.exists()).toBe(true)
+  })
+
+  it('moves focus to the step heading on step change (a11y soft-navigation)', async () => {
+    mockedFetch.mockResolvedValue(false)
+    const wrapper = mount(FirstRunSetupView, { attachTo: document.body })
+    await flushPromises()
+    await wrapper.find('.wizard__next').trigger('click') // preflight → planes
+    await flushPromises()
+    expect(document.activeElement).toBe(wrapper.find('.wizard__title').element)
+    wrapper.unmount()
   })
 })

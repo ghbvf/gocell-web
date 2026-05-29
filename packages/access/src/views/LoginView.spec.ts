@@ -83,7 +83,10 @@ describe('LoginView', () => {
 
   it('shows the error i18n key in an alert region when login fails', async () => {
     const { wrapper, auth } = mountView()
-    vi.mocked(auth.login).mockRejectedValue({ i18nKey: 'errors.ERR_AUTH_LOGIN_FAILED' })
+    vi.mocked(auth.login).mockRejectedValue({
+      isAxiosError: true,
+      i18nKey: 'errors.ERR_AUTH_LOGIN_FAILED',
+    })
     await fill(wrapper)
     await wrapper.find('form').trigger('submit')
     await flushPromises()

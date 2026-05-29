@@ -425,9 +425,20 @@ describe('request interceptors', () => {
   })
 })
 
-// ── toI18nKey unit tests ────────────────────────────────────────────────────
+// ── error-helper unit tests ──────────────────────────────────────────────────
 
-import { toI18nKey } from './errors'
+import { isGoCellRequestError, toI18nKey } from './errors'
+
+describe('isGoCellRequestError', () => {
+  it('is true for an axios-shaped error and false otherwise', () => {
+    expect(isGoCellRequestError({ isAxiosError: true, i18nKey: 'errors.x' })).toBe(true)
+    expect(isGoCellRequestError(new Error('plain'))).toBe(false)
+    expect(isGoCellRequestError(null)).toBe(false)
+    expect(isGoCellRequestError('boom')).toBe(false)
+  })
+})
+
+// ── toI18nKey unit tests ────────────────────────────────────────────────────
 
 describe('toI18nKey', () => {
   it.each([

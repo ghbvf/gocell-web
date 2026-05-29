@@ -123,14 +123,14 @@ const zhCN = {
       usernameRequired: '请输入用户名',
       passwordRequired: '请输入密码',
       sessionExpired: '会话已过期，请重新登录',
-      errorLabel: '登录错误',
     },
     firstRun: {
       brand: 'gocell',
       brandTag: '首次运行',
       stepsNav: '设置步骤',
       stepCompleted: '已完成',
-      backBtn: '← 返回',
+      backBtn: '返回',
+      nextBtn: '继续',
       checking: '正在检查系统状态…',
       checkFailed: '无法连接到后端，请确认服务已启动后重试',
       steps: {
@@ -177,7 +177,6 @@ const zhCN = {
         envReminderTitle: '继续前请确认',
         envReminderItem1: '部署清单已设置 GOCELL_BOOTSTRAP_ADMIN_USERNAME',
         envReminderItem2: '部署清单已设置 GOCELL_BOOTSTRAP_ADMIN_PASSWORD',
-        continueBtn: '继续 → 两个平面',
       },
       planes: {
         operatorTitle: '操作员（环境变量）',
@@ -189,7 +188,6 @@ const zhCN = {
         whyTitle: '为何分两层？',
         whyBody:
           '操作员 Basic Auth 永久守护端点，避免首次运行窗口被任意访问者抢占管理员；你创建的管理员与操作员无关。',
-        continueBtn: '继续 → 输入操作员凭据',
       },
       operator: {
         cardTitle: '操作员（环境变量）',
@@ -207,7 +205,6 @@ const zhCN = {
         passwordTooShort: '至少 8 字节（已去除首尾空白）',
         controlChar: '不能包含控制字符',
         trimNote: '首尾空白会被自动去除（兼容 K8s Secret 行尾换行）。',
-        continueBtn: '继续 → 管理员身份',
       },
       admin: {
         cardTitle: '管理员用户（body）',
@@ -220,7 +217,8 @@ const zhCN = {
         },
         email: {
           label: '邮箱',
-          placeholder: 'admin@corp.example',
+          // vue-i18n 把 `@` 当作 linked-message 前缀，邮箱示例须用字面插值转义
+          placeholder: "admin{'@'}corp.example",
           required: '请输入邮箱',
           format: '请输入有效的邮箱地址',
         },
@@ -243,7 +241,6 @@ const zhCN = {
           num: '含数字',
           sym: '含符号',
         },
-        continueBtn: '继续 → 复核并提交',
       },
       submit: {
         reviewTitle: '复核请求',

@@ -10,7 +10,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
-import type { GoCellRequestError } from '@gocell/request'
+import { isGoCellRequestError } from '@gocell/request'
 import { useAuthStore } from '../stores/useAuthStore'
 
 const { t } = useI18n()
@@ -41,7 +41,9 @@ async function onSubmit(): Promise<void> {
     const redirect = route.query.redirect
     await router.push(typeof redirect === 'string' ? redirect : '/')
   } catch (err: unknown) {
-    errorKey.value = (err as GoCellRequestError).i18nKey ?? 'errors.unknown'
+    errorKey.value = isGoCellRequestError(err)
+      ? (err.i18nKey ?? 'errors.unknown')
+      : 'errors.unknown'
   } finally {
     loading.value = false
   }
@@ -105,8 +107,11 @@ async function onSubmit(): Promise<void> {
           </div>
         </div>
 
-        <p v-if="errorKey" class="login__error" role="alert" aria-live="assertive">
-          {{ t(errorKey) }}
+        <!-- Persistent live region (not v-if): the alert node must exist before
+             its text changes so screen readers reliably re-announce, incl. a
+             repeated identical error on a second failed submit. -->
+        <p class="login__error" role="alert" aria-live="assertive">
+          {{ errorKey ? t(errorKey) : '' }}
         </p>
 
         <button type="submit" class="login__submit" :disabled="!canSubmit" :aria-busy="loading">
@@ -241,7 +246,7 @@ async function onSubmit(): Promise<void> {
 .login__pw-toggle {
   position: absolute;
   right: 6px;
-  height: 26px;
+  height: 30px;
   padding: 0 8px;
   font-size: 11.5px;
   color: var(--fg-muted);

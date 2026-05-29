@@ -120,14 +120,14 @@ const enUS = {
       usernameRequired: 'Username is required',
       passwordRequired: 'Password is required',
       sessionExpired: 'Your session has expired. Please sign in again.',
-      errorLabel: 'Sign-in error',
     },
     firstRun: {
       brand: 'gocell',
       brandTag: 'first run',
       stepsNav: 'Setup steps',
       stepCompleted: 'completed',
-      backBtn: '← Back',
+      backBtn: 'Back',
+      nextBtn: 'Continue',
       checking: 'Checking system status…',
       checkFailed: 'Could not reach the backend. Confirm the service is running and retry.',
       steps: {
@@ -174,7 +174,6 @@ const enUS = {
         envReminderTitle: 'Before continuing, confirm',
         envReminderItem1: 'GOCELL_BOOTSTRAP_ADMIN_USERNAME is set in the deployment manifest',
         envReminderItem2: 'GOCELL_BOOTSTRAP_ADMIN_PASSWORD is set in the deployment manifest',
-        continueBtn: 'Continue → Two planes',
       },
       planes: {
         operatorTitle: 'Operator (env)',
@@ -188,7 +187,6 @@ const enUS = {
         whyTitle: 'Why two?',
         whyBody:
           'Operator Basic Auth permanently guards the endpoint so the first-run window cannot be hijacked; the admin you create is unrelated to the operator.',
-        continueBtn: 'Continue → Enter operator credentials',
       },
       operator: {
         cardTitle: 'Operator (env)',
@@ -210,7 +208,6 @@ const enUS = {
         passwordTooShort: 'At least 8 bytes (leading/trailing whitespace trimmed)',
         controlChar: 'Must not contain control characters',
         trimNote: 'Leading/trailing whitespace is trimmed (K8s Secret newline-safe).',
-        continueBtn: 'Continue → Admin identity',
       },
       admin: {
         cardTitle: 'Admin user (body)',
@@ -223,7 +220,8 @@ const enUS = {
         },
         email: {
           label: 'Email',
-          placeholder: 'admin@corp.example',
+          // vue-i18n treats `@` as a linked-message prefix; escape via literal interpolation.
+          placeholder: "admin{'@'}corp.example",
           required: 'Email is required',
           format: 'Enter a valid email address',
         },
@@ -250,7 +248,6 @@ const enUS = {
           num: 'digit',
           sym: 'symbol',
         },
-        continueBtn: 'Continue → Review & submit',
       },
       submit: {
         reviewTitle: 'Review request',

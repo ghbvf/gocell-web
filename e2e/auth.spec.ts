@@ -16,11 +16,15 @@ async function stubSetupStatus(page: Page, hasAdmin: boolean): Promise<void> {
 }
 
 test.describe('Login', () => {
-  test('未认证访问 / 被重定向到 /login', async ({ page }) => {
+  test('/login 直接渲染独立登录页（不套 AppShell）', async ({ page }) => {
+    // 备注：受保护路由→/login 的重定向冒烟留待 Batch 7（届时 home 改 requiresAuth:true）；
+    // 当前 home 为 public，访问 / 不重定向，故此处直接验证 /login 独立渲染。
     await stubSetupStatus(page, true) // setup done → first-run gate passes
-    await page.goto('/')
-    await expect(page).toHaveURL(/\/login$/)
+    await page.goto('/login')
     await expect(page.locator('#login-username')).toBeVisible()
+    await expect(page.locator('#login-password')).toBeVisible()
+    // standalone layout: no AppShell sidebar nav
+    await expect(page.locator('.wizard')).toHaveCount(0)
   })
 
   test('登录成功后跳转回受保护页并挂载 AppShell', async ({ page }) => {
@@ -87,6 +91,9 @@ test.describe('First-run', () => {
     await page.click('.wizard__submit')
 
     await expect(page.locator('.wizard__login')).toBeVisible()
+    // Admin now provisioned → backend would report hasAdmin=true; re-stub so the
+    // first-run guard lets /login through instead of bouncing back to the wizard.
+    await stubSetupStatus(page, true)
     await page.click('.wizard__login')
     await expect(page).toHaveURL(/\/login$/)
   })

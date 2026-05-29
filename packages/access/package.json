@@ -6,7 +6,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./stores": "./src/stores/index.ts",
-    "./views": "./src/views/index.ts"
+    "./views/login": "./src/views/LoginView.vue",
+    "./views/first-run": "./src/views/FirstRunSetupView.vue"
   },
   "files": [
     "src"
@@ -20,7 +21,6 @@
     "@gocell/core": "workspace:*",
     "@gocell/request": "workspace:*",
     "@gocell/contracts": "workspace:*",
-    "@gocell/shared": "workspace:*",
     "pinia": "catalog:",
     "vue": "catalog:",
     "vue-i18n": "catalog:",

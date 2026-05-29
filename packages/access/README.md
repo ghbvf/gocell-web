@@ -10,8 +10,10 @@ auth store（全内存 token）+ first-run / login 视图 + PDP client（fail-cl
 |---|---|
 | `.` (`src/index.ts`) | `useAuthStore`、`AuthUser`（type）、`createPdpClient` |
 | `./stores` (`src/stores/index.ts`) | `useAuthStore`、`AuthUser`（type）（按需导入 store 时用） |
-| `./views` (`src/views/index.ts`) | `LoginView`、`FirstRunSetupView`（由 `apps/web` 路由懒加载装配） |
+| `./views/login` (`src/views/LoginView.vue`) | `LoginView`（默认导出，`apps/web` 路由懒加载） |
+| `./views/first-run` (`src/views/FirstRunSetupView.vue`) | `FirstRunSetupView`（默认导出，`apps/web` 路由懒加载） |
 
+> 两个 view 各为独立 export 子路径 → 各自独立 async chunk（访问 `/login` 不连带加载 first-run 向导）。
 > `api/setup`、`composables/useSetupWizard`、`lib/validation` 是包内私有模块（不在 `exports`），仅供本包 views 消费。
 
 ## 依赖的 contract
@@ -52,7 +54,7 @@ contract 来源：`@gocell/contracts`（codegen 派生，只读）。
 
 ## 边界
 
-- 依赖：`@gocell/core`、`@gocell/shared`、`@gocell/contracts`、`@gocell/request`
+- 依赖：`@gocell/core`、`@gocell/contracts`、`@gocell/request`、`vue-router`、`vue-i18n`
 - 严禁依赖其他业务 cell（`audit`、`config`、`observability`、`devboard`）
 - HTTP 调用只走 `@gocell/request` 的 `http` 实例，禁直接 `import axios`
 
