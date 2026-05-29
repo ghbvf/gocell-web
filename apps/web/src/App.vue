@@ -1,15 +1,34 @@
 <script setup lang="ts">
+import { watch } from 'vue'
 import { ConfigProvider } from 'ant-design-vue'
-import { useTheme, useThemeTokens } from '@gocell/core'
+import { useI18n } from 'vue-i18n'
+import { useTheme, useThemeTokens, useLocaleStore, AppShell } from '@gocell/core'
 
-// Initialize theme (applies data-theme to <html> at module load, this call
-// ensures the singleton is set up for this component tree too)
+// Initialize theme (applies data-theme to <html>)
 useTheme()
 const { themeConfig } = useThemeTokens()
+
+// Sync locale store → vue-i18n
+const { locale: i18nLocale } = useI18n()
+const localeStore = useLocaleStore()
+
+// Keep vue-i18n locale in sync with store
+watch(
+  () => localeStore.locale,
+  (val) => {
+    i18nLocale.value = val
+  },
+  { immediate: true },
+)
+
+// Note: AntD ConfigProvider locale is not wired in Batch 0.
+// It will be added in a subsequent batch with zh-CN/en-US locale objects.
 </script>
 
 <template>
   <ConfigProvider :theme="themeConfig">
-    <RouterView />
+    <AppShell>
+      <RouterView />
+    </AppShell>
   </ConfigProvider>
 </template>
