@@ -84,9 +84,11 @@ async function onConfirm(): Promise<void> {
   confirmBusy.value = true
   confirmErrorKey.value = null
   try {
+    // Explicit per-action dispatch — no catch-all, so a future ConfirmAction
+    // can never silently fall through to the destructive remove().
     if (action === 'lock') await store.lock(user.id)
     else if (action === 'unlock') await store.unlock(user.id)
-    else await store.remove(user.id)
+    else if (action === 'delete') await store.remove(user.id)
     confirmState.value = null
   } catch (err: unknown) {
     confirmErrorKey.value = isGoCellRequestError(err)
@@ -456,7 +458,7 @@ async function onConfirm(): Promise<void> {
 }
 
 .identities__action--danger {
-  color: var(--err);
+  color: var(--err-strong);
 }
 
 .identities__more {

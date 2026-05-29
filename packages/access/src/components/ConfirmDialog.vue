@@ -31,11 +31,12 @@ const { t } = useI18n()
   <ModalShell
     :open="open"
     title-id="confirm-dialog-title"
+    description-id="confirm-dialog-message"
     role="alertdialog"
     @close="emit('cancel')"
   >
     <h2 id="confirm-dialog-title" class="confirm__title">{{ t(titleKey) }}</h2>
-    <p class="confirm__message">{{ t(messageKey) }}</p>
+    <p id="confirm-dialog-message" class="confirm__message">{{ t(messageKey) }}</p>
 
     <p v-if="errorKey" class="confirm__error" role="alert">{{ t(errorKey) }}</p>
 
@@ -111,9 +112,10 @@ const { t } = useI18n()
 }
 
 .confirm__btn--danger {
-  color: var(--bg-raised);
-  background: var(--err);
-  border-color: var(--err);
+  /* --bg inverts per theme so text stays high-contrast on the themed --err-strong fill */
+  color: var(--bg);
+  background: var(--err-strong);
+  border-color: var(--err-strong);
 }
 
 .confirm__btn:disabled {

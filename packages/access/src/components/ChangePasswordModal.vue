@@ -6,7 +6,7 @@
  * self-service changes). Validation is inline (i18n keys via validators); a
  * server error stays in a live region and keeps the modal open.
  */
-import { reactive, ref, watch } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { isGoCellRequestError } from '@gocell/request'
 import { useIdentitiesStore } from '../stores/useIdentitiesStore'
@@ -25,6 +25,8 @@ const submitted = ref(false)
 const submitting = ref(false)
 const errorKey = ref<string | null>(null)
 
+const errors = computed<ChangePasswordErrors>(() => validateChangePassword(form))
+
 watch(
   () => props.open,
   (open) => {
@@ -40,15 +42,14 @@ watch(
 )
 
 function fieldError(field: keyof ChangePasswordErrors): string | null {
-  return submitted.value ? validateChangePassword(form)[field] : null
+  return submitted.value ? errors.value[field] : null
 }
 
 async function onSubmit(): Promise<void> {
   submitted.value = true
   errorKey.value = null
   if (!props.user) return
-  const errs = validateChangePassword(form)
-  if (errs.oldPassword || errs.newPassword || errs.confirm) return
+  if (errors.value.oldPassword || errors.value.newPassword || errors.value.confirm) return
 
   submitting.value = true
   try {

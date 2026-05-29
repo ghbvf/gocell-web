@@ -22,7 +22,9 @@ describe('ConfirmDialog', () => {
     const panel = w.find('.modal__panel')
     expect(panel.attributes('role')).toBe('alertdialog')
     expect(panel.attributes('aria-labelledby')).toBe('confirm-dialog-title')
+    expect(panel.attributes('aria-describedby')).toBe('confirm-dialog-message')
     expect(w.find('#confirm-dialog-title').text()).toBe('access.identities.confirm.delete.title')
+    expect(w.find('#confirm-dialog-message').exists()).toBe(true)
   })
 
   it('emits confirm when the confirm button is clicked', async () => {

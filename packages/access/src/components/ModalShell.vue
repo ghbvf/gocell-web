@@ -15,6 +15,8 @@ const props = withDefaults(
     open: boolean
     /** id of the element labelling the dialog (its title). */
     titleId: string
+    /** id of the element describing the dialog (its body) — required for alertdialog. */
+    descriptionId?: string
     role?: 'dialog' | 'alertdialog'
   }>(),
   { role: 'dialog' },
@@ -26,7 +28,7 @@ const panel = ref<HTMLElement | null>(null)
 let opener: HTMLElement | null = null
 
 const FOCUSABLE =
-  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), summary, [contenteditable]:not([contenteditable="false"]), [tabindex]:not([tabindex="-1"])'
 
 function focusables(): HTMLElement[] {
   if (!panel.value) return []
@@ -46,13 +48,16 @@ function onKeydown(e: KeyboardEvent): void {
     panel.value?.focus()
     return
   }
-  const first = els[0] as HTMLElement
-  const last = els[els.length - 1] as HTMLElement
+  const first = els[0]!
+  const last = els.at(-1)!
   const active = document.activeElement
-  if (e.shiftKey && active === first) {
+  // idx === -1 covers focus resting on the panel itself or outside → still wrap,
+  // so Tab/Shift+Tab can never escape the dialog.
+  const idx = active instanceof HTMLElement ? els.indexOf(active) : -1
+  if (e.shiftKey && idx <= 0) {
     e.preventDefault()
     last.focus()
-  } else if (!e.shiftKey && active === last) {
+  } else if (!e.shiftKey && (idx === -1 || idx === els.length - 1)) {
     e.preventDefault()
     first.focus()
   }
@@ -62,7 +67,7 @@ watch(
   () => props.open,
   (isOpen) => {
     if (isOpen) {
-      opener = (document.activeElement as HTMLElement | null) ?? null
+      opener = document.activeElement instanceof HTMLElement ? document.activeElement : null
       document.addEventListener('keydown', onKeydown, true)
       void nextTick(() => {
         const els = focusables()
@@ -74,7 +79,9 @@ watch(
       opener = null
     }
   },
-  { immediate: true },
+  // flush: 'post' so the listener + focus run after the panel is committed to the
+  // DOM (otherwise a Tab in the open-tick gap would find no focusables to trap).
+  { immediate: true, flush: 'post' },
 )
 
 onBeforeUnmount(() => {
@@ -90,6 +97,7 @@ onBeforeUnmount(() => {
       :role="role"
       aria-modal="true"
       :aria-labelledby="titleId"
+      :aria-describedby="descriptionId"
       tabindex="-1"
     >
       <slot />

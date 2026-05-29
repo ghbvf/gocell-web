@@ -171,7 +171,11 @@ async function onSubmit(): Promise<void> {
       </div>
 
       <label class="modal__checkbox">
-        <input v-model="form.requirePasswordReset" type="checkbox" />
+        <input
+          id="identity-require-password-reset"
+          v-model="form.requirePasswordReset"
+          type="checkbox"
+        />
         <span>{{ t('access.identities.form.requirePasswordReset') }}</span>
       </label>
 
