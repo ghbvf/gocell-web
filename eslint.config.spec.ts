@@ -27,12 +27,16 @@ function wt(...segments: string[]): string {
   return path.resolve(__dirname, ...segments)
 }
 
+// 单例复用：new ESLint() 会加载完整 flat config + 全部 plugin（数秒级），
+// 每个用例新建会在 CI 慢机上超时（5s）。共享实例后仅首次 lintText 触发加载，
+// 后续调用快；配合 root vitest.config 的 testTimeout 兜底首次加载耗时。
+const sharedEslint = new ESLint({
+  cwd: __dirname,
+  overrideConfigFile: path.resolve(__dirname, 'eslint.config.js'),
+})
+
 async function lint(code: string, filePath: string): Promise<ESLint.LintResult[]> {
-  const eslint = new ESLint({
-    cwd: __dirname,
-    overrideConfigFile: path.resolve(__dirname, 'eslint.config.js'),
-  })
-  return eslint.lintText(code, { filePath })
+  return sharedEslint.lintText(code, { filePath })
 }
 
 /** 从 results 中取出所有 ruleId */

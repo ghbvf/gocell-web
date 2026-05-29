@@ -11,28 +11,20 @@ jobs:
   codegen-readonly:
     runs-on: ubuntu-latest
     steps:
-      - name: Assert backend contracts token is configured
-        env:
-          GOCELL_CONTRACTS_TOKEN: ${{ secrets.GOCELL_CONTRACTS_TOKEN }}
-        run: |
-          if [ -z "$GOCELL_CONTRACTS_TOKEN" ]; then
-            echo "::error::GOCELL_CONTRACTS_TOKEN 未配置——codegen 守门需读取私有后端契约仓库 ghbvf/gocell。请在 repo secrets 配置只读 PAT。"
-            exit 1
-          fi
-
       - name: Checkout gocell-web
         uses: actions/checkout@v4
         with:
           path: gocell-web
 
       # 后端契约源仓库，checkout 为 gocell-web 的同级目录（codegen 默认读 ../gocell/contracts）。
-      # 私有仓库需在 repo secrets 配置 GOCELL_CONTRACTS_TOKEN（具备 ghbvf/gocell 只读权限的 PAT）。
+      # ghbvf/gocell 为公开仓库 → actions/checkout 匿名克隆即可，无需 token/PAT。
+      # （默认 GITHUB_TOKEN 仅限当前仓库；跨仓库只在源仓库为「私有」时才需额外凭据。）
+      # 若将来 gocell 转私有，再在 repo secrets 配只读 PAT 并加回 `token:` 行。
       - name: Checkout gocell (backend contracts)
         uses: actions/checkout@v4
         with:
           repository: ghbvf/gocell
           path: gocell
-          token: ${{ secrets.GOCELL_CONTRACTS_TOKEN }}
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
