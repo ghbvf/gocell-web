@@ -4,6 +4,9 @@
 # git worktree 本地工作目录（含独立 checkout，禁止提交）
 worktrees/
 
+# Claude Code sub-agent 持久记忆（本地 scratch，不纳入版本库）
+.claude/agent-memory/
+
 # 依赖与构建产物
 node_modules/
 dist/
