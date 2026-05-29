@@ -50,7 +50,7 @@ worktrees/                — git worktree 工作区（用完即删）
 - `@gocell/core` 只依赖 `@gocell/shared`，**不依赖任何业务 cell**
 - `@gocell/shared` 不依赖其他 `@gocell/*` 包
 - `@gocell/access|audit|config|observability|devboard` 之间**不直接 import**——跨域只允许通过 `@gocell/contracts` 的类型 + `@gocell/request` 的 client
-- **设计性例外**：`@gocell/devboard` 可消费 `@gocell/access` 暴露的 PDP client（`<Can>` 组件、`useDecision()` composable），因为 devboard 所有页面都依赖 PDP；其他业务包之间无例外。`<Can>` 与 PDP client 唯一归属 `@gocell/access`，不在 `@gocell/core` 复刻
+- **`<Can>` / PDP 归属（PRD §9/§211 两层拆分）**：`<Can>` 组件 + `useDecision()` 注入点（`PDP_INJECTION_KEY`）唯一归属 `@gocell/core`（UI 壳，全包经 exports 消费）；PDP client 实现（`createPdpClient`）唯一归属 `@gocell/access`，由 `apps/web` 装配层经注入点 `provide` 注入。**设计性例外**：`@gocell/devboard` 可依赖 `@gocell/access`（消费其 PDP client 能力），因为 devboard 所有页面都依赖 PDP；其他业务包之间无横向 import 例外。`<Can>`/`useDecision` 本身来自 `@gocell/core`，与其他消费方一致
 - `apps/web` 可依赖所有 `@gocell/*` 包；反向不允许
 - 跨包 import 只走 `package.json#exports` 暴露的入口，**禁止深路径** `@gocell/foo/src/internal/x`
 

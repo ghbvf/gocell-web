@@ -293,7 +293,7 @@ export default tseslint.config(
   },
 
   // ── 边界锁: packages/devboard ─────────────────────────────────────────────
-  // 设计性例外：devboard 可消费 access 的 PDP client（<Can>/useDecision）
+  // 设计性例外：devboard 可依赖 access（消费其 PDP client 实现）；<Can>/useDecision 本身来自 @gocell/core
   {
     files: ['packages/devboard/**/*.{ts,vue}'],
     rules: {
@@ -302,7 +302,7 @@ export default tseslint.config(
           {
             regex: '^@gocell/(audit|config|observability)(/|$)',
             message:
-              '@gocell/devboard 禁止 import @gocell/audit/config/observability。设计性例外仅 @gocell/access（PDP client）。参见 .claude/rules/gocellweb/package-boundaries.md',
+              '@gocell/devboard 禁止 import @gocell/audit/config/observability。设计性例外仅 @gocell/access（PDP client 实现；<Can>/useDecision 走 @gocell/core）。参见 .claude/rules/gocellweb/package-boundaries.md',
           },
         ],
         [NO_AXIOS_PATH],
