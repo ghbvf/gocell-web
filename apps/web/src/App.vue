@@ -1,10 +1,15 @@
 <script setup lang="ts">
+/**
+ * App root — global concerns only (theme, i18n locale sync, AntD theme provider).
+ *
+ * Renders a bare <RouterView/>: the dashboard chrome lives in AppShellLayout
+ * (a parent route), so standalone full-screen pages (login, first-run-setup)
+ * render here without any shell wrapper.
+ */
 import { watch } from 'vue'
 import { ConfigProvider } from 'ant-design-vue'
 import { useI18n } from 'vue-i18n'
-import { useTheme, useThemeTokens, useLocaleStore, AppShell } from '@gocell/core'
-import { useUiStore } from './stores/useUiStore'
-import { useGlobalShortcuts } from './composables/useGlobalShortcuts'
+import { useTheme, useThemeTokens, useLocaleStore } from '@gocell/core'
 
 // Initialize theme (applies data-theme to <html>)
 useTheme()
@@ -14,7 +19,6 @@ const { themeConfig } = useThemeTokens()
 const { locale: i18nLocale } = useI18n()
 const localeStore = useLocaleStore()
 
-// Keep vue-i18n locale in sync with store
 watch(
   () => localeStore.locale,
   (val) => {
@@ -23,25 +27,12 @@ watch(
   { immediate: true },
 )
 
-// Global UI state (command palette + sidebar) shared between AppShell and shortcuts
-const uiStore = useUiStore()
-
-// Register global keyboard shortcuts.
-// useGlobalShortcuts registers cleanup via onScopeDispose internally,
-// so no explicit onBeforeUnmount teardown is needed here.
-useGlobalShortcuts()
-
-// Note: AntD ConfigProvider locale is not wired in Batch 0.
-// It will be added in a subsequent batch with zh-CN/en-US locale objects.
+// Note: AntD ConfigProvider locale is not wired yet; added in a later batch
+// with zh-CN/en-US locale objects.
 </script>
 
 <template>
   <ConfigProvider :theme="themeConfig">
-    <AppShell
-      v-model:command-palette-open="uiStore.commandPaletteOpen"
-      v-model:sidebar-collapsed="uiStore.sidebarCollapsed"
-    >
-      <RouterView />
-    </AppShell>
+    <RouterView />
   </ConfigProvider>
 </template>

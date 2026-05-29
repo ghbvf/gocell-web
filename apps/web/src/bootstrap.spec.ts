@@ -98,12 +98,47 @@ describe('bootstrap configureAxios', () => {
     opts.onAuthFail()
 
     expect(clearSpy).toHaveBeenCalledOnce()
-    expect(router.push).toHaveBeenCalledWith({ name: 'login' })
+    expect(router.push).toHaveBeenCalledWith({ name: 'login', query: { reason: 'expired' } })
   })
 
   it('setupAxios is called with exact refreshPath /sessions/refresh', async () => {
     await invokeBootstrapSetupAxios()
     const opts = mockedSetupAxios.mock.calls[0]![0]
     expect(opts.refreshPath).toBe('/sessions/refresh')
+  })
+})
+
+describe('bootstrap bootstrapSession', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.resetModules()
+    setActivePinia(createPinia())
+  })
+
+  it('calls authStore.refresh() exactly once', async () => {
+    const { bootstrapSession } = await import('./bootstrap')
+    const auth = useAuthStore()
+    const spy = vi.spyOn(auth, 'refresh').mockResolvedValue(null)
+
+    await bootstrapSession()
+
+    expect(spy).toHaveBeenCalledOnce()
+  })
+
+  it('is idempotent: concurrent calls share one in-flight refresh', async () => {
+    const { bootstrapSession } = await import('./bootstrap')
+    const auth = useAuthStore()
+    const spy = vi.spyOn(auth, 'refresh').mockResolvedValue(null)
+
+    await Promise.all([bootstrapSession(), bootstrapSession()])
+
+    expect(spy).toHaveBeenCalledOnce()
+  })
+
+  it('resolves without throwing on a cold load (no session to restore)', async () => {
+    const { bootstrapSession } = await import('./bootstrap')
+    // No setSession → real refresh() short-circuits to null with no HTTP call.
+    await expect(bootstrapSession()).resolves.toBeUndefined()
+    expect(useAuthStore().isAuthenticated).toBe(false)
   })
 })
