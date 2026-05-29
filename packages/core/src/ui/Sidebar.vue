@@ -46,7 +46,7 @@ function openCommandPalette(): void {
   <aside
     class="sidebar"
     :class="{ 'sidebar--collapsed': collapsed }"
-    aria-label="sidebar"
+    :aria-label="t('shell.sidebar.label')"
   >
     <!-- Brand area -->
     <div class="sidebar__top">
@@ -61,6 +61,7 @@ function openCommandPalette(): void {
         type="button"
         class="sidebar__collapse-btn v1-ghost"
         :aria-label="toggleLabel"
+        :aria-expanded="!collapsed"
         @click="toggleCollapsed"
       >
         <svg
@@ -105,7 +106,7 @@ function openCommandPalette(): void {
     </button>
 
     <!-- Navigation groups -->
-    <nav class="sidebar__nav" aria-label="main navigation">
+    <nav class="sidebar__nav" :aria-label="t('shell.nav.label')">
       <template v-for="group in NAV_GROUPS" :key="group.groupKey">
         <div
           class="sidebar__group"

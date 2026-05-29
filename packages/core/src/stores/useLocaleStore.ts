@@ -4,10 +4,9 @@ import { ref, watch } from 'vue'
 export type AppLocale = 'zh-CN' | 'en-US'
 
 const STORAGE_KEY = 'gocell-locale'
-const SUPPORTED_LOCALES: AppLocale[] = ['zh-CN', 'en-US']
 
 function isAppLocale(value: unknown): value is AppLocale {
-  return typeof value === 'string' && (SUPPORTED_LOCALES as string[]).includes(value)
+  return value === 'zh-CN' || value === 'en-US'
 }
 
 function readInitialLocale(): AppLocale {

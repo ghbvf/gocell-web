@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import Sidebar from './Sidebar.vue'
 import TopBar from './TopBar.vue'
 import CommandPalette from './CommandPalette.vue'
@@ -19,8 +20,11 @@ import AIBottomBar from './AIBottomBar.vue'
  * to prevent AT/keyboard from reaching content behind the dialog (ARIA APG).
  */
 
+const { t } = useI18n()
+
 const sidebarCollapsed = ref(false)
 const commandPaletteOpen = ref(false)
+const commandPaletteRef = ref<InstanceType<typeof CommandPalette>>()
 
 /**
  * When commandPalette is open, returns `true` to set inert on background elements.
@@ -33,8 +37,12 @@ const backgroundInert = computed<true | undefined>(() =>
   commandPaletteOpen.value ? true : undefined,
 )
 
+/**
+ * Open the command palette via the exposed open() method so that triggerRef
+ * is properly set and focus returns to the triggering element on close.
+ */
 function openCommandPalette(): void {
-  commandPaletteOpen.value = true
+  commandPaletteRef.value?.open()
 }
 
 function setCommandPaletteOpen(value: boolean): void {
@@ -44,6 +52,8 @@ function setCommandPaletteOpen(value: boolean): void {
 
 <template>
   <div class="shell">
+    <a class="shell__skip-link" href="#shell-content">{{ t('shell.skipToContent') }}</a>
+
     <Sidebar
       :collapsed="sidebarCollapsed"
       :inert="backgroundInert"
@@ -57,7 +67,7 @@ function setCommandPaletteOpen(value: boolean): void {
     >
       <TopBar @open-command-palette="openCommandPalette" />
 
-      <main class="shell__content">
+      <main id="shell-content" class="shell__content">
         <slot />
       </main>
 
@@ -65,6 +75,7 @@ function setCommandPaletteOpen(value: boolean): void {
     </div>
 
     <CommandPalette
+      ref="commandPaletteRef"
       :open="commandPaletteOpen"
       @update:open="setCommandPaletteOpen"
     />
@@ -77,6 +88,32 @@ function setCommandPaletteOpen(value: boolean): void {
   height: 100dvh;
   overflow: hidden;
   background: var(--bg);
+}
+
+.shell__skip-link {
+  position: absolute;
+  left: -9999px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  z-index: 9999;
+  background: var(--bg-raised);
+  color: var(--accent);
+  padding: 8px 16px;
+  border-radius: var(--r-sm);
+  font-size: 13px;
+  text-decoration: none;
+}
+
+.shell__skip-link:focus-visible {
+  left: 16px;
+  top: 16px;
+  width: auto;
+  height: auto;
+  overflow: visible;
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .shell__main {
