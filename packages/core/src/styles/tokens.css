@@ -18,6 +18,9 @@
   --fg: oklch(0.18 0.008 270);
   --fg-muted: oklch(0.45 0.008 270);
   --fg-faint: oklch(0.62 0.006 270);
+  /* Hover shade of --fg for solid/inverted buttons — references --fg lazily so it
+     tracks the theme. Replaces ad-hoc oklch(from var(--fg) ...) in button hovers. */
+  --fg-hover: oklch(from var(--fg) calc(l + 0.08) c h);
 
   /* single accent */
   --accent: oklch(0.58 0.19 268);
@@ -28,6 +31,9 @@
   --ok: oklch(0.62 0.16 150);
   --warn: oklch(0.72 0.16 75);
   --err: oklch(0.58 0.22 25);
+  /* High-contrast error: darker in light theme so it clears WCAG AA both as text
+     on light surfaces and (with inverted --bg text) as a filled danger button. */
+  --err-strong: oklch(0.47 0.2 25);
 
   /* radii / shadow */
   --r-sm: 4px;
@@ -47,6 +53,9 @@
   --sidebar-collapsed-width: 52px;
   --topbar-height: 44px;
 
+  /* stacking layers */
+  --z-modal: 1000;
+
   /* overlay backdrop */
   --overlay-bg: oklch(0 0 0 / 0.35);
 }
@@ -60,10 +69,17 @@
   --fg: oklch(0.96 0.004 270);
   --fg-muted: oklch(0.68 0.008 270);
   --fg-faint: oklch(0.48 0.008 270);
+  /* Dark theme: --fg is near-white, so lightening for hover is imperceptible —
+     darken instead for a visible hover on solid (--fg-backed) buttons. */
+  --fg-hover: oklch(from var(--fg) calc(l - 0.06) c h);
 
   --accent: oklch(0.72 0.17 268);
   --accent-soft: oklch(0.28 0.08 268);
   --accent-fg: oklch(0.14 0.006 270);
+
+  /* Lighter in dark theme: high contrast as text on dark surfaces and (with
+     inverted --bg text) as a filled danger button. */
+  --err-strong: oklch(0.72 0.18 25);
 
   --shadow-sm: 0 1px 0 rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.04);
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 4px 12px rgba(0, 0, 0, 0.45);

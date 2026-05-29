@@ -15,7 +15,11 @@ auth store（全内存 token）+ first-run / login 视图 + Identities 列表 + 
 | `./views/identities` (`src/views/IdentitiesView.vue`) | `IdentitiesView`（`/access/identities` 列表页，路由懒加载） |
 
 > 每个 view 各为独立 export 子路径 → 各自独立 async chunk（访问 `/login` 不连带加载 first-run 向导 / identities 表）。
-> `api/setup`、`api/identities`、`composables/useSetupWizard`、`lib/validation`、`components/IdentityStatusPill.vue` 是包内私有模块（不在 `exports`），仅供本包 views / store 消费。
+> `api/setup`、`api/identities`、`composables/useSetupWizard`、`lib/validation`、`lib/identityValidation`、
+> `components/{IdentityStatusPill,IdentityFormModal,ChangePasswordModal,ConfirmDialog}.vue`
+> 是包内私有模块（不在 `exports`），仅供本包 views / store 消费。
+> a11y modal 原语 `ModalShell`（focus-trap + ESC + backdrop + 背景 inert + 焦点回归）已归属
+> `@gocell/core/components`，三个 modal 经 `import { ModalShell } from '@gocell/core/components'` 消费。
 
 ## 依赖的 contract
 
@@ -26,6 +30,9 @@ auth store（全内存 token）+ first-run / login 视图 + Identities 列表 + 
 | `HttpAuthSetupStatusV1Response` | `api/setup.fetchSetupStatus()` first-run 门控 |
 | `HttpAuthSetupAdminV1Request/Response` | `api/setup.createAdmin()` 首位 admin 创建 |
 | `HttpAuthUserGetV1Response`（`['data']`） | `api/identities` 的 `Identity` 行类型（list 行字段复用 get 契约） |
+| `HttpAuthUserCreateV1Request` | `api/identities.createUser()`（POST `/users`） |
+| `HttpAuthUserPatchV1Request` | `api/identities.patchUser()` 编辑（PATCH `/users/{id}`，email/status/requirePasswordReset；PATCH 是 email-only PUT `update` 的超集，故 UI 不另用 update） |
+| `HttpAuthUserChangePasswordV1Request` | `api/identities.changeUserPassword()`（POST `/users/{id}/password`，old+new） |
 
 > **BR-005 pending**：`http.auth.user.list` 后端尚未交付（`/users` 路由仅 8 handler，无 list）。
 > `api/identities.ts` 的 `UserListPage` 信封（`{ data, nextCursor, hasMore }`，cursor 分页，对齐
@@ -58,8 +65,9 @@ contract 来源：`@gocell/contracts`（codegen 派生，只读）。
 
 - **store state**：`users`、`loading`、`errorKey`、`nextCursor`、`hasMore`、`filter`（client-side quick-filter）
 - **store getter**：`filteredUsers`（按 username / email 子串过滤当前已加载页）
-- **store actions**：`fetchList()`（首页，replace）、`loadMore()`（cursor 续页，append；无下页或在途时 no-op）；错误经 `toI18nKey` 落 `errorKey`，不抛中文字面量
-- **`IdentitiesView`**：`AppShell` 内子路由 `/access/identities`；hand-rolled 语义 `<table>` + status pill + 客户端筛选 + 禁用「服务账号」tab 占位（FR-030，`aria-disabled` + `tabindex="-1"`）。MVP 只读；行操作 modal + `<Can>` 见 PR-10。
+- **store read actions**：`fetchList()`（首页，replace）、`loadMore()`（cursor 续页，append；无下页或在途时 no-op）；错误经 `toI18nKey` 落 `errorKey`，不抛中文字面量
+- **store mutation actions**：`create` / `edit` / `lock` / `unlock` / `remove` / `changePassword`。**与读操作相反，mutation 失败时 re-throw**（由触发的 modal 内联展示并保持打开）；成功后 `await fetchList()` 以列表为真相源（`changePassword` 不 refetch，行可见字段不变）。
+- **`IdentitiesView`**：`AppShell` 内子路由 `/access/identities`；hand-rolled 语义 `<table>` + status pill + 客户端筛选 + 禁用「服务账号」tab 占位（FR-030，`aria-disabled` + `tabindex="-1"`）。行操作（create/edit/change-password/lock/unlock/delete）开 modal，每个动作按钮挂 `<Can>`（fail-closed：PDP 不允许即隐藏）；路由另挂 `meta.requiredAction='read'` + `requiredResource='identity'`（guards.ts fail-closed，PDP 后端未接通前整页拒绝，见 BR-004）。
 - **BR-005**：list 端点未交付，`api/identities` 用临时信封类型（见上「依赖的 contract」）。
 
 ### `createPdpClient(): PdpClient`
@@ -81,4 +89,4 @@ pnpm -F @gocell/access test
 pnpm -F @gocell/access typecheck
 ```
 
-覆盖：`useAuthStore`（含 login/logout）、`createPdpClient`（fail-closed + cache + TTL）、`api/setup`、`api/identities`、`useIdentitiesStore`、`IdentityStatusPill`、`IdentitiesView`、`lib/validation`、`useSetupWizard`、`LoginView`、`FirstRunSetupView`。整包 ≥ 80%（实测 ~97% lines）。
+覆盖：`useAuthStore`（含 login/logout）、`createPdpClient`（fail-closed + cache + TTL）、`api/setup`、`api/identities`（list + mutations）、`useIdentitiesStore`（读 + 写 + refetch）、`lib/validation`、`lib/identityValidation`、`IdentityStatusPill`、`ModalShell`（focus-trap）、`IdentityFormModal`、`ChangePasswordModal`、`ConfirmDialog`、`IdentitiesView`（含 `<Can>` fail-closed）、`useSetupWizard`、`LoginView`、`FirstRunSetupView`。整包 ≥ 80%（实测 ~97.5% lines）。

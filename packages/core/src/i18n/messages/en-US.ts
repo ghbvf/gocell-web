@@ -286,6 +286,7 @@ const enUS = {
         email: 'Email',
         status: 'Status',
         createdAt: 'Created',
+        actions: 'Actions',
       },
       status: {
         active: 'Active',
@@ -295,6 +296,78 @@ const enUS = {
       empty: 'No users yet',
       loadMore: 'Load more',
       resultCount: '{count} users',
+      actions: {
+        create: 'New user',
+        edit: 'Edit',
+        changePassword: 'Password',
+        lock: 'Lock',
+        unlock: 'Unlock',
+        delete: 'Delete',
+        // Screen-reader suffix for row action buttons — appends the username for context (e.g. "Edit alice")
+        rowSuffix: ' {username}',
+      },
+      form: {
+        createTitle: 'New user',
+        editTitle: 'Edit user',
+        username: {
+          label: 'Username',
+          placeholder: 'alice',
+          required: 'Username is required',
+          format: '3–32 chars: letters / digits / . _ -',
+        },
+        email: {
+          label: 'Email',
+          // vue-i18n treats a bare `@` as a linked-message prefix; escape it.
+          placeholder: "alice{'@'}corp.example",
+          required: 'Email is required',
+          format: 'Enter a valid email address',
+        },
+        password: {
+          label: 'Initial password',
+          placeholder: 'Long passphrase: mixed case + digits + symbols',
+          required: 'Password is required',
+          tooShort: 'Must be 8–72 bytes (bcrypt limit)',
+          controlChar: 'Control characters are not allowed',
+        },
+        requirePasswordReset: 'Require a password change after first sign-in',
+        cancel: 'Cancel',
+        submit: 'Save',
+        submitting: 'Saving…',
+      },
+      password: {
+        title: 'Change password',
+        old: { label: 'Current password' },
+        new: { label: 'New password' },
+        confirm: { label: 'Confirm new password' },
+        oldRequired: 'Enter the current password',
+        newRequired: 'Enter a new password',
+        newTooShort: 'Must be 8–72 bytes (bcrypt limit)',
+        newControlChar: 'Control characters are not allowed',
+        confirmRequired: 'Re-enter the new password',
+        confirmMismatch: 'Passwords do not match',
+        cancel: 'Cancel',
+        submit: 'Change password',
+        submitting: 'Submitting…',
+      },
+      confirm: {
+        cancel: 'Cancel',
+        lock: {
+          title: 'Lock user',
+          message: 'A locked user cannot sign in. You can unlock them at any time. Lock this user?',
+          confirm: 'Lock',
+        },
+        unlock: {
+          title: 'Unlock user',
+          message: 'Unlocking restores this user’s ability to sign in. Unlock this user?',
+          confirm: 'Unlock',
+        },
+        delete: {
+          title: 'Delete user',
+          message:
+            'This permanently removes the user and their sessions. This cannot be undone. Delete?',
+          confirm: 'Delete',
+        },
+      },
     },
   },
   errors: {

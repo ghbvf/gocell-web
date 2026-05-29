@@ -1,12 +1,15 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
-import { nextTick } from 'vue'
+import { nextTick, computed } from 'vue'
 import { createTestingPinia } from '@pinia/testing'
+import { PDP_INJECTION_KEY, type PdpClient } from '@gocell/core'
 import { useIdentitiesStore } from '../stores/useIdentitiesStore'
 import type { Identity } from '../api/identities'
 import IdentitiesView from './IdentitiesView.vue'
 
 vi.mock('vue-i18n', () => ({ useI18n: () => ({ t: (k: string) => k }) }))
+
+const pdp = (allowed: boolean): PdpClient => ({ can: () => computed(() => allowed) })
 
 const mkUser = (over: Partial<Identity> = {}): Identity => ({
   id: 'u-1',
@@ -175,5 +178,116 @@ describe('IdentitiesView', () => {
   it('hides the load-more control when there are no more pages', () => {
     const { wrapper } = mountView({ users: [mkUser()], hasMore: false })
     expect(wrapper.find('[data-action="load-more"]').exists()).toBe(false)
+  })
+})
+
+describe('IdentitiesView · operations (Can + modals)', () => {
+  function mountWithPdp(allowed: boolean | undefined, users = [mkUser()]) {
+    const provide: Record<symbol, PdpClient> = {}
+    if (allowed !== undefined) provide[PDP_INJECTION_KEY] = pdp(allowed)
+    const wrapper = mount(IdentitiesView, {
+      global: {
+        plugins: [
+          createTestingPinia({
+            createSpy: vi.fn,
+            initialState: {
+              'access.identities': {
+                users,
+                loading: false,
+                errorKey: null,
+                nextCursor: '',
+                hasMore: false,
+                filter: '',
+              },
+            },
+          }),
+        ],
+        provide,
+      },
+    })
+    return { wrapper, store: useIdentitiesStore() }
+  }
+
+  const actionBtn = (w: ReturnType<typeof mountWithPdp>['wrapper'], key: string) =>
+    w.findAll('.identities__action').find((b) => b.text() === key)
+
+  it('shows the create button only when the PDP allows it', () => {
+    expect(mountWithPdp(true).wrapper.find('[data-action="create"]').exists()).toBe(true)
+    expect(mountWithPdp(false).wrapper.find('[data-action="create"]').exists()).toBe(false)
+  })
+
+  it('hides the create button fail-closed when no PDP provider is mounted', () => {
+    expect(mountWithPdp(undefined).wrapper.find('[data-action="create"]').exists()).toBe(false)
+  })
+
+  it('renders row action buttons when the PDP allows', () => {
+    const { wrapper } = mountWithPdp(true)
+    expect(actionBtn(wrapper, 'access.identities.actions.edit')).toBeDefined()
+    expect(actionBtn(wrapper, 'access.identities.actions.delete')).toBeDefined()
+  })
+
+  it('gives each row action button an aria-label (username-scoped for screen readers)', () => {
+    const { wrapper } = mountWithPdp(true)
+    const edit = actionBtn(wrapper, 'access.identities.actions.edit')!
+    expect(edit.attributes('aria-label')).toContain('access.identities.actions.edit')
+  })
+
+  it('hides all row action buttons fail-closed when the PDP denies', () => {
+    const { wrapper } = mountWithPdp(false)
+    expect(wrapper.findAll('.identities__action')).toHaveLength(0)
+  })
+
+  it('opens the create modal when the create button is clicked', async () => {
+    const { wrapper } = mountWithPdp(true)
+    await wrapper.find('[data-action="create"]').trigger('click')
+    await nextTick()
+    expect(wrapper.find('#identity-form-title').text()).toBe('access.identities.form.createTitle')
+  })
+
+  it('opens the edit modal in edit mode when a row edit button is clicked', async () => {
+    const { wrapper } = mountWithPdp(true)
+    await actionBtn(wrapper, 'access.identities.actions.edit')!.trigger('click')
+    await nextTick()
+    expect(wrapper.find('#identity-form-title').text()).toBe('access.identities.form.editTitle')
+  })
+
+  it('opens the change-password modal when its action is clicked', async () => {
+    const { wrapper } = mountWithPdp(true)
+    await actionBtn(wrapper, 'access.identities.actions.changePassword')!.trigger('click')
+    await nextTick()
+    expect(wrapper.find('#change-password-title').exists()).toBe(true)
+  })
+
+  it('shows a Lock action for an active user and Unlock for a locked one', () => {
+    const active = mountWithPdp(true, [mkUser({ status: 'active' })]).wrapper
+    expect(actionBtn(active, 'access.identities.actions.lock')).toBeDefined()
+    expect(actionBtn(active, 'access.identities.actions.unlock')).toBeUndefined()
+
+    const locked = mountWithPdp(true, [mkUser({ status: 'locked' })]).wrapper
+    expect(actionBtn(locked, 'access.identities.actions.unlock')).toBeDefined()
+    expect(actionBtn(locked, 'access.identities.actions.lock')).toBeUndefined()
+  })
+
+  it('opens an alertdialog confirm when a destructive action is clicked', async () => {
+    const { wrapper } = mountWithPdp(true)
+    await actionBtn(wrapper, 'access.identities.actions.delete')!.trigger('click')
+    await nextTick()
+    const panel = wrapper.find('.modal__panel')
+    expect(panel.attributes('role')).toBe('alertdialog')
+    expect(wrapper.find('#confirm-dialog-title').text()).toBe(
+      'access.identities.confirm.delete.title',
+    )
+  })
+
+  it('runs store.remove and closes the dialog on delete confirm', async () => {
+    const { wrapper, store } = mountWithPdp(true)
+    vi.mocked(store.remove).mockResolvedValue(undefined)
+    await actionBtn(wrapper, 'access.identities.actions.delete')!.trigger('click')
+    await nextTick()
+    const buttons = wrapper.findAll('.confirm__btn')
+    await buttons[buttons.length - 1]!.trigger('click')
+    await flushPromises()
+    expect(store.remove).toHaveBeenCalledWith('u-1')
+    expect(wrapper.find('.modal__panel').exists()).toBe(false)
   })
 })

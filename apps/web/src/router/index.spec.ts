@@ -31,12 +31,13 @@ describe('router layout fork', () => {
     expect(router.resolve('/first-run-setup').meta.public).toBe(true)
   })
 
-  it('renders /access/identities nested under the shell, behind the auth gate', () => {
+  it('renders /access/identities nested under the shell, behind the auth + PDP gates', () => {
     const m = router.resolve('/access/identities')
     expect(m.name).toBe('access-identities')
     expect(m.matched.length).toBeGreaterThanOrEqual(2)
     expect(m.meta.requiresAuth).toBe(true)
-    // PR-09 is read-only behind auth; the PDP requiredAction gate arrives in PR-10.
-    expect(m.meta.requiredAction).toBeUndefined()
+    // PDP fail-closed gate (read on identity) — guards.ts denies until the PDP backend allows.
+    expect(m.meta.requiredAction).toBe('read')
+    expect(m.meta.requiredResource).toBe('identity')
   })
 })
