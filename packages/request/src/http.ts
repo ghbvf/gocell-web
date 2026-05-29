@@ -84,13 +84,16 @@ export function setupAxios(opts: SetupAxiosOptions): void {
 
       const config = error.config
 
-      // Non-401, already a retry, refresh endpoint itself, or missing config
-      // → attach i18nKey and reject immediately
+      // Non-401, already a retry, opted out of auth-refresh, refresh endpoint
+      // itself, or missing config → attach i18nKey and reject immediately.
+      // __skipAuthRefresh marks authentication-establishing calls (login /
+      // setup-admin) whose 401 is a credential verdict, not an expired session.
       const status = error.response?.status
       if (
         status !== 401 ||
         config === undefined ||
         config.__isRetry === true ||
+        config.__skipAuthRefresh === true ||
         isRefreshPath(config, refreshPath)
       ) {
         attachI18nKey(error)

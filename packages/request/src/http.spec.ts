@@ -308,6 +308,121 @@ describe('request interceptors', () => {
       expect(onRefresh).toHaveBeenCalledTimes(1)
     })
   })
+
+  // ── __skipAuthRefresh opts a request out of the refresh machinery ─────────
+  // Authentication-establishing calls (login / setup-admin) carry this flag so
+  // their credential-verdict 401 surfaces inline instead of triggering a
+  // refresh + bounce to /login.
+
+  describe('__skipAuthRefresh flag', () => {
+    it('rejects a 401 immediately without calling onRefresh', async () => {
+      getToken.mockReturnValue(null)
+      onRefresh.mockResolvedValue('new-token')
+      onAuthFail.mockReturnValue(undefined)
+      setupAxios(buildOpts())
+
+      mock.onPost('/api/v1/access/sessions/login').reply(401, {
+        error: { code: 'ERR_AUTH_LOGIN_FAILED', message: 'invalid credentials', details: [] },
+      })
+
+      await expect(
+        http.post('/api/v1/access/sessions/login', {}, { __skipAuthRefresh: true }),
+      ).rejects.toThrow()
+      expect(onRefresh).not.toHaveBeenCalled()
+    })
+
+    it('attaches i18nKey to the rejected 401 (error envelope still mapped)', async () => {
+      getToken.mockReturnValue(null)
+      onRefresh.mockResolvedValue('new-token')
+      onAuthFail.mockReturnValue(undefined)
+      setupAxios(buildOpts())
+
+      mock.onPost('/api/v1/access/sessions/login').reply(401, {
+        error: { code: 'ERR_AUTH_LOGIN_FAILED', message: 'invalid credentials', details: [] },
+      })
+
+      try {
+        await http.post('/api/v1/access/sessions/login', {}, { __skipAuthRefresh: true })
+        expect.fail('should have thrown')
+      } catch (err: unknown) {
+        expect((err as GoCellRequestError).i18nKey).toBe('errors.ERR_AUTH_LOGIN_FAILED')
+      }
+    })
+
+    it('does not call onAuthFail on a skipped 401', async () => {
+      getToken.mockReturnValue(null)
+      onRefresh.mockResolvedValue('new-token')
+      onAuthFail.mockReturnValue(undefined)
+      setupAxios(buildOpts())
+
+      mock.onPost('/api/v1/access/setup/admin').reply(401, {
+        error: { code: 'ERR_AUTH_BOOTSTRAP_FAILED', message: 'bootstrap failed', details: [] },
+      })
+
+      await expect(
+        http.post('/api/v1/access/setup/admin', {}, { __skipAuthRefresh: true }),
+      ).rejects.toThrow()
+      expect(onAuthFail).not.toHaveBeenCalled()
+    })
+
+    it('skips refresh even when a token is present (auth call in an authed tab)', async () => {
+      getToken.mockReturnValue('stale-token')
+      onRefresh.mockResolvedValue('new-token')
+      onAuthFail.mockReturnValue(undefined)
+      setupAxios(buildOpts())
+
+      mock.onPost('/api/v1/access/setup/admin').reply(401, {
+        error: { code: 'ERR_AUTH_BOOTSTRAP_FAILED', message: 'bootstrap failed', details: [] },
+      })
+
+      await expect(
+        http.post('/api/v1/access/setup/admin', {}, { __skipAuthRefresh: true }),
+      ).rejects.toThrow()
+      expect(onRefresh).not.toHaveBeenCalled()
+      expect(onAuthFail).not.toHaveBeenCalled()
+    })
+
+    it('reverse self-check: a 401 WITHOUT the flag still triggers onRefresh', async () => {
+      getToken.mockReturnValue('old-token')
+      onRefresh.mockResolvedValue('new-token')
+      onAuthFail.mockReturnValue(undefined)
+      setupAxios(buildOpts())
+
+      let callCount = 0
+      mock.onGet('/api/protected').reply(() => {
+        callCount++
+        if (callCount === 1) return [401, {}]
+        return [200, { ok: true }]
+      })
+
+      const res = await http.get<{ ok: boolean }>('/api/protected')
+      expect(res.data.ok).toBe(true)
+      expect(onRefresh).toHaveBeenCalledTimes(1)
+    })
+
+    it('is a no-op for non-401 errors (409 still rejects with i18nKey)', async () => {
+      getToken.mockReturnValue(null)
+      onRefresh.mockResolvedValue('new-token')
+      onAuthFail.mockReturnValue(undefined)
+      setupAxios(buildOpts())
+
+      mock.onPost('/api/v1/access/setup/admin').reply(409, {
+        error: {
+          code: 'ERR_AUTH_ADMIN_ALREADY_EXISTS',
+          message: 'username taken',
+          details: [],
+        },
+      })
+
+      try {
+        await http.post('/api/v1/access/setup/admin', {}, { __skipAuthRefresh: true })
+        expect.fail('should have thrown')
+      } catch (err: unknown) {
+        expect((err as GoCellRequestError).i18nKey).toBe('errors.ERR_AUTH_ADMIN_ALREADY_EXISTS')
+        expect(onRefresh).not.toHaveBeenCalled()
+      }
+    })
+  })
 })
 
 // ── toI18nKey unit tests ────────────────────────────────────────────────────
