@@ -65,6 +65,9 @@ async function main(): Promise<void> {
       bannerComment: fileBanner(relSchema),
       declareExternallyReferenced: true,
       additionalProperties: false,
+      // 封堵 `const enum`（v15 默认 enableConstEnums:true）：const enum 是运行时值导出，
+      // 破坏 @gocell/contracts 零运行时承诺，且与 tsconfig isolatedModules:true 冲突致 typecheck 红。
+      enableConstEnums: false,
     })
 
     mkdirSync(dirname(outPath), { recursive: true })
