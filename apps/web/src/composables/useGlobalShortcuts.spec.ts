@@ -282,6 +282,71 @@ describe('useGlobalShortcuts', () => {
     document.body.removeChild(select)
   })
 
+  // ─── ARIA role input guard (AntD Select / combobox) ───────────────────────
+
+  it('ignores shortcuts when role="combobox" element is focused (AntD Select)', () => {
+    setup()
+    const spy = vi.spyOn(themeStore, 'toggleTheme')
+
+    const div = document.createElement('div')
+    div.setAttribute('role', 'combobox')
+    div.setAttribute('tabindex', '0')
+    document.body.appendChild(div)
+    div.focus()
+
+    fireKey('j', { metaKey: true })
+    expect(spy).not.toHaveBeenCalled()
+
+    document.body.removeChild(div)
+  })
+
+  it('ignores shortcuts when role="textbox" element is focused', () => {
+    setup()
+    const spy = vi.spyOn(themeStore, 'toggleTheme')
+
+    const div = document.createElement('div')
+    div.setAttribute('role', 'textbox')
+    div.setAttribute('tabindex', '0')
+    document.body.appendChild(div)
+    div.focus()
+
+    fireKey('j', { metaKey: true })
+    expect(spy).not.toHaveBeenCalled()
+
+    document.body.removeChild(div)
+  })
+
+  it('ignores shortcuts when role="searchbox" element is focused', () => {
+    setup()
+    uiStore.commandPaletteOpen = false
+    const div = document.createElement('div')
+    div.setAttribute('role', 'searchbox')
+    div.setAttribute('tabindex', '0')
+    document.body.appendChild(div)
+    div.focus()
+
+    fireKey('k', { metaKey: true })
+    expect(uiStore.commandPaletteOpen).toBe(false)
+
+    document.body.removeChild(div)
+  })
+
+  it('Esc still works when role="combobox" element is focused (closes palette)', () => {
+    setup()
+    uiStore.commandPaletteOpen = true
+
+    const div = document.createElement('div')
+    div.setAttribute('role', 'combobox')
+    div.setAttribute('tabindex', '0')
+    document.body.appendChild(div)
+    div.focus()
+
+    fireKey('Escape')
+    expect(uiStore.commandPaletteOpen).toBe(false)
+
+    document.body.removeChild(div)
+  })
+
   // ─── Cleanup ──────────────────────────────────────────────────────────────
 
   it('cleans up listeners when cleanup is called', () => {

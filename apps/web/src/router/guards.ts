@@ -12,8 +12,15 @@
  *    查到 false 才缓存，破除 first-run 完成后仍死循环重定向的问题。
  *  - auth: requiresAuth 默认 true；meta.requiresAuth === false 或 meta.public 放行
  *  - PDP: fail-closed；仅当明确 allowed 时通过（ComputedRef.value 读取）
+ *
+ * 顺序安全注解（Stage 1 → Stage 2）：
+ *  fetchSetupStatus 的 catch 块 return false（fail-open）是安全的，
+ *  前提是 auth gate（Stage 2）在 first-run gate（Stage 1）之后执行。
+ *  若 Stage 2 先于 Stage 1，fail-open 会让未初始化的后端绕过认证门。
+ *  两段顺序不可颠倒。
  */
 import type { Router } from 'vue-router'
+import { nextTick } from 'vue'
 import type { App } from 'vue'
 import { useAuthStore } from '@gocell/access'
 import { http } from '@gocell/request'
@@ -33,50 +40,74 @@ const SETUP_STATUS_URL = '/api/v1/access/setup/status'
  */
 let _setupStatusCache: false | undefined = undefined
 
+/**
+ * Single-flight: if concurrent navigations fire before the first request
+ * settles, they reuse the same in-flight Promise instead of spawning
+ * duplicate requests. Pattern mirrors @gocell/request refreshPromise.
+ */
+let _setupStatusPromise: Promise<boolean> | null = null
+
 async function fetchSetupStatus(): Promise<boolean> {
   // Only serve from cache when we know setup is done
   if (_setupStatusCache === false) return false
 
-  try {
-    const res = await http.get<HttpAuthSetupStatusV1Response>(SETUP_STATUS_URL)
-    // hasAdmin: true  → setup done → no redirect
-    // hasAdmin: false → needs setup → redirect
-    const needsSetup = !res.data.data.hasAdmin
-    if (!needsSetup) {
-      // Cache only the "setup done" result — prevents repeated API calls once setup completes
-      _setupStatusCache = false
+  // Reuse the in-flight request if one is already pending
+  if (_setupStatusPromise !== null) return _setupStatusPromise
+
+  _setupStatusPromise = (async () => {
+    try {
+      const res = await http.get<HttpAuthSetupStatusV1Response>(SETUP_STATUS_URL)
+      // hasAdmin: true  → setup done → no redirect
+      // hasAdmin: false → needs setup → redirect
+      const needsSetup = !res.data.data.hasAdmin
+      if (!needsSetup) {
+        // Cache only the "setup done" result — prevents repeated API calls once setup completes
+        _setupStatusCache = false
+      }
+      // needsSetup=true: do NOT cache — re-fetch on next navigation until setup completes
+      return needsSetup
+    } catch {
+      // Request failed / backend not reachable → fail-open: do not block app startup
+      // Do NOT cache failure — retry on next navigation
+      // Safety: fail-open is acceptable here ONLY because auth gate (Stage 2) runs AFTER
+      // this first-run gate (Stage 1). The two stages must never be reordered.
+      if (import.meta.env.DEV)
+        console.warn('[guards] setup/status request failed; skipping first-run gate')
+      return false
+    } finally {
+      // Clear the in-flight promise so future navigations re-fetch after failure
+      // (success with needsSetup=false is handled by _setupStatusCache)
+      _setupStatusPromise = null
     }
-    // needsSetup=true: do NOT cache — re-fetch on next navigation until setup completes
-    return needsSetup
-  } catch {
-    // Request failed / backend not reachable → fail-open: do not block app startup
-    // Do NOT cache failure — retry on next navigation
-    console.warn('[guards] setup/status request failed; skipping first-run gate')
-    return false
-  }
+  })()
+
+  return _setupStatusPromise
 }
 
 /**
- * Reset the first-run cache — intended for test isolation.
+ * Reset the first-run cache and in-flight promise — intended for test isolation.
  * @internal
  */
 export function _resetSetupStatusCache(): void {
   _setupStatusCache = undefined
+  _setupStatusPromise = null
 }
 
 /**
  * Register the three-stage beforeEach guard on the router.
  *
- * @param router   — Vue Router instance
- * @param app      — Vue App instance (used to inject PDP client via app.config.globalProperties)
+ * @param router    — Vue Router instance
+ * @param _app      — Vue App instance (reserved for future app.inject() wiring)
  * @param pdpClient — Optional PDP client override; used in tests. In production
  *                    main.ts provides it via app.provide() and passes it here.
  */
-export function registerGuards(router: Router, app: App, pdpClient?: PdpClient): void {
+export function registerGuards(router: Router, _app: App, pdpClient?: PdpClient): void {
   router.beforeEach(async (to) => {
     // ── Stage 1: first-run gate ─────────────────────────────────────────────
-    // Already on the setup or login page → skip to avoid infinite redirect
-    if (to.name !== 'first-run-setup' && to.name !== 'login') {
+    // PRD §5.1: needsSetup=true → always redirect to /first-run-setup, including
+    // when navigating to /login (first-run setup takes precedence over login page).
+    // Already on /first-run-setup → skip to avoid infinite redirect.
+    if (to.name !== 'first-run-setup') {
       const needsSetup = await fetchSetupStatus()
       if (needsSetup) {
         return { name: 'first-run-setup' }
@@ -84,7 +115,7 @@ export function registerGuards(router: Router, app: App, pdpClient?: PdpClient):
     }
 
     // ── Stage 2: auth gate ──────────────────────────────────────────────────
-    const isPublic = to.meta['requiresAuth'] === false || to.meta['public'] === true
+    const isPublic = to.meta.requiresAuth === false || to.meta.public === true
     if (!isPublic) {
       const authStore = useAuthStore()
       if (!authStore.isAuthenticated) {
@@ -93,19 +124,20 @@ export function registerGuards(router: Router, app: App, pdpClient?: PdpClient):
     }
 
     // ── Stage 3: PDP gate ───────────────────────────────────────────────────
-    const requiredAction = to.meta['requiredAction']
+    const requiredAction = to.meta.requiredAction
     if (typeof requiredAction === 'string') {
       // Resolve PDP client: explicit override > app global property > fail-closed
       const client: PdpClient | undefined = pdpClient
 
       if (!client) {
         // PDP client not wired yet (Batch 0 fallback) → fail-closed
-        console.warn('[guards] PDP client not provided; denying access to', to.path)
+        if (import.meta.env.DEV)
+          console.warn('[guards] PDP client not provided; denying access to', to.path)
         return { name: 'home' }
       }
 
       const resource =
-        typeof to.meta['requiredResource'] === 'string' ? to.meta['requiredResource'] : undefined
+        typeof to.meta.requiredResource === 'string' ? to.meta.requiredResource : undefined
 
       const allowed = client.can(requiredAction, resource)
       if (!allowed.value) {
@@ -117,6 +149,16 @@ export function registerGuards(router: Router, app: App, pdpClient?: PdpClient):
     return true
   })
 
-  // Keep app param referenced to satisfy TS — may be used in future for app.inject()
-  void app
+  // ── a11y: SPA 路由切换后焦点移到主内容区域 ─────────────────────────────────
+  // 无刷新路由切换不会触发浏览器默认的焦点重置；screen reader 用户需要显式提示
+  // 新视图已加载。将焦点移到 #shell-content（AppShell.vue <main tabindex="-1">）。
+  // 用 nextTick 确保 Vue 已更新 DOM，再移焦点。
+  // 注意：#shell-content 的 tabindex="-1" 在 @gocell/core/AppShell.vue 中设置；
+  //   此处用 DOM id 查询，不让 apps/web 反向依赖 @gocell/core 组件实现。
+  router.afterEach(() => {
+    void nextTick(() => {
+      const main = document.getElementById('shell-content')
+      main?.focus({ preventScroll: true })
+    })
+  })
 }

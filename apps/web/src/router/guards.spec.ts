@@ -158,6 +158,15 @@ describe('Router guards', () => {
       expect(router.currentRoute.value.name).toBe('first-run-setup')
     })
 
+    it('redirects /login to /first-run-setup when needsSetup=true (PRD §5.1)', async () => {
+      // PRD §5.1: 首次部署时访问 /login 也应重定向到 /first-run-setup
+      httpGet.mockResolvedValue({ data: { data: { hasAdmin: false } } })
+
+      await navigate(router, '/login')
+
+      expect(router.currentRoute.value.name).toBe('first-run-setup')
+    })
+
     it('caches setup status result to avoid repeated requests', async () => {
       httpGet.mockResolvedValue({ data: { data: { hasAdmin: true } } })
       authStore.setSession(makeSession())
@@ -194,6 +203,28 @@ describe('Router guards', () => {
       )
       // Stronger invariant: at least 2 calls after the initial router mount call
       expect(httpGet.mock.calls.length).toBeGreaterThanOrEqual(2)
+    })
+
+    it('concurrent navigations reuse the same in-flight request (single-flight)', async () => {
+      // Simulate slow response to ensure concurrent navigations overlap
+      let resolveRequest!: (v: { data: { data: { hasAdmin: boolean } } }) => void
+      const slowPromise = new Promise<{ data: { data: { hasAdmin: boolean } } }>((res) => {
+        resolveRequest = res
+      })
+      httpGet.mockReturnValueOnce(slowPromise)
+      authStore.setSession(makeSession())
+
+      // Fire two concurrent navigations before the first settles
+      const nav1 = navigate(router, '/protected')
+      const nav2 = navigate(router, '/')
+
+      // Now resolve the slow request
+      resolveRequest({ data: { data: { hasAdmin: true } } })
+      await nav1
+      await nav2
+
+      // Only one HTTP request should have been made (single-flight)
+      expect(httpGet).toHaveBeenCalledTimes(1)
     })
 
     it('does NOT cache on request failure — retries on next navigation', async () => {
@@ -364,6 +395,39 @@ describe('Router guards', () => {
 
       // Should land on login (auth gate), not home (PDP gate)
       expect(router.currentRoute.value.name).toBe('login')
+    })
+  })
+
+  // ─── afterEach: SPA focus management ─────────────────────────────────────
+
+  describe('afterEach: SPA a11y focus management', () => {
+    beforeEach(() => {
+      httpGet.mockResolvedValue({ data: { data: { hasAdmin: true } } })
+      authStore.setSession(makeSession())
+    })
+
+    it('moves focus to #shell-content after navigation', async () => {
+      const main = document.createElement('main')
+      main.id = 'shell-content'
+      main.setAttribute('tabindex', '-1')
+      document.body.appendChild(main)
+      const focusSpy = vi.spyOn(main, 'focus')
+
+      await navigate(router, '/protected')
+
+      // nextTick is needed; wait a tick to let afterEach fire
+      await new Promise((r) => setTimeout(r, 0))
+      expect(focusSpy).toHaveBeenCalled()
+
+      document.body.removeChild(main)
+    })
+
+    it('does not throw when #shell-content is absent (AppShell not mounted)', async () => {
+      // Ensure there is no #shell-content in the document
+      document.getElementById('shell-content')?.remove()
+
+      // Navigation should not throw even if focus target is missing
+      await expect(navigate(router, '/protected')).resolves.not.toThrow()
     })
   })
 })

@@ -142,4 +142,11 @@ describe('AppShell.vue', () => {
     const wrapper = mountShell()
     expect(wrapper.find('.shell__content').exists()).toBe(true)
   })
+
+  it('main#shell-content has tabindex="-1" for SPA focus management (a11y)', () => {
+    const wrapper = mountShell()
+    const main = wrapper.find('#shell-content')
+    expect(main.exists()).toBe(true)
+    expect(main.attributes('tabindex')).toBe('-1')
+  })
 })

@@ -46,11 +46,10 @@ function ruleIds(results: ESLint.LintResult[]): string[] {
 
 /** 仅取边界相关 ruleId */
 function boundaryRuleIds(results: ESLint.LintResult[]): string[] {
+  // 注意：import-x/no-restricted-paths 已从 eslint.config.js 中废弃移除（替换为
+  // no-restricted-imports regex 方案），此处不再过滤该废弃 ruleId。
   return ruleIds(results).filter(
-    (id) =>
-      id === 'import-x/no-restricted-paths' ||
-      id === 'no-restricted-imports' ||
-      id === 'import-x/no-cycle',
+    (id) => id === 'no-restricted-imports' || id === 'import-x/no-cycle',
   )
 }
 
@@ -183,6 +182,66 @@ describe('ESLint 边界锁 — 违规代码（必须被报错）', () => {
   it('devboard import @gocell/observability — 被拦', async () => {
     const code = `import { } from '@gocell/observability'\nexport const x = 1\n`
     const results = await lint(code, wt('packages/devboard/src/index.ts'))
+    expect(ruleIds(results)).toContain('no-restricted-imports')
+  })
+
+  // ── audit 包横向边界 ──────────────────────────────────────────────────────
+
+  it('audit import @gocell/access — 被拦', async () => {
+    const code = `import { } from '@gocell/access'\nexport const x = 1\n`
+    const results = await lint(code, wt('packages/audit/src/index.ts'))
+    expect(ruleIds(results)).toContain('no-restricted-imports')
+  })
+
+  it('audit import @gocell/config — 被拦', async () => {
+    const code = `import { } from '@gocell/config'\nexport const x = 1\n`
+    const results = await lint(code, wt('packages/audit/src/index.ts'))
+    expect(ruleIds(results)).toContain('no-restricted-imports')
+  })
+
+  it('audit import @gocell/observability — 被拦', async () => {
+    const code = `import { } from '@gocell/observability'\nexport const x = 1\n`
+    const results = await lint(code, wt('packages/audit/src/index.ts'))
+    expect(ruleIds(results)).toContain('no-restricted-imports')
+  })
+
+  // ── config 包横向边界 ────────────────────────────────────────────────────
+
+  it('config import @gocell/audit — 被拦', async () => {
+    const code = `import { } from '@gocell/audit'\nexport const x = 1\n`
+    const results = await lint(code, wt('packages/config/src/index.ts'))
+    expect(ruleIds(results)).toContain('no-restricted-imports')
+  })
+
+  it('config import @gocell/access — 被拦', async () => {
+    const code = `import { } from '@gocell/access'\nexport const x = 1\n`
+    const results = await lint(code, wt('packages/config/src/index.ts'))
+    expect(ruleIds(results)).toContain('no-restricted-imports')
+  })
+
+  it('config import @gocell/observability — 被拦', async () => {
+    const code = `import { } from '@gocell/observability'\nexport const x = 1\n`
+    const results = await lint(code, wt('packages/config/src/index.ts'))
+    expect(ruleIds(results)).toContain('no-restricted-imports')
+  })
+
+  // ── observability 包横向边界 ─────────────────────────────────────────────
+
+  it('observability import @gocell/access — 被拦', async () => {
+    const code = `import { } from '@gocell/access'\nexport const x = 1\n`
+    const results = await lint(code, wt('packages/observability/src/index.ts'))
+    expect(ruleIds(results)).toContain('no-restricted-imports')
+  })
+
+  it('observability import @gocell/audit — 被拦', async () => {
+    const code = `import { } from '@gocell/audit'\nexport const x = 1\n`
+    const results = await lint(code, wt('packages/observability/src/index.ts'))
+    expect(ruleIds(results)).toContain('no-restricted-imports')
+  })
+
+  it('observability import @gocell/config — 被拦', async () => {
+    const code = `import { } from '@gocell/config'\nexport const x = 1\n`
+    const results = await lint(code, wt('packages/observability/src/index.ts'))
     expect(ruleIds(results)).toContain('no-restricted-imports')
   })
 

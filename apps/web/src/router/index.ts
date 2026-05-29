@@ -10,6 +10,7 @@ const routes: RouteRecordRaw[] = [
     path: '/',
     name: 'home',
     component: () => import('../views/HomeView.vue'),
+    // TODO(Batch 7): Health Overview 需认证，改 requiresAuth: true
     meta: { requiresAuth: false },
   },
   {
@@ -31,4 +32,6 @@ const routes: RouteRecordRaw[] = [
 export const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes,
+  // SPA 路由切换时滚动到顶部（a11y：确保新视图从顶部开始）
+  scrollBehavior: () => ({ top: 0 }),
 })
