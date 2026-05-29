@@ -1,5 +1,5 @@
 # SC-009：契约只读守门（AI-robust Hard）。
-# 跑 `pnpm codegen` 后断言 packages/contracts/src/ 无 diff —— 业务包手改生成物即红。
+# 跑 `pnpm codegen` 后断言 packages/contracts/src/ 无 diff（含未提交的新增/删除）—— 业务包手改生成物即红。
 name: codegen-diff
 
 on:
@@ -11,31 +11,25 @@ jobs:
   codegen-readonly:
     runs-on: ubuntu-latest
     steps:
-      - name: Assert backend contracts token is configured
-        env:
-          GOCELL_CONTRACTS_TOKEN: ${{ secrets.GOCELL_CONTRACTS_TOKEN }}
-        run: |
-          if [ -z "$GOCELL_CONTRACTS_TOKEN" ]; then
-            echo "::error::GOCELL_CONTRACTS_TOKEN 未配置——codegen 守门需读取私有后端契约仓库 ghbvf/gocell。请在 repo secrets 配置只读 PAT。"
-            exit 1
-          fi
-
       - name: Checkout gocell-web
         uses: actions/checkout@v4
         with:
           path: gocell-web
 
-      # 后端契约源仓库，checkout 为 gocell-web 的同级目录（codegen 默认读 ../gocell/contracts）。
-      # 私有仓库需在 repo secrets 配置 GOCELL_CONTRACTS_TOKEN（具备 ghbvf/gocell 只读权限的 PAT）。
+      # 后端契约源仓库（公开仓库 ghbvf/gocell），checkout 为 gocell-web 的同级目录
+      # （codegen 默认读 ../gocell/contracts）。公开仓库无需 PAT，默认 GITHUB_TOKEN 即可拉取。
       - name: Checkout gocell (backend contracts)
         uses: actions/checkout@v4
         with:
           repository: ghbvf/gocell
           path: gocell
-          token: ${{ secrets.GOCELL_CONTRACTS_TOKEN }}
 
+      # gocell-web checkout 在子目录，runner 根无 package.json，显式钉死 pnpm 版本
+      # （须与 gocell-web/package.json#packageManager 的 pnpm@11.4.0 保持一致）。
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
+        with:
+          version: 11.4.0
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -52,11 +46,19 @@ jobs:
         run: pnpm codegen
         working-directory: gocell-web
 
-      - name: Assert contracts are read-only (no manual edits)
-        run: git diff --exit-code packages/contracts/src/
+      # 守门：codegen 产物须与提交完全一致。`git diff` 不报 untracked 新文件，故用
+      # `git status --porcelain` 同时覆盖 修改 / 新增 / 删除 三种漂移。
+      - name: Assert contracts are read-only (no manual edits / uncommitted)
+        run: |
+          if [ -n "$(git status --porcelain packages/contracts/src/)" ]; then
+            echo "::error::packages/contracts/src/ 与 codegen 输出不一致（含未提交的新增/修改/删除）。请本地跑 \`pnpm codegen\` 后提交。"
+            git status --porcelain packages/contracts/src/
+            git diff packages/contracts/src/
+            exit 1
+          fi
         working-directory: gocell-web
 
-      # 守门第二段：生成物未漂移后，确认下游消费端类型未被破坏（package-boundaries §CI 步骤 4）。
+      # 守门第二段：生成物未漂移后，确认下游消费端类型未被破坏（package-boundaries §CI 校验链路 步骤 4）。
       - name: Typecheck downstream consumers
         run: pnpm -w typecheck
         working-directory: gocell-web
