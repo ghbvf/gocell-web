@@ -26,6 +26,8 @@
     "baseUrl": ".",
     "paths": {
       "@gocell/core": ["packages/core/src/index.ts"],
+      "@gocell/core/composables": ["packages/core/src/composables/index.ts"],
+      "@gocell/core/stores": ["packages/core/src/stores/index.ts"],
       "@gocell/shared": ["packages/shared/src/index.ts"],
       "@gocell/contracts": ["packages/contracts/src/index.ts"],
       "@gocell/request": ["packages/request/src/index.ts"],

@@ -1,3 +1,7 @@
+import 'ant-design-vue/dist/reset.css'
+import '@gocell/core/styles/tokens.css'
+import '@gocell/core/styles/v1-linear.scss'
+
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import App from './App.vue'

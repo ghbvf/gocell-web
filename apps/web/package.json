@@ -12,11 +12,15 @@
   "dependencies": {
     "vue": "catalog:",
     "vue-router": "catalog:",
-    "pinia": "catalog:"
+    "pinia": "catalog:",
+    "ant-design-vue": "catalog:",
+    "@ant-design/icons-vue": "catalog:",
+    "@gocell/core": "workspace:*"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "catalog:",
     "@types/node": "catalog:",
-    "vite": "catalog:"
+    "vite": "catalog:",
+    "sass": "catalog:"
   }
 }
