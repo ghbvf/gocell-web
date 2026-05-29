@@ -288,6 +288,7 @@ const zhCN = {
       loading: '正在加载用户…',
       empty: '暂无用户',
       loadMore: '加载更多',
+      resultCount: '{count} 个用户',
       actions: {
         create: '新建用户',
         edit: '编辑',

@@ -295,6 +295,7 @@ const enUS = {
       loading: 'Loading users…',
       empty: 'No users yet',
       loadMore: 'Load more',
+      resultCount: '{count} users',
       actions: {
         create: 'New user',
         edit: 'Edit',

@@ -147,6 +147,25 @@ describe('IdentitiesView', () => {
     expect(panel.attributes('aria-labelledby')).toBe('identities-tab-users')
   })
 
+  it('wires the disabled service-accounts tab to a hidden placeholder tabpanel', () => {
+    const { wrapper } = mountView()
+    const tab = wrapper.get('#identities-tab-service-accounts')
+    expect(tab.attributes('aria-controls')).toBe('identities-panel-service-accounts')
+    const panel = wrapper.get('#identities-panel-service-accounts')
+    expect(panel.attributes('role')).toBe('tabpanel')
+    expect(panel.attributes('aria-labelledby')).toBe('identities-tab-service-accounts')
+    expect(panel.attributes('hidden')).toBeDefined()
+  })
+
+  it('announces the (filtered) result count via an sr-only live region', async () => {
+    const { wrapper } = mountView({
+      users: [mkUser({ id: 'u-1', username: 'alice' }), mkUser({ id: 'u-2', username: 'bob' })],
+    })
+    const live = wrapper.find('.sr-only[role="status"]')
+    expect(live.exists()).toBe(true)
+    expect(live.text()).toContain('access.identities.resultCount')
+  })
+
   it('shows a load-more control only when more pages exist and calls loadMore', async () => {
     const { wrapper, store } = mountView({ users: [mkUser()], hasMore: true })
     const btn = wrapper.find('[data-action="load-more"]')
