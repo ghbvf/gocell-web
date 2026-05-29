@@ -1,0 +1,22 @@
+# pnpm workspace — 平铺 monorepo（对标 vbenjs/vue-vben-admin）
+# catalog: 单点钉死全部第三方版本；业务包一律以 "catalog:" 引用，禁止硬编版本号。
+packages:
+  - apps/*
+  - packages/*
+  - tools/*
+
+# 仅放行 esbuild 平台二进制安装脚本（Vite 依赖）；其余包默认禁止 postinstall。
+allowBuilds:
+  esbuild: true
+
+catalog:
+  # —— 运行时核心 ——
+  vue: ^3.5.13
+  vue-router: ^4.5.0
+  pinia: ^3.0.1
+  # —— 构建 / 类型工具 ——
+  vite: ^6.0.7
+  '@vitejs/plugin-vue': ^5.2.1
+  typescript: ^5.7.3
+  vue-tsc: ^2.2.0
+  '@types/node': ^22.10.5
