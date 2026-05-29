@@ -7,10 +7,13 @@
     ".": "./src/index.ts",
     "./stores": "./src/stores/index.ts"
   },
-  "files": ["src"],
+  "files": [
+    "src"
+  ],
   "scripts": {
     "typecheck": "vue-tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@gocell/core": "workspace:*",

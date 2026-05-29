@@ -61,10 +61,10 @@ export function createPdpClient(): PdpClient {
     inFlight.add(key)
 
     try {
-      const res = await http.post<{ data: { allowed: boolean } }>(
-        '/api/v1/access/decide',
-        { action, resource },
-      )
+      const res = await http.post<{ data: { allowed: boolean } }>('/api/v1/access/decide', {
+        action,
+        resource,
+      })
       // Only true when backend explicitly says so — fail-closed
       const allowed = res.data.data.allowed === true
       store.entries[key] = { allowed, fetchedAt: Date.now() }

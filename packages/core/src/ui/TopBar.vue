@@ -112,7 +112,9 @@ function openCommandPalette(): void {
           stroke-linejoin="round"
           aria-hidden="true"
         >
-          <path d="M2 5h7 M5 2v3 M10 19l3-9 3 9 M12.7 15h4.6 M2 19a11 11 0 0 0 7-6.9c.5 1.3 1.3 2.5 2.3 3.5" />
+          <path
+            d="M2 5h7 M5 2v3 M10 19l3-9 3 9 M12.7 15h4.6 M2 19a11 11 0 0 0 7-6.9c.5 1.3 1.3 2.5 2.3 3.5"
+          />
         </svg>
         <span class="topbar__locale-label">{{ localeToggleLabel }}</span>
       </button>
@@ -121,6 +123,7 @@ function openCommandPalette(): void {
       <button
         type="button"
         class="v1-ghost topbar__action-btn"
+        data-testid="theme-toggle"
         :aria-label="themeToggleLabel"
         :aria-pressed="themeStore.theme === 'dark'"
         @click="toggleTheme"

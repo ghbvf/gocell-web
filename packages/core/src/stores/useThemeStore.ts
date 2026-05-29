@@ -100,10 +100,13 @@ export const useThemeStore = defineStore('core.theme', () => {
 
   // Derived AntD ThemeConfig — lives here so all callers share one computed
   // without a module-level singleton.
-  const themeConfig = computed<ThemeConfig>(() => ({
-    algorithm: theme.value === 'dark' ? antTheme.darkAlgorithm : antTheme.defaultAlgorithm,
-    token: buildSeedTokens(theme.value),
-  } as ThemeConfig))
+  const themeConfig = computed<ThemeConfig>(
+    () =>
+      ({
+        algorithm: theme.value === 'dark' ? antTheme.darkAlgorithm : antTheme.defaultAlgorithm,
+        token: buildSeedTokens(theme.value),
+      }) as ThemeConfig,
+  )
 
   // Register OS-level change listener only when user has NOT made an explicit
   // localStorage choice. Flag prevents duplicate registration across HMR.

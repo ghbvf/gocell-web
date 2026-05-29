@@ -54,7 +54,9 @@ function collapse(): void {
           stroke-linejoin="round"
           aria-hidden="true"
         >
-          <path d="M12 2v4 M5 8h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2 M9 14h.01 M15 14h.01 M9 17h6" />
+          <path
+            d="M12 2v4 M5 8h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2 M9 14h.01 M15 14h.01 M9 17h6"
+          />
         </svg>
         <span class="ai-bar__label">{{ t('shell.ai.name') }}</span>
       </button>

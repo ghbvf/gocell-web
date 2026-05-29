@@ -39,10 +39,13 @@ function mountTopBar(path = '/') {
   const pinia = createPinia()
   setActivePinia(pinia)
 
-  return { wrapper: mount(TopBar, {
-    global: { plugins: [router, i18n, pinia] },
-    attachTo: document.body,
-  }), router }
+  return {
+    wrapper: mount(TopBar, {
+      global: { plugins: [router, i18n, pinia] },
+      attachTo: document.body,
+    }),
+    router,
+  }
 }
 
 describe('TopBar.vue', () => {
@@ -100,9 +103,9 @@ describe('TopBar.vue', () => {
   describe('theme toggle', () => {
     it('theme button has aria-label', () => {
       const { wrapper } = mountTopBar()
-      const themeBtn = wrapper.findAll('button').find(
-        (b) => b.attributes('aria-label') === '暗色' || b.attributes('aria-label') === '亮色',
-      )
+      const themeBtn = wrapper
+        .findAll('button')
+        .find((b) => b.attributes('aria-label') === '暗色' || b.attributes('aria-label') === '亮色')
       expect(themeBtn).toBeDefined()
       expect(themeBtn!.exists()).toBe(true)
     })
@@ -122,9 +125,9 @@ describe('TopBar.vue', () => {
       const themeStore = useThemeStore()
       const initialTheme = themeStore.theme
 
-      const themeBtn = wrapper.findAll('button').find(
-        (b) => b.attributes('aria-label') === '暗色' || b.attributes('aria-label') === '亮色',
-      )
+      const themeBtn = wrapper
+        .findAll('button')
+        .find((b) => b.attributes('aria-label') === '暗色' || b.attributes('aria-label') === '亮色')
 
       await themeBtn!.trigger('click')
 
@@ -135,9 +138,9 @@ describe('TopBar.vue', () => {
   describe('locale toggle', () => {
     it('locale button has aria-label', () => {
       const { wrapper } = mountTopBar()
-      const localeBtn = wrapper.findAll('button').find(
-        (b) => b.attributes('aria-label') === '切换语言',
-      )
+      const localeBtn = wrapper
+        .findAll('button')
+        .find((b) => b.attributes('aria-label') === '切换语言')
       expect(localeBtn).toBeDefined()
     })
 
@@ -156,9 +159,9 @@ describe('TopBar.vue', () => {
       const localeStore = useLocaleStore()
       expect(localeStore.locale).toBe('zh-CN')
 
-      const localeBtn = wrapper.findAll('button').find(
-        (b) => b.attributes('aria-label') === '切换语言',
-      )
+      const localeBtn = wrapper
+        .findAll('button')
+        .find((b) => b.attributes('aria-label') === '切换语言')
       await localeBtn!.trigger('click')
 
       expect(localeStore.locale).toBe('en-US')
@@ -189,9 +192,9 @@ describe('TopBar.vue', () => {
         attachTo: document.body,
       })
 
-      const btn = wrapper.findAll('button').find(
-        (b) => b.attributes('aria-label') === '暗色' || b.attributes('aria-label') === '亮色',
-      )
+      const btn = wrapper
+        .findAll('button')
+        .find((b) => b.attributes('aria-label') === '暗色' || b.attributes('aria-label') === '亮色')
       expect(btn?.exists()).toBe(true)
     })
 
@@ -209,9 +212,9 @@ describe('TopBar.vue', () => {
         attachTo: document.body,
       })
 
-      const btn = wrapper.findAll('button').find(
-        (b) => b.attributes('aria-label') === '暗色' || b.attributes('aria-label') === '亮色',
-      )
+      const btn = wrapper
+        .findAll('button')
+        .find((b) => b.attributes('aria-label') === '暗色' || b.attributes('aria-label') === '亮色')
       expect(btn?.exists()).toBe(true)
     })
   })

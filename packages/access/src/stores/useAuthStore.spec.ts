@@ -117,19 +117,19 @@ describe('useAuthStore', () => {
       const result = await store.refresh()
 
       // Validates that the internal refreshToken was correctly stored from setSession
-      expect(mockHttp.post).toHaveBeenCalledWith(
-        '/api/v1/access/sessions/refresh',
-        { refreshToken: 'refresh-tok-1' },
-      )
+      expect(mockHttp.post).toHaveBeenCalledWith('/api/v1/access/sessions/refresh', {
+        refreshToken: 'refresh-tok-1',
+      })
       expect(result).toBe('access-tok-new')
       expect(store.accessToken).toBe('access-tok-new')
       // refreshToken is internal; verify it works by doing a second refresh
-      mockHttp.post.mockResolvedValueOnce({ data: { data: { ...newPayload, accessToken: 'access-tok-3' } } })
+      mockHttp.post.mockResolvedValueOnce({
+        data: { data: { ...newPayload, accessToken: 'access-tok-3' } },
+      })
       await store.refresh()
-      expect(mockHttp.post).toHaveBeenLastCalledWith(
-        '/api/v1/access/sessions/refresh',
-        { refreshToken: 'refresh-tok-new' },
-      )
+      expect(mockHttp.post).toHaveBeenLastCalledWith('/api/v1/access/sessions/refresh', {
+        refreshToken: 'refresh-tok-new',
+      })
     })
 
     it('clearSession and returns null when http.post rejects', async () => {
@@ -149,7 +149,9 @@ describe('useAuthStore', () => {
     it('localStorage still empty after successful refresh', async () => {
       const store = useAuthStore()
       store.setSession(sessionPayload)
-      mockHttp.post.mockResolvedValueOnce({ data: { data: { ...sessionPayload, accessToken: 'tok-2' } } })
+      mockHttp.post.mockResolvedValueOnce({
+        data: { data: { ...sessionPayload, accessToken: 'tok-2' } },
+      })
       await store.refresh()
       expect(localStorage.length).toBe(0)
     })

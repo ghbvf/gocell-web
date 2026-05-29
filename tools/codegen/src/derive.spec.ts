@@ -41,7 +41,10 @@ describe('buildExports — 全局去重（首现胜出）', () => {
   it('shared 排在 http 前 → 共享类型归属 shared 规范源，http 内联副本被丢弃', () => {
     const files: GeneratedModule[] = [
       { module: './shared/cas/v1/expected_version', names: ['ExpectedVersion'] },
-      { module: './http/config/rollback/v1/request', names: ['ExpectedVersion', 'RollbackRequest'] },
+      {
+        module: './http/config/rollback/v1/request',
+        names: ['ExpectedVersion', 'RollbackRequest'],
+      },
     ]
     const { moduleExports, shadowed } = buildExports(files)
     expect(moduleExports.get('./shared/cas/v1/expected_version')).toEqual(['ExpectedVersion'])

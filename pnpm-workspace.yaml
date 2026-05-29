@@ -10,6 +10,7 @@ allowBuilds:
   '@parcel/watcher': true
   core-js: true
   esbuild: true
+  unrs-resolver: true
 
 catalog:
   # —— 运行时核心 ——
@@ -36,6 +37,21 @@ catalog:
   # —— 测试 ——
   vitest: ^3.0.4
   '@vue/test-utils': ^2.4.6
+  '@pinia/testing': ^1.0.0
   jsdom: ^25.0.1
   '@vitest/coverage-v8': ^3.0.4
   axios-mock-adapter: ^2.1.0
+  '@playwright/test': ^1.49.1
+  # —— Lint / format / git hooks（边界双锁 + SC-010）——
+  eslint: ^9.18.0
+  '@eslint/js': ^9.18.0
+  typescript-eslint: ^8.20.0
+  eslint-plugin-vue: ^9.32.0
+  vue-eslint-parser: ^9.4.3
+  eslint-plugin-import-x: ^4.6.1
+  eslint-import-resolver-typescript: ^3.7.0
+  eslint-plugin-vuejs-accessibility: ^2.4.1
+  eslint-config-prettier: ^9.1.0
+  prettier: ^3.4.2
+  husky: ^9.1.7
+  lint-staged: ^15.3.0

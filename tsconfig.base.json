@@ -31,6 +31,7 @@
       "@gocell/core/components": ["packages/core/src/components/index.ts"],
       "@gocell/core/ui": ["packages/core/src/ui/index.ts"],
       "@gocell/core/i18n": ["packages/core/src/i18n/index.ts"],
+      "@gocell/core/testing": ["packages/core/src/testing/index.ts"],
       "@gocell/shared": ["packages/shared/src/index.ts"],
       "@gocell/contracts": ["packages/contracts/src/index.ts"],
       "@gocell/request": ["packages/request/src/index.ts"],

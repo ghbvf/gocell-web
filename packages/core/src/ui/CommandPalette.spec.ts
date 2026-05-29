@@ -42,7 +42,13 @@ describe('CommandPalette.vue', () => {
   })
 
   afterEach(() => {
-    wrappers.forEach((w) => { try { w.unmount() } catch { /* ignore */ } })
+    wrappers.forEach((w) => {
+      try {
+        w.unmount()
+      } catch {
+        /* ignore */
+      }
+    })
     wrappers.length = 0
     document.body.innerHTML = ''
   })
@@ -71,9 +77,7 @@ describe('CommandPalette.vue', () => {
       const overlay = queryBody('.cmd-overlay')
       expect(overlay).not.toBeNull()
 
-      overlay!.dispatchEvent(
-        new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }),
-      )
+      overlay!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
       await nextTick()
 
       expect(wrapper.emitted('update:open')).toBeTruthy()

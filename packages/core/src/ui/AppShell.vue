@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import Sidebar from './Sidebar.vue'
 import TopBar from './TopBar.vue'
@@ -12,19 +12,50 @@ import AIBottomBar from './AIBottomBar.vue'
  * CSS grid: sidebar (232px fixed) | main area (flex: 1)
  * Main area: topbar (44px) | content (flex: 1) | AIBottomBar (32px)
  *
- * Sidebar collapsed state is managed locally by AppShell (single source of truth).
- * Command palette open state is also managed here and threaded to both
- * Sidebar (search button) and TopBar (⌘K button).
+ * Sidebar collapsed state and command palette open state are managed internally.
+ * Both can be controlled externally via v-model:sidebarCollapsed and
+ * v-model:commandPaletteOpen — when the external model is provided (non-undefined),
+ * the internal state follows it and changes are emitted back (controlled mode).
  *
  * When the command palette is open, Sidebar and shell__main receive `inert`
  * to prevent AT/keyboard from reaching content behind the dialog (ARIA APG).
  */
 
+const props = defineProps<{
+  /** External control for command palette open state (v-model:commandPaletteOpen). */
+  commandPaletteOpen?: boolean
+  /** External control for sidebar collapsed state (v-model:sidebarCollapsed). */
+  sidebarCollapsed?: boolean
+}>()
+
+const emit = defineEmits<{
+  (e: 'update:commandPaletteOpen', value: boolean): void
+  (e: 'update:sidebarCollapsed', value: boolean): void
+}>()
+
 const { t } = useI18n()
 
+// Internal state — authoritative when no external prop is supplied
 const sidebarCollapsed = ref(false)
 const commandPaletteOpen = ref(false)
 const commandPaletteRef = ref<InstanceType<typeof CommandPalette>>()
+
+// When external prop changes, sync internal state (controlled mode)
+watch(
+  () => props.sidebarCollapsed,
+  (v) => {
+    if (v !== undefined) sidebarCollapsed.value = v
+  },
+  { immediate: true },
+)
+
+watch(
+  () => props.commandPaletteOpen,
+  (v) => {
+    if (v !== undefined) commandPaletteOpen.value = v
+  },
+  { immediate: true },
+)
 
 /**
  * When commandPalette is open, returns `true` to set inert on background elements.
@@ -40,6 +71,8 @@ const backgroundInert = computed<true | undefined>(() =>
 /**
  * Open the command palette via the exposed open() method so that triggerRef
  * is properly set and focus returns to the triggering element on close.
+ * Opening through the child cascades back via @update:open → setCommandPaletteOpen,
+ * which also emits update:commandPaletteOpen for external v-model consumers.
  */
 function openCommandPalette(): void {
   commandPaletteRef.value?.open()
@@ -47,6 +80,12 @@ function openCommandPalette(): void {
 
 function setCommandPaletteOpen(value: boolean): void {
   commandPaletteOpen.value = value
+  emit('update:commandPaletteOpen', value)
+}
+
+function setSidebarCollapsed(value: boolean): void {
+  sidebarCollapsed.value = value
+  emit('update:sidebarCollapsed', value)
 }
 </script>
 
@@ -57,17 +96,16 @@ function setCommandPaletteOpen(value: boolean): void {
     <Sidebar
       :collapsed="sidebarCollapsed"
       :inert="backgroundInert"
-      @update:collapsed="sidebarCollapsed = $event"
+      @update:collapsed="setSidebarCollapsed($event)"
       @open-command-palette="openCommandPalette"
     />
 
-    <div
-      class="shell__main"
-      :inert="backgroundInert"
-    >
+    <div class="shell__main" :inert="backgroundInert">
       <TopBar @open-command-palette="openCommandPalette" />
 
-      <main id="shell-content" class="shell__content">
+      <!-- tabindex="-1" allows programmatic focus from router afterEach (SPA a11y focus management) -->
+      <!-- See apps/web/src/router/guards.ts afterEach — focus is moved here on each navigation -->
+      <main id="shell-content" class="shell__content" tabindex="-1">
         <slot />
       </main>
 

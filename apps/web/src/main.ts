@@ -6,10 +6,28 @@ import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import App from './App.vue'
 import { router } from './router'
-import { createGocellI18n } from '@gocell/core'
+import { createGocellI18n, PDP_INJECTION_KEY } from '@gocell/core'
+import { createPdpClient } from '@gocell/access'
+import { configureAxios } from './bootstrap'
+import { registerGuards } from './router/guards'
 
 const app = createApp(App)
+
+// 1. Pinia first — authStore depends on it
 app.use(createPinia())
-app.use(router)
+
+// 2. Axios: auth callbacks wired to authStore
+configureAxios(router)
+
+// 3. i18n + router
 app.use(createGocellI18n())
+app.use(router)
+
+// 4. PDP client provided for Can / useDecision in the whole app
+const pdpClient = createPdpClient()
+app.provide(PDP_INJECTION_KEY, pdpClient)
+
+// 5. Route guards (three-stage: first-run → auth → PDP)
+registerGuards(router, app, pdpClient)
+
 app.mount('#app')

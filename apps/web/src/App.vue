@@ -3,6 +3,8 @@ import { watch } from 'vue'
 import { ConfigProvider } from 'ant-design-vue'
 import { useI18n } from 'vue-i18n'
 import { useTheme, useThemeTokens, useLocaleStore, AppShell } from '@gocell/core'
+import { useUiStore } from './stores/useUiStore'
+import { useGlobalShortcuts } from './composables/useGlobalShortcuts'
 
 // Initialize theme (applies data-theme to <html>)
 useTheme()
@@ -21,13 +23,24 @@ watch(
   { immediate: true },
 )
 
+// Global UI state (command palette + sidebar) shared between AppShell and shortcuts
+const uiStore = useUiStore()
+
+// Register global keyboard shortcuts.
+// useGlobalShortcuts registers cleanup via onScopeDispose internally,
+// so no explicit onBeforeUnmount teardown is needed here.
+useGlobalShortcuts()
+
 // Note: AntD ConfigProvider locale is not wired in Batch 0.
 // It will be added in a subsequent batch with zh-CN/en-US locale objects.
 </script>
 
 <template>
   <ConfigProvider :theme="themeConfig">
-    <AppShell>
+    <AppShell
+      v-model:command-palette-open="uiStore.commandPaletteOpen"
+      v-model:sidebar-collapsed="uiStore.sidebarCollapsed"
+    >
       <RouterView />
     </AppShell>
   </ConfigProvider>

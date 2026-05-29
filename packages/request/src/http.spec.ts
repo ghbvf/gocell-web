@@ -1,13 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import axios from 'axios'
 import MockAdapter from 'axios-mock-adapter'
-import { http, setupAxios } from './http'
+import { http, setupAxios, _resetForTesting } from './http'
 import type { SetupAxiosOptions, GoCellRequestError } from './types'
-
-// Re-create a fresh axios instance for each test to avoid shared interceptor state.
-// We exercise `setupAxios` on the exported `http` instance but reset it via the
-// internal `_resetForTesting` helper exposed only in tests.
-import { _resetForTesting } from './http'
 
 // The real refresh URL used by the backend
 const REAL_REFRESH_URL = '/api/v1/access/sessions/refresh'
@@ -365,16 +360,8 @@ describe('toI18nKey', () => {
       })(),
       'errors.network',
     ],
-    [
-      'non-axios error (plain Error)',
-      new Error('something went wrong'),
-      'errors.unknown',
-    ],
-    [
-      'null value',
-      null,
-      'errors.unknown',
-    ],
+    ['non-axios error (plain Error)', new Error('something went wrong'), 'errors.unknown'],
+    ['null value', null, 'errors.unknown'],
   ] as const)('%s', (_label, err, expected) => {
     expect(toI18nKey(err)).toBe(expected)
   })

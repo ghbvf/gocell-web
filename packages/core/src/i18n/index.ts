@@ -23,8 +23,7 @@ export type { AppLocale }
 export function createGocellI18n(): ReturnType<typeof createI18n> {
   const STORAGE_KEY = 'gocell-locale'
   const stored = localStorage.getItem(STORAGE_KEY)
-  const initialLocale: AppLocale =
-    stored === 'zh-CN' || stored === 'en-US' ? stored : 'zh-CN'
+  const initialLocale: AppLocale = stored === 'zh-CN' || stored === 'en-US' ? stored : 'zh-CN'
 
   const messages: Record<AppLocale, MessageSchema> = {
     'zh-CN': zhCN,
