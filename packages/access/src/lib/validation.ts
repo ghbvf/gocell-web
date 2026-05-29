@@ -11,8 +11,9 @@
 // rejection of control chars in bootstrap creds), so no-control-regex is moot.
 // eslint-disable-next-line no-control-regex
 const CONTROL_CHAR_RE = /[\x00-\x08\x0E-\x1F\x7F]/
-const USERNAME_RE = /^[a-z0-9_.-]{3,32}$/i
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+// Exported for reuse by identity-management validators (same username/email rules).
+export const USERNAME_RE = /^[a-z0-9_.-]{3,32}$/i
+export const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 /** Trim leading/trailing whitespace (mirrors backend TrimSpace on bootstrap creds). */
 function trim(s: string): string {

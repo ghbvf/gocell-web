@@ -30,13 +30,14 @@ const routes: RouteRecordRaw[] = [
         meta: { requiresAuth: false },
       },
       {
-        // Access · Identities (Batch 2). PR-09 ships the read-only list behind
-        // the auth gate; PR-10 adds meta.requiredAction (PDP fail-closed gate)
-        // once the operation modals + <Can> land. Own async chunk via subpath.
+        // Access · Identities (Batch 2). Behind the auth gate + the PDP gate:
+        // `requiredAction` makes the route fail-closed (guards.ts redirects home
+        // until the PDP backend allows `read` on `identity`; BR-004 stub denies
+        // until /access/decide lands). Own async chunk via the subpath export.
         path: 'access/identities',
         name: 'access-identities',
         component: () => import('@gocell/access/views/identities'),
-        meta: { requiresAuth: true },
+        meta: { requiresAuth: true, requiredAction: 'read', requiredResource: 'identity' },
       },
     ],
   },

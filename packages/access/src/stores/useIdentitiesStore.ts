@@ -1,17 +1,34 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { toI18nKey } from '@gocell/request'
-import { listUsers, type Identity } from '../api/identities'
+import type {
+  HttpAuthUserCreateV1Request,
+  HttpAuthUserPatchV1Request,
+  HttpAuthUserChangePasswordV1Request,
+} from '@gocell/contracts'
+import {
+  listUsers,
+  createUser,
+  patchUser,
+  deleteUser,
+  lockUser,
+  unlockUser,
+  changeUserPassword,
+  type Identity,
+} from '../api/identities'
 
 /** Server page size for the cursor-paginated user list (BR-005). */
 const PAGE_SIZE = 50
 
 /**
- * access.identities — user-identity list state (MVP: `type=user`).
+ * access.identities — user-identity state (MVP: `type=user`).
  *
  * Owns server-list state (rows, cursor, loading, error) + a client-side
- * quick-filter. Mutation actions (create/lock/unlock/change-password/…) land
- * with the operation modals (PR-10); this slice is read-only.
+ * quick-filter, plus the mutation actions backing the operation modals.
+ *
+ * List fetches swallow errors into `errorKey` (rendered inline on the page).
+ * Mutations DO NOT swallow — they re-throw so the triggering modal can show the
+ * error and stay open; on success they re-fetch the list as the source of truth.
  */
 export const useIdentitiesStore = defineStore('access.identities', () => {
   // ─── state ──────────────────────────────────────────────────────────────
@@ -32,7 +49,7 @@ export const useIdentitiesStore = defineStore('access.identities', () => {
     )
   })
 
-  // ─── actions ──────────────────────────────────────────────────────────────
+  // ─── read actions ───────────────────────────────────────────────────────
 
   /** Fetch the first page, replacing any current rows. */
   async function fetchList(): Promise<void> {
@@ -68,6 +85,41 @@ export const useIdentitiesStore = defineStore('access.identities', () => {
     }
   }
 
+  // ─── mutation actions (re-throw on failure; refetch on success) ───────────
+
+  async function create(body: HttpAuthUserCreateV1Request): Promise<void> {
+    await createUser(body)
+    await fetchList()
+  }
+
+  async function edit(id: string, body: HttpAuthUserPatchV1Request): Promise<void> {
+    await patchUser(id, body)
+    await fetchList()
+  }
+
+  async function lock(id: string): Promise<void> {
+    await lockUser(id)
+    await fetchList()
+  }
+
+  async function unlock(id: string): Promise<void> {
+    await unlockUser(id)
+    await fetchList()
+  }
+
+  async function remove(id: string): Promise<void> {
+    await deleteUser(id)
+    await fetchList()
+  }
+
+  /** Change password — no list refetch (the row's visible fields don't change). */
+  async function changePassword(
+    id: string,
+    body: HttpAuthUserChangePasswordV1Request,
+  ): Promise<void> {
+    await changeUserPassword(id, body)
+  }
+
   return {
     // state
     users,
@@ -78,8 +130,15 @@ export const useIdentitiesStore = defineStore('access.identities', () => {
     filter,
     // getters
     filteredUsers,
-    // actions
+    // read actions
     fetchList,
     loadMore,
+    // mutation actions
+    create,
+    edit,
+    lock,
+    unlock,
+    remove,
+    changePassword,
   }
 })

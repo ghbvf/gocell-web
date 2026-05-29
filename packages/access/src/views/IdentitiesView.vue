@@ -4,17 +4,24 @@
  *
  * Reads the cursor-paginated user list from `useIdentitiesStore` and renders a
  * hand-rolled semantic table + client-side quick-filter (BR-005: no server
- * filter yet). Row actions (edit / lock / change-password …) and their `<Can>`
- * gating land with the operation modals (PR-10); this page is read-only.
+ * filter yet). Row operations (create / edit / change-password / lock / unlock /
+ * delete) open modals; every action button is gated by `<Can>` (fail-closed:
+ * hidden unless the PDP allows), and the route also carries `meta.requiredAction`.
  *
  * The "Service accounts" tab is a disabled placeholder (FR-030): MVP manages
  * only user identities; service-account / cell-as-principal support is Wave 2+.
  */
-import { onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
+import { Can } from '@gocell/core'
+import { isGoCellRequestError } from '@gocell/request'
 import { useIdentitiesStore } from '../stores/useIdentitiesStore'
+import type { Identity } from '../api/identities'
 import IdentityStatusPill from '../components/IdentityStatusPill.vue'
+import IdentityFormModal from '../components/IdentityFormModal.vue'
+import ChangePasswordModal from '../components/ChangePasswordModal.vue'
+import ConfirmDialog from '../components/ConfirmDialog.vue'
 
 const { t } = useI18n()
 const store = useIdentitiesStore()
@@ -30,13 +37,79 @@ function formatDate(iso: string): string {
   if (Number.isNaN(d.getTime())) return iso
   return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(d)
 }
+
+// ─── operation modals ───────────────────────────────────────────────────────
+const formOpen = ref(false)
+const formUser = ref<Identity | null>(null)
+const pwOpen = ref(false)
+const pwUser = ref<Identity | null>(null)
+
+type ConfirmAction = 'lock' | 'unlock' | 'delete'
+const confirmState = ref<{ action: ConfirmAction; user: Identity } | null>(null)
+const confirmBusy = ref(false)
+const confirmErrorKey = ref<string | null>(null)
+
+function openCreate(): void {
+  formUser.value = null
+  formOpen.value = true
+}
+function openEdit(user: Identity): void {
+  formUser.value = user
+  formOpen.value = true
+}
+function openChangePassword(user: Identity): void {
+  pwUser.value = user
+  pwOpen.value = true
+}
+function askConfirm(action: ConfirmAction, user: Identity): void {
+  confirmErrorKey.value = null
+  confirmState.value = { action, user }
+}
+
+const confirmAction = computed(() => confirmState.value?.action ?? null)
+const confirmTitleKey = computed(() =>
+  confirmAction.value ? `access.identities.confirm.${confirmAction.value}.title` : '',
+)
+const confirmMessageKey = computed(() =>
+  confirmAction.value ? `access.identities.confirm.${confirmAction.value}.message` : '',
+)
+const confirmConfirmKey = computed(() =>
+  confirmAction.value ? `access.identities.confirm.${confirmAction.value}.confirm` : '',
+)
+const confirmDanger = computed(() => confirmAction.value === 'delete')
+
+async function onConfirm(): Promise<void> {
+  if (!confirmState.value) return
+  const { action, user } = confirmState.value
+  confirmBusy.value = true
+  confirmErrorKey.value = null
+  try {
+    if (action === 'lock') await store.lock(user.id)
+    else if (action === 'unlock') await store.unlock(user.id)
+    else await store.remove(user.id)
+    confirmState.value = null
+  } catch (err: unknown) {
+    confirmErrorKey.value = isGoCellRequestError(err)
+      ? (err.i18nKey ?? 'errors.unknown')
+      : 'errors.unknown'
+  } finally {
+    confirmBusy.value = false
+  }
+}
 </script>
 
 <template>
   <section class="identities">
     <header class="identities__header">
-      <h1 class="identities__title">{{ t('access.identities.title') }}</h1>
-      <p class="identities__subtitle">{{ t('access.identities.subtitle') }}</p>
+      <div>
+        <h1 class="identities__title">{{ t('access.identities.title') }}</h1>
+        <p class="identities__subtitle">{{ t('access.identities.subtitle') }}</p>
+      </div>
+      <Can action="create" resource="identity">
+        <button type="button" class="identities__create" data-action="create" @click="openCreate">
+          {{ t('access.identities.actions.create') }}
+        </button>
+      </Can>
     </header>
 
     <div class="identities__tabs" role="tablist" :aria-label="t('access.identities.tabs.label')">
@@ -106,6 +179,7 @@ function formatDate(iso: string): string {
               <th scope="col">{{ t('access.identities.table.email') }}</th>
               <th scope="col">{{ t('access.identities.table.status') }}</th>
               <th scope="col">{{ t('access.identities.table.createdAt') }}</th>
+              <th scope="col">{{ t('access.identities.table.actions') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -115,6 +189,37 @@ function formatDate(iso: string): string {
               <td class="identities__cell"><IdentityStatusPill :status="u.status" /></td>
               <td class="identities__cell">
                 <time :datetime="u.createdAt">{{ formatDate(u.createdAt) }}</time>
+              </td>
+              <td class="identities__cell identities__cell--actions">
+                <Can action="update" resource="identity">
+                  <button type="button" class="identities__action" @click="openEdit(u)">
+                    {{ t('access.identities.actions.edit') }}
+                  </button>
+                </Can>
+                <Can action="change-password" resource="identity">
+                  <button type="button" class="identities__action" @click="openChangePassword(u)">
+                    {{ t('access.identities.actions.changePassword') }}
+                  </button>
+                </Can>
+                <Can v-if="u.status !== 'locked'" action="lock" resource="identity">
+                  <button type="button" class="identities__action" @click="askConfirm('lock', u)">
+                    {{ t('access.identities.actions.lock') }}
+                  </button>
+                </Can>
+                <Can v-else action="unlock" resource="identity">
+                  <button type="button" class="identities__action" @click="askConfirm('unlock', u)">
+                    {{ t('access.identities.actions.unlock') }}
+                  </button>
+                </Can>
+                <Can action="delete" resource="identity">
+                  <button
+                    type="button"
+                    class="identities__action identities__action--danger"
+                    @click="askConfirm('delete', u)"
+                  >
+                    {{ t('access.identities.actions.delete') }}
+                  </button>
+                </Can>
               </td>
             </tr>
           </tbody>
@@ -132,6 +237,30 @@ function formatDate(iso: string): string {
         </button>
       </template>
     </div>
+
+    <IdentityFormModal
+      :open="formOpen"
+      :user="formUser"
+      @close="formOpen = false"
+      @saved="formOpen = false"
+    />
+    <ChangePasswordModal
+      :open="pwOpen"
+      :user="pwUser"
+      @close="pwOpen = false"
+      @saved="pwOpen = false"
+    />
+    <ConfirmDialog
+      :open="confirmState !== null"
+      :title-key="confirmTitleKey"
+      :message-key="confirmMessageKey"
+      :confirm-key="confirmConfirmKey"
+      :danger="confirmDanger"
+      :busy="confirmBusy"
+      :error-key="confirmErrorKey"
+      @confirm="onConfirm"
+      @cancel="confirmState = null"
+    />
   </section>
 </template>
 
@@ -142,6 +271,10 @@ function formatDate(iso: string): string {
 }
 
 .identities__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
   margin-bottom: 20px;
 }
 
@@ -158,6 +291,27 @@ function formatDate(iso: string): string {
   margin: 0;
   font-size: 13px;
   color: var(--fg-muted);
+}
+
+.identities__create {
+  flex-shrink: 0;
+  height: 34px;
+  padding: 0 14px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--bg);
+  background: var(--fg);
+  border: 1px solid var(--fg);
+  border-radius: var(--r);
+}
+
+.identities__create:hover {
+  background: oklch(from var(--fg) calc(l + 0.08) c h);
+}
+
+.identities__create:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .identities__tabs {
@@ -274,6 +428,35 @@ function formatDate(iso: string): string {
 .identities__cell time {
   color: var(--fg-muted);
   font-variant-numeric: tabular-nums;
+}
+
+.identities__cell--actions {
+  display: flex;
+  gap: 6px;
+}
+
+.identities__action {
+  height: 28px;
+  padding: 0 10px;
+  font-size: 12px;
+  color: var(--fg-muted);
+  background: var(--bg-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+}
+
+.identities__action:hover {
+  color: var(--fg);
+  background: var(--bg-sunken);
+}
+
+.identities__action:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.identities__action--danger {
+  color: var(--err);
 }
 
 .identities__more {
