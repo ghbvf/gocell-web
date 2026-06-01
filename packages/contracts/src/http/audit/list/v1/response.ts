@@ -11,6 +11,12 @@ export interface HttpAuditListV1Response {
     eventId: string;
     eventType: string;
     actorId: string;
+    subjectId?: string;
+    /**
+     * Opaque cross-cell correlation identifier from the originating request context. Lets consumers stitch an audited action back to its request. Empty for entries predating its introduction.
+     */
+    correlationId?: string;
+    occurredAt?: string;
     timestamp: string;
     payload?: unknown;
   }[];
