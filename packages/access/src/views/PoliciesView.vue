@@ -37,25 +37,28 @@ function onLookup(): void {
 }
 
 // ─── mutation state ──────────────────────────────────────────────────────────
-const mutationErrorKey = ref<string | null>(null)
+const assignRoleId = ref('')
+const assignErrorKey = ref<string | null>(null)
+const revokeErrorKey = ref<string | null>(null)
 
 async function onAssign(roleId: string): Promise<void> {
-  mutationErrorKey.value = null
+  assignErrorKey.value = null
   try {
     await store.assign(roleId)
+    assignRoleId.value = ''
   } catch (err: unknown) {
-    mutationErrorKey.value = isGoCellRequestError(err)
+    assignErrorKey.value = isGoCellRequestError(err)
       ? (err.i18nKey ?? 'access.policies.errors.assignFailed')
       : 'access.policies.errors.assignFailed'
   }
 }
 
 async function onRevoke(roleId: string): Promise<void> {
-  mutationErrorKey.value = null
+  revokeErrorKey.value = null
   try {
     await store.revoke(roleId)
   } catch (err: unknown) {
-    mutationErrorKey.value = isGoCellRequestError(err)
+    revokeErrorKey.value = isGoCellRequestError(err)
       ? (err.i18nKey ?? 'access.policies.errors.revokeFailed')
       : 'access.policies.errors.revokeFailed'
   }
@@ -139,6 +142,7 @@ async function onRevoke(roleId: string): Promise<void> {
               type="submit"
               class="policies__lookup-btn"
               data-action="lookup"
+              :disabled="loading"
               :aria-busy="loading"
             >
               {{ t('access.policies.user.load') }}
@@ -184,9 +188,11 @@ async function onRevoke(roleId: string): Promise<void> {
         <RolePermissionMatrix :roles="roles" />
 
         <RoleAssignmentForm
+          v-model:assign-role-id="assignRoleId"
           :roles="roles"
           :busy="mutating"
-          :error-key="mutationErrorKey"
+          :assign-error="assignErrorKey"
+          :revoke-error="revokeErrorKey"
           @assign="onAssign"
           @revoke="onRevoke"
         />

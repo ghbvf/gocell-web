@@ -3,13 +3,16 @@
  * RoleAssignmentForm — assign a role to / revoke a role from the current user.
  *
  * Props:
- *   roles     — the user's CURRENTLY-HELD roles (used to populate the revoke select)
- *   busy      — disables all controls while a mutation is in flight
- *   errorKey  — optional mutation error i18n key; renders inline alert with aria wiring
+ *   roles        — the user's CURRENTLY-HELD roles (used to populate the revoke select)
+ *   busy         — disables all controls while a mutation is in flight
+ *   assignRoleId — controlled value for the assign input (parent owns clearing on success)
+ *   assignError  — optional assign-operation error i18n key; scoped to the assign input only
+ *   revokeError  — optional revoke-operation error i18n key; scoped to the revoke select only
  *
  * Emits:
- *   assign(roleId: string) — operator typed/pasted a roleId and confirmed
- *   revoke(roleId: string) — operator selected a held role and confirmed
+ *   assign(roleId: string)           — operator typed/pasted a roleId and confirmed
+ *   revoke(roleId: string)           — operator selected a held role and confirmed
+ *   update:assignRoleId(value: string) — controlled input update; parent clears on success
  *
  * Gating:
  *   Assign button is wrapped in <Can action="assign" resource="role">.
@@ -27,34 +30,38 @@ const props = withDefaults(
   defineProps<{
     roles: Role[]
     busy?: boolean
-    errorKey?: string | null
+    assignRoleId?: string
+    assignError?: string | null
+    revokeError?: string | null
   }>(),
   {
     busy: false,
-    errorKey: null,
+    assignRoleId: '',
+    assignError: null,
+    revokeError: null,
   },
 )
 
 const emit = defineEmits<{
   assign: [roleId: string]
   revoke: [roleId: string]
+  'update:assignRoleId': [value: string]
 }>()
 
 const { t } = useI18n()
 
 // ─── Assign section ───────────────────────────────────────────────────────────
-const assignInput = ref('')
 const assignRequiredVisible = ref(false)
 
 function onAssign(): void {
-  const trimmed = assignInput.value.trim()
+  const trimmed = (props.assignRoleId ?? '').trim()
   if (!trimmed) {
     assignRequiredVisible.value = true
     return
   }
   assignRequiredVisible.value = false
   emit('assign', trimmed)
-  assignInput.value = ''
+  // Do NOT clear here — the parent clears via the model on success only
 }
 
 // ─── Revoke section ───────────────────────────────────────────────────────────
@@ -92,21 +99,22 @@ function onRevoke(): void {
           <div class="raf__row">
             <input
               id="raf-assign-input"
-              v-model="assignInput"
               class="raf__input"
               type="text"
               autocomplete="off"
               data-testid="assign-input"
+              :value="assignRoleId"
               :disabled="busy"
               :placeholder="t('access.policies.assign.placeholder')"
-              :aria-invalid="assignRequiredVisible || !!errorKey || undefined"
+              :aria-invalid="assignRequiredVisible || !!assignError || undefined"
               :aria-describedby="
                 assignRequiredVisible
                   ? 'raf-assign-required'
-                  : errorKey
-                    ? 'raf-mutation-error'
+                  : assignError
+                    ? 'raf-assign-error'
                     : undefined
               "
+              @input="emit('update:assignRoleId', ($event.target as HTMLInputElement).value)"
             />
             <Can action="assign" resource="role">
               <button
@@ -129,20 +137,18 @@ function onRevoke(): void {
           >
             {{ t('access.policies.assign.required') }}
           </p>
+          <p
+            v-if="assignError"
+            id="raf-assign-error"
+            class="raf__error"
+            role="alert"
+            data-testid="assign-error-alert"
+          >
+            {{ t(assignError) }}
+          </p>
         </div>
       </form>
     </section>
-
-    <!-- ─── Mutation error (from parent, A-F7) ────────────────────────────── -->
-    <p
-      v-if="errorKey"
-      id="raf-mutation-error"
-      class="raf__error"
-      role="alert"
-      data-testid="mutation-error-alert"
-    >
-      {{ t(errorKey) }}
-    </p>
 
     <!-- ─── Revoke section ─────────────────────────────────────────────────── -->
     <section class="raf__section">
@@ -158,8 +164,8 @@ function onRevoke(): void {
             class="raf__select"
             data-testid="revoke-select"
             :disabled="revokeDisabled"
-            :aria-invalid="!!errorKey || undefined"
-            :aria-describedby="errorKey ? 'raf-mutation-error' : undefined"
+            :aria-invalid="!!revokeError || undefined"
+            :aria-describedby="revokeError ? 'raf-revoke-error' : undefined"
           >
             <option value="" disabled>
               {{ t('access.policies.revoke.selectPlaceholder') }}
@@ -173,7 +179,7 @@ function onRevoke(): void {
               type="button"
               class="raf__btn raf__btn--danger"
               data-testid="revoke-btn"
-              :disabled="busy || roles.length === 0"
+              :disabled="revokeDisabled"
               :aria-busy="busy"
               @click="onRevoke"
             >
@@ -183,6 +189,15 @@ function onRevoke(): void {
         </div>
         <p v-if="roles.length === 0" class="raf__hint" data-testid="revoke-empty-hint">
           {{ t('access.policies.revoke.empty') }}
+        </p>
+        <p
+          v-if="revokeError"
+          id="raf-revoke-error"
+          class="raf__error"
+          role="alert"
+          data-testid="revoke-error-alert"
+        >
+          {{ t(revokeError) }}
         </p>
       </div>
     </section>

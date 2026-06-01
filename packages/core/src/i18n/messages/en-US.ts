@@ -410,7 +410,7 @@ const enUS = {
         selectPlaceholder: 'Select a role to revoke',
         title: 'Revoke a role',
       },
-      roleCount: '{count} role(s)',
+      roleCount: '{count} roles',
       errors: {
         assignFailed: 'Failed to assign role',
         revokeFailed: 'Failed to revoke role',

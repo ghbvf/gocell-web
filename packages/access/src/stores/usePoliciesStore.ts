@@ -15,10 +15,10 @@ import { listUserRoles, assignRole, revokeRole, type Role } from '../api/roles'
  * an inline error and stay open; on success they re-fetch the user's roles.
  */
 
-// Module-closure generation counter for fetchRoles race guard (P-F6).
-let generation = 0
-
 export const usePoliciesStore = defineStore('access.policies', () => {
+  // Generation counter lives inside the factory so it resets when a fresh
+  // Pinia recreates the store (avoids cross-test coupling, P-F2).
+  let generation = 0
   // ─── state ──────────────────────────────────────────────────────────────
   const userId = ref('')
   const roles = ref<Role[]>([])

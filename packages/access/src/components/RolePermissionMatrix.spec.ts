@@ -148,10 +148,13 @@ describe('RolePermissionMatrix', () => {
   })
 
   describe('a11y', () => {
-    it('renders the table with an aria-label', () => {
+    it('renders the scroll region with an aria-label on the wrapper (not the table)', () => {
       const w = mountMatrix([roleA])
+      // A-F1: aria-label belongs on the role="region" wrapper, not duplicated on <table>
+      const region = w.find('[role="region"]')
+      expect(region.attributes('aria-label')).toBe('access.policies.matrix.label')
       const table = w.find('table')
-      expect(table.attributes('aria-label')).toBe('access.policies.matrix.label')
+      expect(table.attributes('aria-label')).toBeUndefined()
     })
 
     it('provides sr-only text for granted cells via aria-label', () => {

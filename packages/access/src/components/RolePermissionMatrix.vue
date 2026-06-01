@@ -81,7 +81,7 @@ function granted(roleId: string, key: string): boolean {
     role="region"
     :aria-label="t('access.policies.matrix.label')"
   >
-    <table class="matrix__table" :aria-label="t('access.policies.matrix.label')">
+    <table class="matrix__table">
       <thead>
         <tr>
           <!-- Role name header column -->
@@ -135,6 +135,7 @@ function granted(roleId: string, key: string): boolean {
 
 .matrix__wrapper:focus-visible {
   outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .matrix__empty {

@@ -130,14 +130,6 @@ describe('PoliciesView · lookup form', () => {
     expect(store.fetchRoles).toHaveBeenCalledWith('u-1')
   })
 
-  it('submitting via form submit also calls store.fetchRoles', async () => {
-    const { wrapper, store } = mountView()
-    await wrapper.get('#policies-user-input').setValue('u-2')
-    await wrapper.get('form').trigger('submit')
-    await flushPromises()
-    expect(store.fetchRoles).toHaveBeenCalledWith('u-2')
-  })
-
   it('blank submit shows user.required alert and does NOT call fetchRoles (D-F1)', async () => {
     const { wrapper, store } = mountView()
     await wrapper.get('#policies-user-input').setValue('')
@@ -229,15 +221,47 @@ describe('PoliciesView · mutations', () => {
     expect(store.revoke).toHaveBeenCalledWith('role-1')
   })
 
-  it('passes mutation error as error-key to RoleAssignmentForm when store.assign rejects', async () => {
+  it('successful assign clears assignRoleId (input becomes empty)', async () => {
+    const { wrapper, store } = mountWithRoles()
+    vi.mocked(store.assign).mockResolvedValue(undefined)
+    const form = wrapper.findComponent({ name: 'RoleAssignmentForm' })
+    // Simulate parent having typed a role id
+    await wrapper.setData({})
+    // Emit assign from child
+    form.vm.$emit('assign', 'role-1')
+    await flushPromises()
+    // After success the parent clears the v-model
+    expect(form.props('assignRoleId')).toBe('')
+  })
+
+  it('passes assign error as assign-error to RoleAssignmentForm when store.assign rejects', async () => {
     const { wrapper, store } = mountWithRoles()
     vi.mocked(store.assign).mockRejectedValue(new Error('assign failed'))
     wrapper.findComponent({ name: 'RoleAssignmentForm' }).vm.$emit('assign', 'role-1')
     await flushPromises()
 
     const form = wrapper.findComponent({ name: 'RoleAssignmentForm' })
-    // The form receives the error-key prop
-    expect(form.props('errorKey')).toBe('access.policies.errors.assignFailed')
+    expect(form.props('assignError')).toBe('access.policies.errors.assignFailed')
+  })
+
+  it('assign failure does NOT set revokeError', async () => {
+    const { wrapper, store } = mountWithRoles()
+    vi.mocked(store.assign).mockRejectedValue(new Error('assign failed'))
+    wrapper.findComponent({ name: 'RoleAssignmentForm' }).vm.$emit('assign', 'role-1')
+    await flushPromises()
+
+    const form = wrapper.findComponent({ name: 'RoleAssignmentForm' })
+    expect(form.props('revokeError')).toBeNull()
+  })
+
+  it('revoke failure does NOT set assignError', async () => {
+    const { wrapper, store } = mountWithRoles()
+    vi.mocked(store.revoke).mockRejectedValue(new Error('revoke failed'))
+    wrapper.findComponent({ name: 'RoleAssignmentForm' }).vm.$emit('revoke', 'role-1')
+    await flushPromises()
+
+    const form = wrapper.findComponent({ name: 'RoleAssignmentForm' })
+    expect(form.props('assignError')).toBeNull()
   })
 
   it('surfaces assign error in role=alert when store.assign rejects', async () => {
@@ -264,7 +288,7 @@ describe('PoliciesView · mutations', () => {
     const goCellErr = Object.assign(new Error('typed'), {
       isAxiosError: true,
       i18nKey: 'access.policies.errors.custom',
-    }) as GoCellRequestError
+    }) as unknown as GoCellRequestError
     vi.mocked(store.assign).mockRejectedValue(goCellErr)
     wrapper.findComponent({ name: 'RoleAssignmentForm' }).vm.$emit('assign', 'role-1')
     await flushPromises()

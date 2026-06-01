@@ -26,11 +26,24 @@ function makePdpClient(allowed: boolean): PdpClient {
  * When noProvider=true, no PDP key is provided — simulates fail-closed.
  */
 function mountForm(
-  props: { roles?: Role[]; busy?: boolean; errorKey?: string | null } = {},
+  props: {
+    roles?: Role[]
+    busy?: boolean
+    assignRoleId?: string
+    assignError?: string | null
+    revokeError?: string | null
+  } = {},
   pdpAllowed: boolean = true,
   noProvider: boolean = false,
 ) {
-  const resolvedProps = { roles, busy: false, errorKey: null, ...props }
+  const resolvedProps = {
+    roles,
+    busy: false,
+    assignRoleId: '',
+    assignError: null,
+    revokeError: null,
+    ...props,
+  }
 
   const globalConfig = noProvider
     ? {}
@@ -45,36 +58,34 @@ function mountForm(
 describe('RoleAssignmentForm', () => {
   describe('assign section', () => {
     it('emits assign with the trimmed roleId on form submit (V-F7)', async () => {
-      const w = mountForm()
-      const input = w.find('[data-testid="assign-input"]')
-      await input.setValue('  role-new  ')
+      const w = mountForm({ assignRoleId: '  role-new  ' })
       await w.find('[data-testid="assign-form"]').trigger('submit')
       const emitted = w.emitted('assign')
       expect(emitted).toBeTruthy()
       expect(emitted![0]).toEqual(['role-new'])
     })
 
-    it('clears the input after successful assign emit', async () => {
-      const w = mountForm()
-      const input = w.find('[data-testid="assign-input"]')
-      await input.setValue('role-new')
+    it('does NOT clear the input after assign emit (parent is responsible)', async () => {
+      const w = mountForm({ assignRoleId: 'role-new' })
       await w.find('[data-testid="assign-form"]').trigger('submit')
-      expect((input.element as HTMLInputElement).value).toBe('')
+      // The form should NOT emit update:assignRoleId with '' — clearing is the parent's job
+      const updateEmits = w.emitted('update:assignRoleId') ?? []
+      // Either no emit at all, or no emit clearing to ''
+      const clearingEmits = updateEmits.filter((args) => args[0] === '')
+      expect(clearingEmits).toHaveLength(0)
+      // The assign emit fired
+      expect(w.emitted('assign')).toBeTruthy()
     })
 
     it('does NOT emit assign when input is blank', async () => {
-      const w = mountForm()
-      const input = w.find('[data-testid="assign-input"]')
-      await input.setValue('   ')
+      const w = mountForm({ assignRoleId: '   ' })
       await w.find('[data-testid="assign-form"]').trigger('submit')
       const emitted = w.emitted('assign')
       expect(emitted).toBeFalsy()
     })
 
     it('emits assign on form submit (Enter key)', async () => {
-      const w = mountForm()
-      const input = w.find('[data-testid="assign-input"]')
-      await input.setValue('role-enter')
+      const w = mountForm({ assignRoleId: 'role-enter' })
       await w.find('[data-testid="assign-form"]').trigger('submit')
       const emitted = w.emitted('assign')
       expect(emitted).toBeTruthy()
@@ -82,8 +93,7 @@ describe('RoleAssignmentForm', () => {
     })
 
     it('shows assign.required alert and sets aria-invalid on blank submit (D-F1)', async () => {
-      const w = mountForm()
-      await w.find('[data-testid="assign-input"]').setValue('')
+      const w = mountForm({ assignRoleId: '' })
       await w.find('[data-testid="assign-form"]').trigger('submit')
 
       const alert = w.find('[data-testid="assign-required-alert"]')
@@ -93,6 +103,14 @@ describe('RoleAssignmentForm', () => {
 
       const input = w.find('[data-testid="assign-input"]')
       expect(input.attributes('aria-invalid')).toBeTruthy()
+    })
+
+    it('emits update:assignRoleId when user types in the input', async () => {
+      const w = mountForm({ assignRoleId: '' })
+      const input = w.find('[data-testid="assign-input"]')
+      await input.setValue('typed-value')
+      const emitted = w.emitted('update:assignRoleId')
+      expect(emitted).toBeTruthy()
     })
   })
 
@@ -172,31 +190,61 @@ describe('RoleAssignmentForm', () => {
     })
   })
 
-  describe('errorKey prop (A-F7)', () => {
-    it('renders mutation error alert when errorKey is provided', () => {
-      const w = mountForm({ errorKey: 'access.policies.errors.assignFailed' })
-      const alert = w.find('[data-testid="mutation-error-alert"]')
+  describe('assignError / revokeError props (split error scoping)', () => {
+    it('renders assign error alert when assignError is provided', () => {
+      const w = mountForm({ assignError: 'access.policies.errors.assignFailed' })
+      const alert = w.find('[data-testid="assign-error-alert"]')
       expect(alert.exists()).toBe(true)
       expect(alert.attributes('role')).toBe('alert')
       expect(alert.text()).toBe('access.policies.errors.assignFailed')
     })
 
-    it('sets aria-invalid on assign input when errorKey is set', () => {
-      const w = mountForm({ errorKey: 'access.policies.errors.assignFailed' })
+    it('sets aria-invalid on assign input when assignError is set', () => {
+      const w = mountForm({ assignError: 'access.policies.errors.assignFailed' })
       const input = w.find('[data-testid="assign-input"]')
       expect(input.attributes('aria-invalid')).toBeTruthy()
     })
 
-    it('sets aria-invalid on revoke select when errorKey is set', () => {
-      const w = mountForm({ errorKey: 'access.policies.errors.revokeFailed' })
+    it('does NOT set aria-invalid on revoke select when only assignError is set', () => {
+      const w = mountForm({ assignError: 'access.policies.errors.assignFailed' })
+      const select = w.find('[data-testid="revoke-select"]')
+      expect(select.attributes('aria-invalid')).toBeUndefined()
+    })
+
+    it('does NOT render revoke error alert when only assignError is set', () => {
+      const w = mountForm({ assignError: 'access.policies.errors.assignFailed' })
+      expect(w.find('[data-testid="revoke-error-alert"]').exists()).toBe(false)
+    })
+
+    it('renders revoke error alert when revokeError is provided', () => {
+      const w = mountForm({ revokeError: 'access.policies.errors.revokeFailed' })
+      const alert = w.find('[data-testid="revoke-error-alert"]')
+      expect(alert.exists()).toBe(true)
+      expect(alert.attributes('role')).toBe('alert')
+      expect(alert.text()).toBe('access.policies.errors.revokeFailed')
+    })
+
+    it('sets aria-invalid on revoke select when revokeError is set', () => {
+      const w = mountForm({ revokeError: 'access.policies.errors.revokeFailed' })
       const select = w.find('[data-testid="revoke-select"]')
       expect(select.attributes('aria-invalid')).toBeTruthy()
     })
 
-    it('does not render mutation error alert when errorKey is null', () => {
-      const w = mountForm({ errorKey: null })
-      const alert = w.find('[data-testid="mutation-error-alert"]')
-      expect(alert.exists()).toBe(false)
+    it('does NOT set aria-invalid on assign input when only revokeError is set', () => {
+      const w = mountForm({ revokeError: 'access.policies.errors.revokeFailed' })
+      const input = w.find('[data-testid="assign-input"]')
+      expect(input.attributes('aria-invalid')).toBeUndefined()
+    })
+
+    it('does NOT render assign error alert when only revokeError is set', () => {
+      const w = mountForm({ revokeError: 'access.policies.errors.revokeFailed' })
+      expect(w.find('[data-testid="assign-error-alert"]').exists()).toBe(false)
+    })
+
+    it('does not render error alerts when both are null', () => {
+      const w = mountForm({ assignError: null, revokeError: null })
+      expect(w.find('[data-testid="assign-error-alert"]').exists()).toBe(false)
+      expect(w.find('[data-testid="revoke-error-alert"]').exists()).toBe(false)
     })
   })
 
