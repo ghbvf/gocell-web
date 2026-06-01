@@ -10,7 +10,7 @@
  */
 import { useI18n } from 'vue-i18n'
 
-const props = defineProps<{
+defineProps<{
   titleKey: string
 }>()
 
@@ -19,9 +19,9 @@ const { t } = useI18n()
 
 <template>
   <section class="coming-soon">
-    <h1 class="coming-soon__title">{{ t(props.titleKey) }}</h1>
+    <h1 class="coming-soon__title">{{ t(titleKey) }}</h1>
     <span class="coming-soon__badge">{{ t('access.comingSoon.badge') }}</span>
-    <p class="coming-soon__body" role="status">{{ t('access.comingSoon.body') }}</p>
+    <p class="coming-soon__body">{{ t('access.comingSoon.body') }}</p>
   </section>
 </template>
 

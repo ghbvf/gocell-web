@@ -23,11 +23,13 @@ describe('AccessComingSoonView', () => {
     expect(wrapper.text()).toContain('access.comingSoon.badge')
   })
 
-  it('renders the body text in role=status', () => {
+  it('renders the body text as a plain paragraph (no live region — A-F6)', () => {
     const wrapper = mountView('nav.decisions')
-    const status = wrapper.find('[role="status"]')
-    expect(status.exists()).toBe(true)
-    expect(status.text()).toContain('access.comingSoon.body')
+    const body = wrapper.find('.coming-soon__body')
+    expect(body.exists()).toBe(true)
+    expect(body.text()).toContain('access.comingSoon.body')
+    // Static content must NOT carry role="status" (not a live region)
+    expect(body.attributes('role')).toBeUndefined()
   })
 
   it('uses the provided titleKey as the h1 text', () => {

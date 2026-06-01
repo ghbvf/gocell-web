@@ -15,9 +15,7 @@
  */
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import type { HttpAuthRoleListV1Response } from '@gocell/contracts'
-
-type Role = HttpAuthRoleListV1Response['data'][number]
+import type { Role } from '../api/roles'
 
 const props = defineProps<{
   roles: Role[]
@@ -31,6 +29,9 @@ interface PermCol {
   resource: string
   action: string
 }
+
+/** Hoisted collator — avoids re-constructing on every sort comparison. */
+const collator = new Intl.Collator('en', { sensitivity: 'base' })
 
 /**
  * Compute the sorted, de-duplicated union of all permissions across all roles.
@@ -46,31 +47,25 @@ const permColumns = computed<PermCol[]>(() => {
       }
     }
   }
-  return [...seen.values()].sort((a, b) => {
-    const rCmp = a.resource.localeCompare(b.resource, 'en', { sensitivity: 'base' })
-    if (rCmp !== 0) return rCmp
-    return a.action.localeCompare(b.action, 'en', { sensitivity: 'base' })
-  })
+  return [...seen.values()].sort(
+    (a, b) => collator.compare(a.resource, b.resource) || collator.compare(a.action, b.action),
+  )
 })
 
 /**
  * Pre-compute granted sets per role for O(1) cell lookup.
  * key = role.id, value = Set of permission keys held by that role.
  */
-const roleGrantedSets = computed<Map<string, Set<string>>>(() => {
-  const map = new Map<string, Set<string>>()
+const grantedMatrix = computed<Map<string, Set<string>>>(() => {
+  const m = new Map<string, Set<string>>()
   for (const role of props.roles) {
-    const s = new Set<string>()
-    for (const perm of role.permissions) {
-      s.add(`${perm.resource} ${perm.action}`)
-    }
-    map.set(role.id, s)
+    m.set(role.id, new Set(role.permissions.map((p) => `${p.resource} ${p.action}`)))
   }
-  return map
+  return m
 })
 
-function isGranted(roleId: string, col: PermCol): boolean {
-  return roleGrantedSets.value.get(roleId)?.has(col.key) ?? false
+function granted(roleId: string, key: string): boolean {
+  return grantedMatrix.value.get(roleId)?.has(key) ?? false
 }
 </script>
 
@@ -79,7 +74,13 @@ function isGranted(roleId: string, col: PermCol): boolean {
     {{ t('access.policies.matrix.empty') }}
   </p>
 
-  <div v-else class="matrix__wrapper">
+  <div
+    v-else
+    class="matrix__wrapper"
+    tabindex="0"
+    role="region"
+    :aria-label="t('access.policies.matrix.label')"
+  >
     <table class="matrix__table" :aria-label="t('access.policies.matrix.label')">
       <thead>
         <tr>
@@ -90,7 +91,7 @@ function isGranted(roleId: string, col: PermCol): boolean {
           <!-- Permission columns -->
           <th v-for="col in permColumns" :key="col.key" scope="col" class="matrix__col-perm">
             <span class="matrix__perm-resource">{{ col.resource }}</span>
-            <span class="matrix__perm-sep">:</span>
+            <span class="matrix__perm-sep" aria-hidden="true">:</span>
             <span class="matrix__perm-action">{{ col.action }}</span>
           </th>
         </tr>
@@ -104,19 +105,21 @@ function isGranted(roleId: string, col: PermCol): boolean {
             v-for="col in permColumns"
             :key="col.key"
             class="matrix__cell matrix__cell--perm"
-            :data-granted="String(isGranted(role.id, col))"
+            :data-granted="String(granted(role.id, col.key))"
             :aria-label="
-              isGranted(role.id, col)
+              granted(role.id, col.key)
                 ? t('access.policies.matrix.granted')
                 : t('access.policies.matrix.denied')
             "
           >
             <span
               class="matrix__glyph"
-              :class="isGranted(role.id, col) ? 'matrix__glyph--granted' : 'matrix__glyph--denied'"
+              :class="
+                granted(role.id, col.key) ? 'matrix__glyph--granted' : 'matrix__glyph--denied'
+              "
               aria-hidden="true"
             >
-              {{ isGranted(role.id, col) ? '✓' : '·' }}
+              {{ granted(role.id, col.key) ? '✓' : '·' }}
             </span>
           </td>
         </tr>
@@ -128,6 +131,10 @@ function isGranted(roleId: string, col: PermCol): boolean {
 <style scoped>
 .matrix__wrapper {
   overflow-x: auto;
+}
+
+.matrix__wrapper:focus-visible {
+  outline: 2px solid var(--accent);
 }
 
 .matrix__empty {

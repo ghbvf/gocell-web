@@ -3,8 +3,9 @@
  * RoleAssignmentForm — assign a role to / revoke a role from the current user.
  *
  * Props:
- *   roles  — the user's CURRENTLY-HELD roles (used to populate the revoke select)
- *   busy   — disables all controls while a mutation is in flight
+ *   roles     — the user's CURRENTLY-HELD roles (used to populate the revoke select)
+ *   busy      — disables all controls while a mutation is in flight
+ *   errorKey  — optional mutation error i18n key; renders inline alert with aria wiring
  *
  * Emits:
  *   assign(roleId: string) — operator typed/pasted a roleId and confirmed
@@ -17,20 +18,20 @@
  *
  * No Pinia / API imports — purely presentational.
  */
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Can } from '@gocell/core'
-import type { HttpAuthRoleListV1Response } from '@gocell/contracts'
-
-type Role = HttpAuthRoleListV1Response['data'][number]
+import type { Role } from '../api/roles'
 
 const props = withDefaults(
   defineProps<{
     roles: Role[]
     busy?: boolean
+    errorKey?: string | null
   }>(),
   {
     busy: false,
+    errorKey: null,
   },
 )
 
@@ -43,17 +44,32 @@ const { t } = useI18n()
 
 // ─── Assign section ───────────────────────────────────────────────────────────
 const assignInput = ref('')
+const assignRequiredVisible = ref(false)
 
 function onAssign(): void {
   const trimmed = assignInput.value.trim()
-  if (!trimmed) return
+  if (!trimmed) {
+    assignRequiredVisible.value = true
+    return
+  }
+  assignRequiredVisible.value = false
   emit('assign', trimmed)
   assignInput.value = ''
 }
 
 // ─── Revoke section ───────────────────────────────────────────────────────────
-/** Default to first role id or empty — managed as a plain ref */
+/** Always starts blank; user selects before revoking */
 const revokeSelected = ref('')
+
+// Clear stale selection when roles list changes or empties (V-F2)
+watch(
+  () => props.roles,
+  (r) => {
+    if (!r.some((x) => x.id === revokeSelected.value)) {
+      revokeSelected.value = ''
+    }
+  },
+)
 
 const revokeDisabled = computed(() => props.busy || props.roles.length === 0)
 
@@ -67,6 +83,7 @@ function onRevoke(): void {
   <div class="raf">
     <!-- ─── Assign section ─────────────────────────────────────────────────── -->
     <section class="raf__section">
+      <h2 class="raf__heading">{{ t('access.policies.assign.title') }}</h2>
       <form class="raf__form" data-testid="assign-form" novalidate @submit.prevent="onAssign">
         <div class="raf__field">
           <label class="raf__label" for="raf-assign-input">
@@ -82,6 +99,14 @@ function onRevoke(): void {
               data-testid="assign-input"
               :disabled="busy"
               :placeholder="t('access.policies.assign.placeholder')"
+              :aria-invalid="assignRequiredVisible || !!errorKey || undefined"
+              :aria-describedby="
+                assignRequiredVisible
+                  ? 'raf-assign-required'
+                  : errorKey
+                    ? 'raf-mutation-error'
+                    : undefined
+              "
             />
             <Can action="assign" resource="role">
               <button
@@ -89,18 +114,39 @@ function onRevoke(): void {
                 class="raf__btn raf__btn--primary"
                 data-testid="assign-btn"
                 :disabled="busy"
-                @click.prevent="onAssign"
+                :aria-busy="busy"
               >
                 {{ t('access.policies.assign.button') }}
               </button>
             </Can>
           </div>
+          <p
+            v-if="assignRequiredVisible"
+            id="raf-assign-required"
+            class="raf__error"
+            role="alert"
+            data-testid="assign-required-alert"
+          >
+            {{ t('access.policies.assign.required') }}
+          </p>
         </div>
       </form>
     </section>
 
+    <!-- ─── Mutation error (from parent, A-F7) ────────────────────────────── -->
+    <p
+      v-if="errorKey"
+      id="raf-mutation-error"
+      class="raf__error"
+      role="alert"
+      data-testid="mutation-error-alert"
+    >
+      {{ t(errorKey) }}
+    </p>
+
     <!-- ─── Revoke section ─────────────────────────────────────────────────── -->
     <section class="raf__section">
+      <h2 class="raf__heading">{{ t('access.policies.revoke.title') }}</h2>
       <div class="raf__field">
         <label class="raf__label" for="raf-revoke-select">
           {{ t('access.policies.revoke.label') }}
@@ -112,6 +158,8 @@ function onRevoke(): void {
             class="raf__select"
             data-testid="revoke-select"
             :disabled="revokeDisabled"
+            :aria-invalid="!!errorKey || undefined"
+            :aria-describedby="errorKey ? 'raf-mutation-error' : undefined"
           >
             <option value="" disabled>
               {{ t('access.policies.revoke.selectPlaceholder') }}
@@ -126,6 +174,7 @@ function onRevoke(): void {
               class="raf__btn raf__btn--danger"
               data-testid="revoke-btn"
               :disabled="busy || roles.length === 0"
+              :aria-busy="busy"
               @click="onRevoke"
             >
               {{ t('access.policies.revoke.button') }}
@@ -151,6 +200,13 @@ function onRevoke(): void {
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+
+.raf__heading {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fg);
 }
 
 .raf__form {
@@ -271,6 +327,12 @@ function onRevoke(): void {
   margin: 0;
   font-size: 12.5px;
   color: var(--fg-muted);
+}
+
+.raf__error {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--err);
 }
 
 @media (prefers-reduced-motion: reduce) {

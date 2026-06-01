@@ -33,6 +33,7 @@ describe('usePoliciesStore', () => {
     expect(store.roles).toEqual([])
     expect(store.loading).toBe(false)
     expect(store.errorKey).toBeNull()
+    expect(store.mutating).toBe(false)
   })
 
   describe('fetchRoles', () => {
@@ -85,6 +86,13 @@ describe('usePoliciesStore', () => {
       expect(store.roles).toHaveLength(1)
     })
 
+    it('sets errorKey to errors.unknown for a plain Error (T-F4)', async () => {
+      const store = usePoliciesStore()
+      vi.mocked(listUserRoles).mockRejectedValueOnce(new Error('plain fail'))
+      await store.fetchRoles('u-1')
+      expect(store.errorKey).toBe('errors.unknown')
+    })
+
     it('short-circuits on blank userId — no API call, roles cleared', async () => {
       const store = usePoliciesStore()
       store.roles = [mkRole()]
@@ -109,6 +117,32 @@ describe('usePoliciesStore', () => {
       vi.mocked(listUserRoles).mockResolvedValueOnce([mkRole()])
       await store.fetchRoles('u-1')
       expect(store.errorKey).toBeNull()
+    })
+
+    it('ignores stale in-flight response (race guard P-F6)', async () => {
+      // First call is slow; second call resolves first with newer data.
+      let resolveFirst!: (v: Role[]) => void
+      vi.mocked(listUserRoles)
+        .mockReturnValueOnce(
+          new Promise<Role[]>((res) => {
+            resolveFirst = res
+          }),
+        )
+        .mockResolvedValueOnce([mkRole({ id: 'role-newer', name: 'newer' })])
+
+      const store = usePoliciesStore()
+      // Start first (slow) fetch
+      const p1 = store.fetchRoles('u-1')
+      // Start second (fast) fetch immediately — it resolves first
+      await store.fetchRoles('u-2')
+
+      // Now resolve the first (stale) fetch
+      resolveFirst([mkRole({ id: 'role-stale', name: 'stale' })])
+      await p1
+
+      // The stale result must not overwrite the newer one
+      expect(store.roles.every((r) => r.id !== 'role-stale')).toBe(true)
+      expect(store.roles.some((r) => r.id === 'role-newer')).toBe(true)
     })
   })
 
@@ -143,6 +177,57 @@ describe('usePoliciesStore', () => {
       await expect(store.assign('role-1')).rejects.toThrow()
       expect(listUserRoles).not.toHaveBeenCalled()
     })
+
+    it('resets mutating to false after failure (re-throw path)', async () => {
+      vi.mocked(assignRole).mockRejectedValueOnce(new Error('fail'))
+      const store = usePoliciesStore()
+      store.userId = 'u-1'
+      await expect(store.assign('role-1')).rejects.toThrow()
+      expect(store.mutating).toBe(false)
+    })
+
+    it('mutating is true during assign and false after success', async () => {
+      let resolveAssign!: () => void
+      vi.mocked(assignRole).mockReturnValueOnce(
+        new Promise<void>((res) => {
+          resolveAssign = res
+        }),
+      )
+      vi.mocked(listUserRoles).mockResolvedValueOnce([mkRole()])
+
+      const store = usePoliciesStore()
+      store.userId = 'u-1'
+      const p = store.assign('role-1')
+      expect(store.mutating).toBe(true)
+      resolveAssign()
+      await p
+      expect(store.mutating).toBe(false)
+    })
+
+    it('concurrent assign is a no-op while first is in-flight (P-F2)', async () => {
+      let resolveFirst!: () => void
+      vi.mocked(assignRole).mockReturnValueOnce(
+        new Promise<void>((res) => {
+          resolveFirst = res
+        }),
+      )
+      vi.mocked(listUserRoles).mockResolvedValue([mkRole()])
+
+      const store = usePoliciesStore()
+      store.userId = 'u-1'
+
+      // Start first assign but don't await
+      const p1 = store.assign('role-1')
+      // Second call while first is in-flight — must be ignored
+      await store.assign('role-2')
+
+      resolveFirst()
+      await p1
+
+      // assignRole should have been called exactly once
+      expect(assignRole).toHaveBeenCalledTimes(1)
+      expect(assignRole).toHaveBeenCalledWith({ userId: 'u-1', roleId: 'role-1' })
+    })
   })
 
   describe('revoke', () => {
@@ -174,6 +259,36 @@ describe('usePoliciesStore', () => {
       store.userId = 'u-1'
       await expect(store.revoke('role-1')).rejects.toThrow()
       expect(listUserRoles).not.toHaveBeenCalled()
+    })
+
+    it('resets mutating to false after revoke failure', async () => {
+      vi.mocked(revokeRole).mockRejectedValueOnce(new Error('fail'))
+      const store = usePoliciesStore()
+      store.userId = 'u-1'
+      await expect(store.revoke('role-1')).rejects.toThrow()
+      expect(store.mutating).toBe(false)
+    })
+
+    it('concurrent revoke is a no-op while first is in-flight (P-F2)', async () => {
+      let resolveFirst!: () => void
+      vi.mocked(revokeRole).mockReturnValueOnce(
+        new Promise<void>((res) => {
+          resolveFirst = res
+        }),
+      )
+      vi.mocked(listUserRoles).mockResolvedValue([mkRole()])
+
+      const store = usePoliciesStore()
+      store.userId = 'u-1'
+
+      const p1 = store.revoke('role-1')
+      await store.revoke('role-2')
+
+      resolveFirst()
+      await p1
+
+      expect(revokeRole).toHaveBeenCalledTimes(1)
+      expect(revokeRole).toHaveBeenCalledWith({ userId: 'u-1', roleId: 'role-1' })
     })
   })
 })

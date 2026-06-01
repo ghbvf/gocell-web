@@ -9,7 +9,7 @@
  *
  * All mutation errors are surfaced inline (role="alert") and never swallowed.
  * Fetch errors come from the store's errorKey; mutation errors are managed
- * locally in mutationErrorKey.
+ * locally in mutationErrorKey and passed down to RoleAssignmentForm.
  */
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -21,21 +21,25 @@ import RoleAssignmentForm from '../components/RoleAssignmentForm.vue'
 
 const { t } = useI18n()
 const store = usePoliciesStore()
-const { roles, loading, errorKey, userId } = storeToRefs(store)
+const { roles, loading, errorKey, userId, mutating } = storeToRefs(store)
 
 // ─── userId lookup form ──────────────────────────────────────────────────────
 const userIdInput = ref('')
+const userIdRequiredVisible = ref(false)
 
 function onLookup(): void {
+  if (!userIdInput.value.trim()) {
+    userIdRequiredVisible.value = true
+    return
+  }
+  userIdRequiredVisible.value = false
   void store.fetchRoles(userIdInput.value)
 }
 
 // ─── mutation state ──────────────────────────────────────────────────────────
-const mutating = ref(false)
 const mutationErrorKey = ref<string | null>(null)
 
 async function onAssign(roleId: string): Promise<void> {
-  mutating.value = true
   mutationErrorKey.value = null
   try {
     await store.assign(roleId)
@@ -43,13 +47,10 @@ async function onAssign(roleId: string): Promise<void> {
     mutationErrorKey.value = isGoCellRequestError(err)
       ? (err.i18nKey ?? 'access.policies.errors.assignFailed')
       : 'access.policies.errors.assignFailed'
-  } finally {
-    mutating.value = false
   }
 }
 
 async function onRevoke(roleId: string): Promise<void> {
-  mutating.value = true
   mutationErrorKey.value = null
   try {
     await store.revoke(roleId)
@@ -57,8 +58,6 @@ async function onRevoke(roleId: string): Promise<void> {
     mutationErrorKey.value = isGoCellRequestError(err)
       ? (err.i18nKey ?? 'access.policies.errors.revokeFailed')
       : 'access.policies.errors.revokeFailed'
-  } finally {
-    mutating.value = false
   }
 }
 </script>
@@ -133,16 +132,27 @@ async function onRevoke(roleId: string): Promise<void> {
               type="text"
               autocomplete="off"
               :placeholder="t('access.policies.user.placeholder')"
+              :aria-invalid="userIdRequiredVisible || undefined"
+              :aria-describedby="userIdRequiredVisible ? 'policies-user-required' : undefined"
             />
             <button
               type="submit"
               class="policies__lookup-btn"
               data-action="lookup"
-              @click.prevent="onLookup"
+              :aria-busy="loading"
             >
               {{ t('access.policies.user.load') }}
             </button>
           </div>
+          <p
+            v-if="userIdRequiredVisible"
+            id="policies-user-required"
+            class="policies__error"
+            role="alert"
+            data-testid="user-required-alert"
+          >
+            {{ t('access.policies.user.required') }}
+          </p>
         </div>
       </form>
 
@@ -159,21 +169,27 @@ async function onRevoke(roleId: string): Promise<void> {
         {{ t('access.policies.empty') }}
       </p>
 
-      <!-- pre-lookup prompt -->
-      <p v-else-if="!userId && roles.length === 0" class="policies__prompt">
+      <!-- pre-lookup prompt (A-F1) -->
+      <p v-else-if="!userId && roles.length === 0" class="policies__prompt" role="status">
         {{ t('access.policies.prompt') }}
       </p>
 
       <!-- roles content -->
       <template v-else>
-        <RolePermissionMatrix :roles="roles" />
-
-        <!-- mutation error -->
-        <p v-if="mutationErrorKey" class="policies__error" role="alert">
-          {{ t(mutationErrorKey) }}
+        <!-- SR-only role count announcement (A-F5) -->
+        <p class="sr-only" role="status">
+          {{ t('access.policies.roleCount', { count: roles.length }) }}
         </p>
 
-        <RoleAssignmentForm :roles="roles" :busy="mutating" @assign="onAssign" @revoke="onRevoke" />
+        <RolePermissionMatrix :roles="roles" />
+
+        <RoleAssignmentForm
+          :roles="roles"
+          :busy="mutating"
+          :error-key="mutationErrorKey"
+          @assign="onAssign"
+          @revoke="onRevoke"
+        />
       </template>
     </div>
 

@@ -3,6 +3,7 @@ import { mount, flushPromises } from '@vue/test-utils'
 import { computed } from 'vue'
 import { createTestingPinia } from '@pinia/testing'
 import { PDP_INJECTION_KEY, type PdpClient } from '@gocell/core'
+import type { GoCellRequestError } from '@gocell/request'
 import { usePoliciesStore } from '../stores/usePoliciesStore'
 import type { Role } from '../api/roles'
 import PoliciesView from './PoliciesView.vue'
@@ -23,6 +24,7 @@ type State = {
   roles?: Role[]
   loading?: boolean
   errorKey?: string | null
+  mutating?: boolean
 }
 
 function mountView(state: State = {}, pdpAllowed = true) {
@@ -37,6 +39,7 @@ function mountView(state: State = {}, pdpAllowed = true) {
               roles: [],
               loading: false,
               errorKey: null,
+              mutating: false,
               ...state,
             },
           },
@@ -121,7 +124,8 @@ describe('PoliciesView · lookup form', () => {
     const { wrapper, store } = mountView()
     const input = wrapper.get('#policies-user-input')
     await input.setValue('u-1')
-    await wrapper.get('[data-action="lookup"]').trigger('click')
+    // The lookup button is type="submit" — trigger form submit (V-F1: no @click.prevent on button)
+    await wrapper.get('form').trigger('submit')
     await flushPromises()
     expect(store.fetchRoles).toHaveBeenCalledWith('u-1')
   })
@@ -133,6 +137,19 @@ describe('PoliciesView · lookup form', () => {
     await flushPromises()
     expect(store.fetchRoles).toHaveBeenCalledWith('u-2')
   })
+
+  it('blank submit shows user.required alert and does NOT call fetchRoles (D-F1)', async () => {
+    const { wrapper, store } = mountView()
+    await wrapper.get('#policies-user-input').setValue('')
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+
+    const alert = wrapper.find('[data-testid="user-required-alert"]')
+    expect(alert.exists()).toBe(true)
+    expect(alert.attributes('role')).toBe('alert')
+    expect(alert.text()).toBe('access.policies.user.required')
+    expect(store.fetchRoles).not.toHaveBeenCalled()
+  })
 })
 
 describe('PoliciesView · states', () => {
@@ -141,6 +158,13 @@ describe('PoliciesView · states', () => {
   it('shows prompt hint before any lookup (no userId, no roles, not loading)', () => {
     const { wrapper } = mountView({ userId: '', roles: [], loading: false, errorKey: null })
     expect(wrapper.text()).toContain('access.policies.prompt')
+  })
+
+  it('prompt has role=status (A-F1)', () => {
+    const { wrapper } = mountView({ userId: '', roles: [], loading: false, errorKey: null })
+    const prompt = wrapper.find('.policies__prompt')
+    expect(prompt.exists()).toBe(true)
+    expect(prompt.attributes('role')).toBe('status')
   })
 
   it('shows loading indicator (role=status) while loading', () => {
@@ -173,6 +197,13 @@ describe('PoliciesView · states', () => {
     const { wrapper } = mountView({ userId: 'u-1', roles: [], loading: false })
     expect(wrapper.findComponent({ name: 'RolePermissionMatrix' }).exists()).toBe(false)
   })
+
+  it('renders SR-only roleCount region when roles exist (A-F5)', () => {
+    const { wrapper } = mountView({ userId: 'u-1', roles: [mkRole()], loading: false })
+    const srRegion = wrapper.find('.sr-only[role="status"]')
+    expect(srRegion.exists()).toBe(true)
+    expect(srRegion.text()).toContain('access.policies.roleCount')
+  })
 })
 
 describe('PoliciesView · mutations', () => {
@@ -198,13 +229,24 @@ describe('PoliciesView · mutations', () => {
     expect(store.revoke).toHaveBeenCalledWith('role-1')
   })
 
+  it('passes mutation error as error-key to RoleAssignmentForm when store.assign rejects', async () => {
+    const { wrapper, store } = mountWithRoles()
+    vi.mocked(store.assign).mockRejectedValue(new Error('assign failed'))
+    wrapper.findComponent({ name: 'RoleAssignmentForm' }).vm.$emit('assign', 'role-1')
+    await flushPromises()
+
+    const form = wrapper.findComponent({ name: 'RoleAssignmentForm' })
+    // The form receives the error-key prop
+    expect(form.props('errorKey')).toBe('access.policies.errors.assignFailed')
+  })
+
   it('surfaces assign error in role=alert when store.assign rejects', async () => {
     const { wrapper, store } = mountWithRoles()
     vi.mocked(store.assign).mockRejectedValue(new Error('assign failed'))
     wrapper.findComponent({ name: 'RoleAssignmentForm' }).vm.$emit('assign', 'role-1')
     await flushPromises()
     const alerts = wrapper.findAll('[role="alert"]')
-    // The mutation error alert must appear
+    // The mutation error alert must appear (inside RoleAssignmentForm)
     expect(alerts.some((a) => a.text().includes('access.policies.errors.assignFailed'))).toBe(true)
   })
 
@@ -217,16 +259,27 @@ describe('PoliciesView · mutations', () => {
     expect(alerts.some((a) => a.text().includes('access.policies.errors.revokeFailed'))).toBe(true)
   })
 
-  it('surfaces isGoCellRequestError i18nKey when available', async () => {
+  it('surfaces isGoCellRequestError i18nKey when available (T-F5)', async () => {
     const { wrapper, store } = mountWithRoles()
     const goCellErr = Object.assign(new Error('typed'), {
       isAxiosError: true,
       i18nKey: 'access.policies.errors.custom',
-    })
+    }) as GoCellRequestError
     vi.mocked(store.assign).mockRejectedValue(goCellErr)
     wrapper.findComponent({ name: 'RoleAssignmentForm' }).vm.$emit('assign', 'role-1')
     await flushPromises()
     const alerts = wrapper.findAll('[role="alert"]')
     expect(alerts.some((a) => a.text().includes('access.policies.errors.custom'))).toBe(true)
+  })
+
+  it('RoleAssignmentForm busy prop reflects store mutating (P-F2)', () => {
+    const { wrapper } = mountView({
+      userId: 'u-1',
+      roles: [mkRole()],
+      loading: false,
+      mutating: true,
+    })
+    const form = wrapper.findComponent({ name: 'RoleAssignmentForm' })
+    expect(form.props('busy')).toBe(true)
   })
 })

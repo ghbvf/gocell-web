@@ -1,11 +1,9 @@
 import { describe, it, expect, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
-import type { HttpAuthRoleListV1Response } from '@gocell/contracts'
+import type { Role } from '../api/roles'
 import RolePermissionMatrix from './RolePermissionMatrix.vue'
 
 vi.mock('vue-i18n', () => ({ useI18n: () => ({ t: (k: string) => k }) }))
-
-type Role = HttpAuthRoleListV1Response['data'][number]
 
 const roleA: Role = {
   id: 'r-admin',

@@ -402,6 +402,7 @@ const zhCN = {
         selectPlaceholder: '选择要撤销的角色',
         title: '撤销角色',
       },
+      roleCount: '共 {count} 个角色',
       errors: {
         assignFailed: '分配角色失败',
         revokeFailed: '撤销角色失败',

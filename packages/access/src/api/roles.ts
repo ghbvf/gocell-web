@@ -24,7 +24,9 @@ import { http } from '@gocell/request'
 import type {
   HttpAuthRoleListV1Response,
   HttpAuthRoleAssignV1Request,
+  HttpAuthRoleAssignV1Response,
   HttpAuthRoleRevokeV1Request,
+  HttpAuthRoleRevokeV1Response,
 } from '@gocell/contracts'
 
 /** Collection base URL for role operations. */
@@ -57,7 +59,7 @@ export async function listUserRoles(userId: string): Promise<Role[]> {
  * (/internal/v1/access/roles/assign). See module-level comment above.
  */
 export async function assignRole(body: HttpAuthRoleAssignV1Request): Promise<void> {
-  await http.post(`${ROLES_URL}/assign`, body)
+  await http.post<HttpAuthRoleAssignV1Response>(`${ROLES_URL}/assign`, body)
 }
 
 /**
@@ -69,5 +71,5 @@ export async function assignRole(body: HttpAuthRoleAssignV1Request): Promise<voi
  * (/internal/v1/access/roles/revoke). See module-level comment above.
  */
 export async function revokeRole(body: HttpAuthRoleRevokeV1Request): Promise<void> {
-  await http.post(`${ROLES_URL}/revoke`, body)
+  await http.post<HttpAuthRoleRevokeV1Response>(`${ROLES_URL}/revoke`, body)
 }

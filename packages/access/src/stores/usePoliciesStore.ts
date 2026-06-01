@@ -14,12 +14,17 @@ import { listUserRoles, assignRole, revokeRole, type Role } from '../api/roles'
  * revoke) DO NOT swallow — they re-throw so the triggering control can show
  * an inline error and stay open; on success they re-fetch the user's roles.
  */
+
+// Module-closure generation counter for fetchRoles race guard (P-F6).
+let generation = 0
+
 export const usePoliciesStore = defineStore('access.policies', () => {
   // ─── state ──────────────────────────────────────────────────────────────
   const userId = ref('')
   const roles = ref<Role[]>([])
   const loading = ref(false)
   const errorKey = ref<string | null>(null)
+  const mutating = ref(false)
 
   // ─── read actions ───────────────────────────────────────────────────────
 
@@ -32,16 +37,18 @@ export const usePoliciesStore = defineStore('access.policies', () => {
       roles.value = []
       return
     }
+    const gen = ++generation
     userId.value = id
     loading.value = true
     errorKey.value = null
     try {
-      roles.value = await listUserRoles(id)
+      const r = await listUserRoles(id)
+      if (gen === generation) roles.value = r
     } catch (err: unknown) {
       // Keep prior roles on failure; surface the i18n key for inline display.
-      errorKey.value = toI18nKey(err)
+      if (gen === generation) errorKey.value = toI18nKey(err)
     } finally {
-      loading.value = false
+      if (gen === generation) loading.value = false
     }
   }
 
@@ -51,19 +58,33 @@ export const usePoliciesStore = defineStore('access.policies', () => {
    * Assign `roleId` to the current `userId`. Refreshes the role list on
    * success. Re-throws on failure — the calling UI is responsible for
    * surfacing the error inline and keeping the panel open.
+   * Concurrent calls while in-flight are ignored (P-F2).
    */
   async function assign(roleId: string): Promise<void> {
-    await assignRole({ userId: userId.value, roleId })
-    await fetchRoles(userId.value)
+    if (mutating.value) return
+    mutating.value = true
+    try {
+      await assignRole({ userId: userId.value, roleId })
+      await fetchRoles(userId.value)
+    } finally {
+      mutating.value = false
+    }
   }
 
   /**
    * Revoke `roleId` from the current `userId`. Symmetric with `assign`:
    * refreshes on success, re-throws on failure.
+   * Concurrent calls while in-flight are ignored (P-F2).
    */
   async function revoke(roleId: string): Promise<void> {
-    await revokeRole({ userId: userId.value, roleId })
-    await fetchRoles(userId.value)
+    if (mutating.value) return
+    mutating.value = true
+    try {
+      await revokeRole({ userId: userId.value, roleId })
+      await fetchRoles(userId.value)
+    } finally {
+      mutating.value = false
+    }
   }
 
   return {
@@ -72,6 +93,7 @@ export const usePoliciesStore = defineStore('access.policies', () => {
     roles,
     loading,
     errorKey,
+    mutating,
     // read actions
     fetchRoles,
     // mutation actions

@@ -383,7 +383,7 @@ const enUS = {
       user: {
         label: 'User ID',
         placeholder: 'Enter a user ID to inspect their roles',
-        load: 'Inspect',
+        load: 'Look up',
         required: 'Enter a user ID',
       },
       loading: 'Loading roles…',
@@ -410,6 +410,7 @@ const enUS = {
         selectPlaceholder: 'Select a role to revoke',
         title: 'Revoke a role',
       },
+      roleCount: '{count} role(s)',
       errors: {
         assignFailed: 'Failed to assign role',
         revokeFailed: 'Failed to revoke role',
