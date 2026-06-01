@@ -39,6 +39,29 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@gocell/access/views/identities'),
         meta: { requiresAuth: true, requiredAction: 'read', requiredResource: 'identity' },
       },
+      {
+        // Access · Policies (Batch 3). PDP-gated like identities: fail-closed until
+        // the /access/decide backend ships (BR-004); meta carries no hardcoded role.
+        path: 'access/policies',
+        name: 'access-policies',
+        component: () => import('@gocell/access/views/policies'),
+        meta: { requiresAuth: true, requiredAction: 'read', requiredResource: 'policy' },
+      },
+      {
+        // Wave-2 placeholders (T305): reachable but content is "coming soon".
+        path: 'access/decisions',
+        name: 'access-decisions',
+        component: () => import('@gocell/access/views/coming-soon'),
+        props: { titleKey: 'nav.decisions' },
+        meta: { requiresAuth: true },
+      },
+      {
+        path: 'access/reviews',
+        name: 'access-reviews',
+        component: () => import('@gocell/access/views/coming-soon'),
+        props: { titleKey: 'nav.reviews' },
+        meta: { requiresAuth: true },
+      },
     ],
   },
 ]

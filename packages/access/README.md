@@ -9,10 +9,12 @@ auth store（全内存 token）+ first-run / login 视图 + Identities 列表 + 
 | 入口 | 内容 |
 |---|---|
 | `.` (`src/index.ts`) | `useAuthStore`、`AuthUser`（type）、`createPdpClient` |
-| `./stores` (`src/stores/index.ts`) | `useAuthStore`、`AuthUser`（type）、`useIdentitiesStore` |
+| `./stores` (`src/stores/index.ts`) | `useAuthStore`、`AuthUser`（type）、`useIdentitiesStore`、`usePoliciesStore`、`Role`（type） |
 | `./views/login` (`src/views/LoginView.vue`) | `LoginView`（默认导出，`apps/web` 路由懒加载） |
 | `./views/first-run` (`src/views/FirstRunSetupView.vue`) | `FirstRunSetupView`（默认导出，`apps/web` 路由懒加载） |
 | `./views/identities` (`src/views/IdentitiesView.vue`) | `IdentitiesView`（`/access/identities` 列表页，路由懒加载） |
+| `./views/policies` (`src/views/PoliciesView.vue`) | `PoliciesView`（`/access/policies` 策略页，路由懒加载） |
+| `./views/coming-soon` (`src/views/AccessComingSoonView.vue`) | `AccessComingSoonView`（通用占位页，路由懒加载） |
 
 > 每个 view 各为独立 export 子路径 → 各自独立 async chunk（访问 `/login` 不连带加载 first-run 向导 / identities 表）。
 > `api/setup`、`api/identities`、`composables/useSetupWizard`、`lib/validation`、`lib/identityValidation`、
