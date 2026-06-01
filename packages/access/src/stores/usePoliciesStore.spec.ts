@@ -1,0 +1,179 @@
+import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { setActivePinia, createPinia } from 'pinia'
+import { usePoliciesStore } from './usePoliciesStore'
+import type { Role } from '../api/roles'
+
+// Mirror the pattern from useIdentitiesStore.spec.ts — mock the api module, not @gocell/request
+vi.mock('../api/roles', () => ({
+  listUserRoles: vi.fn(),
+  assignRole: vi.fn(),
+  revokeRole: vi.fn(),
+  ROLES_URL: '/api/v1/access/roles',
+}))
+
+// Import mocked functions after vi.mock hoisting
+import { listUserRoles, assignRole, revokeRole } from '../api/roles'
+
+const mkRole = (over: Partial<Role> = {}): Role => ({
+  id: 'role-1',
+  name: 'admin',
+  permissions: [{ resource: 'users', action: 'read' }],
+  ...over,
+})
+
+describe('usePoliciesStore', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    vi.resetAllMocks()
+  })
+
+  it('starts with empty state', () => {
+    const store = usePoliciesStore()
+    expect(store.userId).toBe('')
+    expect(store.roles).toEqual([])
+    expect(store.loading).toBe(false)
+    expect(store.errorKey).toBeNull()
+  })
+
+  describe('fetchRoles', () => {
+    it('populates roles on success and clears error', async () => {
+      const roles = [mkRole(), mkRole({ id: 'role-2', name: 'viewer' })]
+      vi.mocked(listUserRoles).mockResolvedValueOnce(roles)
+
+      const store = usePoliciesStore()
+      await store.fetchRoles('u-1')
+
+      expect(store.userId).toBe('u-1')
+      expect(store.roles).toEqual(roles)
+      expect(store.loading).toBe(false)
+      expect(store.errorKey).toBeNull()
+    })
+
+    it('sets loading=true during the request, then false after', async () => {
+      let resolveRoles!: (v: Role[]) => void
+      vi.mocked(listUserRoles).mockReturnValueOnce(
+        new Promise<Role[]>((res) => {
+          resolveRoles = res
+        }),
+      )
+
+      const store = usePoliciesStore()
+      const p = store.fetchRoles('u-1')
+      expect(store.loading).toBe(true)
+      resolveRoles([mkRole()])
+      await p
+      expect(store.loading).toBe(false)
+    })
+
+    it('swallows errors into errorKey and leaves prior roles intact', async () => {
+      const store = usePoliciesStore()
+      // Seed prior roles
+      store.roles = [mkRole()]
+
+      // Must look like an AxiosError (isAxiosError: true) for toI18nKey to extract the code.
+      vi.mocked(listUserRoles).mockRejectedValueOnce(
+        Object.assign(new Error('Request failed with status code 403'), {
+          isAxiosError: true,
+          response: { data: { error: { code: 'ERR_AUTH_FORBIDDEN' } }, status: 403 },
+        }),
+      )
+      await store.fetchRoles('u-1')
+
+      expect(store.errorKey).toBe('errors.ERR_AUTH_FORBIDDEN')
+      expect(store.loading).toBe(false)
+      // Prior roles remain untouched
+      expect(store.roles).toHaveLength(1)
+    })
+
+    it('short-circuits on blank userId — no API call, roles cleared', async () => {
+      const store = usePoliciesStore()
+      store.roles = [mkRole()]
+
+      await store.fetchRoles('')
+
+      expect(listUserRoles).not.toHaveBeenCalled()
+      expect(store.roles).toEqual([])
+    })
+
+    it('short-circuits on whitespace-only userId', async () => {
+      await usePoliciesStore().fetchRoles('   ')
+      expect(listUserRoles).not.toHaveBeenCalled()
+    })
+
+    it('clears a prior errorKey on a subsequent successful fetch', async () => {
+      vi.mocked(listUserRoles).mockRejectedValueOnce(new Error('fail'))
+      const store = usePoliciesStore()
+      await store.fetchRoles('u-1')
+      expect(store.errorKey).not.toBeNull()
+
+      vi.mocked(listUserRoles).mockResolvedValueOnce([mkRole()])
+      await store.fetchRoles('u-1')
+      expect(store.errorKey).toBeNull()
+    })
+  })
+
+  describe('assign', () => {
+    it('calls assignRole with userId + roleId then refetches', async () => {
+      vi.mocked(assignRole).mockResolvedValueOnce(undefined)
+      vi.mocked(listUserRoles).mockResolvedValueOnce([mkRole()])
+
+      const store = usePoliciesStore()
+      store.userId = 'u-1'
+      await store.assign('role-1')
+
+      expect(assignRole).toHaveBeenCalledWith({ userId: 'u-1', roleId: 'role-1' })
+      expect(listUserRoles).toHaveBeenCalledWith('u-1')
+      expect(store.roles).toHaveLength(1)
+    })
+
+    it('re-throws on failure and does NOT set errorKey', async () => {
+      vi.mocked(assignRole).mockRejectedValueOnce(new Error('assign failed'))
+
+      const store = usePoliciesStore()
+      store.userId = 'u-1'
+      await expect(store.assign('role-1')).rejects.toThrow('assign failed')
+      expect(store.errorKey).toBeNull()
+    })
+
+    it('does not refetch when assign fails', async () => {
+      vi.mocked(assignRole).mockRejectedValueOnce(new Error('fail'))
+
+      const store = usePoliciesStore()
+      store.userId = 'u-1'
+      await expect(store.assign('role-1')).rejects.toThrow()
+      expect(listUserRoles).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('revoke', () => {
+    it('calls revokeRole with userId + roleId then refetches', async () => {
+      vi.mocked(revokeRole).mockResolvedValueOnce(undefined)
+      vi.mocked(listUserRoles).mockResolvedValueOnce([mkRole({ id: 'role-2', name: 'viewer' })])
+
+      const store = usePoliciesStore()
+      store.userId = 'u-1'
+      await store.revoke('role-1')
+
+      expect(revokeRole).toHaveBeenCalledWith({ userId: 'u-1', roleId: 'role-1' })
+      expect(listUserRoles).toHaveBeenCalledWith('u-1')
+    })
+
+    it('re-throws on failure and does NOT set errorKey', async () => {
+      vi.mocked(revokeRole).mockRejectedValueOnce(new Error('revoke failed'))
+
+      const store = usePoliciesStore()
+      store.userId = 'u-1'
+      await expect(store.revoke('role-1')).rejects.toThrow('revoke failed')
+      expect(store.errorKey).toBeNull()
+    })
+
+    it('does not refetch when revoke fails', async () => {
+      vi.mocked(revokeRole).mockRejectedValueOnce(new Error('fail'))
+
+      const store = usePoliciesStore()
+      store.userId = 'u-1'
+      await expect(store.revoke('role-1')).rejects.toThrow()
+      expect(listUserRoles).not.toHaveBeenCalled()
+    })
+  })
+})
