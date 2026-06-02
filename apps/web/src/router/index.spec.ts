@@ -87,4 +87,41 @@ describe('router layout fork', () => {
     expect(m.meta.requiredAction).toBe('read')
     expect(m.meta.requiredResource).toBe('cell')
   })
+
+  it('renders /contracts nested under the shell, gate degraded to cell (Batch 6)', () => {
+    const m = router.resolve('/contracts')
+    expect(m.name).toBe('contracts')
+    expect(m.matched.length).toBeGreaterThanOrEqual(2)
+    expect(m.meta.requiresAuth).toBe(true)
+    expect(m.meta.requiredAction).toBe('read')
+    expect(m.meta.requiredResource).toBe('cell')
+  })
+
+  it('renders /deps nested under the shell, gate degraded to cell (Batch 6)', () => {
+    const m = router.resolve('/deps')
+    expect(m.name).toBe('deps')
+    expect(m.matched.length).toBeGreaterThanOrEqual(2)
+    expect(m.meta.requiresAuth).toBe(true)
+    expect(m.meta.requiredAction).toBe('read')
+    expect(m.meta.requiredResource).toBe('cell')
+  })
+
+  it('renders /coverage behind only the auth gate — a self-referential meta page (Batch 6)', () => {
+    const m = router.resolve('/coverage')
+    expect(m.name).toBe('coverage')
+    expect(m.matched.length).toBeGreaterThanOrEqual(2)
+    expect(m.meta.requiresAuth).toBe(true)
+    // No PDP resource exists for a dev-tool self-overview — auth gate only.
+    expect(m.meta.requiredAction).toBeUndefined()
+    expect(m.meta.requiredResource).toBeUndefined()
+  })
+
+  it('renders /groups nested under the shell, gate degraded to cell (Batch 6)', () => {
+    const m = router.resolve('/groups')
+    expect(m.name).toBe('groups')
+    expect(m.matched.length).toBeGreaterThanOrEqual(2)
+    expect(m.meta.requiresAuth).toBe(true)
+    expect(m.meta.requiredAction).toBe('read')
+    expect(m.meta.requiredResource).toBe('cell')
+  })
 })

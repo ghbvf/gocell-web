@@ -105,6 +105,44 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@gocell/devboard/views/cell-detail'),
         meta: { requiresAuth: true, requiredAction: 'read', requiredResource: 'cell' },
       },
+      {
+        // Build · Contract registry (Batch 6). Read-only; data derived from the
+        // static CELL_MANIFEST (governance gates / response envelopes are a
+        // labelled static snapshot). The backend has no `contract` PDP resource
+        // yet, so the gate degrades to `cell` — same gate as the cells list.
+        path: 'contracts',
+        name: 'contracts',
+        component: () => import('@gocell/devboard/views/contracts'),
+        meta: { requiresAuth: true, requiredAction: 'read', requiredResource: 'cell' },
+      },
+      {
+        // Build · Dependency explorer (Batch 6). Read-only; cell dependency
+        // graph derived from CELL_MANIFEST.dependsOnCells. No `dep` PDP resource
+        // exists, so the gate degrades to `cell`.
+        path: 'deps',
+        name: 'deps',
+        component: () => import('@gocell/devboard/views/deps'),
+        meta: { requiresAuth: true, requiredAction: 'read', requiredResource: 'cell' },
+      },
+      {
+        // Meta · Coverage matrix (Batch 6). gocell-web's own implementation
+        // progress board — static, self-referential, with no backend resource
+        // to authorize against, so it carries only the auth gate (a PDP
+        // `requiredAction` would fail-closed against a non-existent resource).
+        path: 'coverage',
+        name: 'coverage',
+        component: () => import('@gocell/devboard/views/coverage'),
+        meta: { requiresAuth: true },
+      },
+      {
+        // Operate · Smart Groups preview (Batch 6). Read-only; static group
+        // rules with membership computed live from CELL_MANIFEST. Same `cell`
+        // gate degradation as the other devboard views.
+        path: 'groups',
+        name: 'groups',
+        component: () => import('@gocell/devboard/views/groups'),
+        meta: { requiresAuth: true, requiredAction: 'read', requiredResource: 'cell' },
+      },
     ],
   },
 ]
