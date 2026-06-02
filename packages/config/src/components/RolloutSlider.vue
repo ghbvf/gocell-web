@@ -4,22 +4,31 @@
  *
  * Uses a native <input type="range"> for built-in keyboard support (← → Home End).
  * Emits `update:modelValue` with clamped integer (0–100).
- * a11y: aria-valuenow/min/max, aria-label (caller must pass i18n-resolved string),
- * keyboard-operable via native range.
+ *
+ * a11y: accessible name comes from the parent's <label for="inputId"> association.
+ * The slider value is carried by aria-valuenow/valuemin/valuemax.
+ * The parent must render a <label :for="inputId"> — do NOT add aria-label on the input
+ * when a visible label is already associated (double accessible name).
+ *
+ * inputId: caller-supplied unique id (required to bind <label for> + <output for>).
+ * In Vue 3.5+ the parent can use useId() to generate a stable unique value.
+ *
  * prefers-reduced-motion: transition disabled when reduced motion is preferred.
  */
-withDefaults(
-  defineProps<{
-    modelValue: number
-    /** Caller must pass a pre-translated aria-label string. */
-    ariaLabel?: string
-  }>(),
-  { ariaLabel: 'Rollout percentage' },
-)
+import { useId } from 'vue'
+
+const props = defineProps<{
+  modelValue: number
+  /** Stable unique HTML id for the range input. Used to bind <label for> and <output for>. */
+  inputId?: string
+}>()
 
 const emit = defineEmits<{
   'update:modelValue': [value: number]
 }>()
+
+/** Fallback to useId() when caller does not supply an id. */
+const resolvedId = props.inputId ?? useId()
 
 function clamp(n: number): number {
   return Math.min(100, Math.max(0, Math.round(n)))
@@ -35,7 +44,7 @@ function onChange(event: Event): void {
   <div class="rollout-slider">
     <div class="rollout-slider__track">
       <input
-        id="rollout-slider-input"
+        :id="resolvedId"
         type="range"
         class="rollout-slider__input"
         :value="modelValue"
@@ -45,11 +54,10 @@ function onChange(event: Event): void {
         :aria-valuenow="modelValue"
         aria-valuemin="0"
         aria-valuemax="100"
-        :aria-label="ariaLabel"
         @input="onChange"
       />
     </div>
-    <output class="rollout-slider__value" :for="'rollout-slider-input'"> {{ modelValue }}% </output>
+    <output class="rollout-slider__value" :for="resolvedId"> {{ modelValue }}% </output>
   </div>
 </template>
 

@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref, computed, shallowRef } from 'vue'
 import { toI18nKey } from '@gocell/request'
 import type {
   HttpConfigFlagsCreateV1Request,
@@ -40,7 +40,7 @@ const PAGE_SIZE = 50
  */
 export const useFlagsStore = defineStore('config.flags', () => {
   // ─── state ──────────────────────────────────────────────────────────────
-  const flags = ref<FeatureFlag[]>([])
+  const flags = shallowRef<FeatureFlag[]>([])
   const loading = ref(false)
   const errorKey = ref<string | null>(null)
   const nextCursor = ref('')
@@ -56,13 +56,16 @@ export const useFlagsStore = defineStore('config.flags', () => {
     return flags.value.filter((f) => f.key.toLowerCase().includes(q))
   })
 
+  /** O(1) lookup map: key → enabled. Recomputed when flags array reference changes. */
+  const flagMap = computed(() => new Map(flags.value.map((f) => [f.key, f.enabled])))
+
   /**
    * Synchronous enabled check for a flag by key.
    * Used by useFlag() composable — consumes the list cache, no HTTP.
    * Returns false (fail-safe) when the key is not in the current cache.
    */
   function isEnabled(key: string): boolean {
-    return flags.value.find((f) => f.key === key)?.enabled ?? false
+    return flagMap.value.get(key) ?? false
   }
 
   // ─── read actions ───────────────────────────────────────────────────────

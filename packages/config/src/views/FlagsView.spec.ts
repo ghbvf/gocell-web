@@ -141,13 +141,13 @@ describe('FlagsView · flag card list', () => {
     expect(wrapper.find('.v1-switch').exists()).toBe(true)
   })
 
-  it('enabled toggle has aria-label for a11y', () => {
+  it('enabled toggle checkbox has aria-label for a11y', () => {
     const { wrapper } = mountView({ flags: [mkFlag()] })
-    // The v1-switch label must have a meaningful aria-label
-    const switchLabel = wrapper.find('.v1-switch')
-    expect(
-      switchLabel.attributes('aria-label') ?? wrapper.find('.v1-switch label').exists(),
-    ).toBeTruthy()
+    // The checkbox input inside .v1-switch must have aria-label (accessible name on the input).
+    // The <label> wrapper has no text content, so aria-label on <input> provides the name.
+    const switchInput = wrapper.find('.v1-switch input[type="checkbox"]')
+    expect(switchInput.exists()).toBe(true)
+    expect(switchInput.attributes('aria-label')).toBeTruthy()
   })
 
   it('description is shown', () => {
@@ -273,6 +273,49 @@ describe('FlagsView · modal interactions', () => {
     await flushPromises()
 
     expect(modal.props('errorKey')).toBe('errors.ERR_VERSION_CONFLICT')
+  })
+})
+
+describe('FlagsView · toggle guard (Can)', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('toggle switch is NOT rendered when PDP denies write on flag', () => {
+    const { wrapper } = mountView({ flags: [mkFlag({ enabled: true })] }, false)
+    // When pdpAllowed=false the <Can> wrapper suppresses the v1-switch
+    expect(wrapper.find('.v1-switch').exists()).toBe(false)
+  })
+
+  it('toggle switch IS rendered when PDP allows write on flag', () => {
+    const { wrapper } = mountView({ flags: [mkFlag({ enabled: true })] }, true)
+    expect(wrapper.find('.v1-switch').exists()).toBe(true)
+  })
+
+  it('changing toggle for enabled flag opens kill dialog without flipping checkbox', async () => {
+    const flag = mkFlag({ enabled: true })
+    const { wrapper } = mountView({ flags: [flag] }, true)
+
+    const checkbox = wrapper.find('.v1-switch input[type="checkbox"]')
+    expect(checkbox.exists()).toBe(true)
+    await checkbox.trigger('change')
+    await flushPromises()
+
+    // Kill dialog should now be open
+    const killDialog = wrapper
+      .findAllComponents({ name: 'ConfirmDialog' })
+      .find((d) => d.props('titleKey') === 'flags.list.confirm.kill.title')
+    expect(killDialog?.props('open')).toBe(true)
+  })
+
+  it('changing toggle for disabled flag calls store.toggle with enabled=true', async () => {
+    const flag = mkFlag({ enabled: false })
+    const { wrapper, store } = mountView({ flags: [flag] }, true)
+    vi.mocked(store.toggle).mockResolvedValue(undefined)
+
+    const checkbox = wrapper.find('.v1-switch input[type="checkbox"]')
+    await checkbox.trigger('change')
+    await flushPromises()
+
+    expect(store.toggle).toHaveBeenCalledWith(flag.key, expect.objectContaining({ enabled: true }))
   })
 })
 

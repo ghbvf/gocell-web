@@ -613,6 +613,7 @@ const enUS = {
         variantComingSoon: 'Variant configuration is coming soon',
       },
       confirm: {
+        cancel: 'Cancel',
         kill: {
           title: 'Kill this flag?',
           message:

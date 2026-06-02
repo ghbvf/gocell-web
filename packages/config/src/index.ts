@@ -2,8 +2,7 @@
 export { useConfigStore } from './stores'
 export type { ConfigEntry } from './api/config'
 
-// flags domain public API
+// flags domain public API — stores and types only
+// useFlag / FLAG_KEYS / FlagKey are exposed exclusively via @gocell/config/composables
 export { useFlagsStore } from './stores'
-export { useFlag } from './composables/useFlag'
-export { FLAG_KEYS, type FlagKey } from './flags/registry'
 export type { FeatureFlag } from './api/flags'

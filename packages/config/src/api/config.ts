@@ -36,21 +36,14 @@ export type ConfigEntry = HttpConfigListV1Response['data'][number]
 /** Publish snapshot (returned from publishConfig). */
 export type PublishSnapshot = HttpConfigPublishV1Response['data']
 
-/** Cursor-paginated list page. */
-export interface ConfigListPage {
-  data: ConfigEntry[]
-  nextCursor: string
-  hasMore: boolean
-}
-
 export interface ListConfigParams {
   cursor?: string
   limit?: number
 }
 
 /** GET /api/v1/config/ — cursor-paginated config entry list. */
-export async function listConfig(params: ListConfigParams = {}): Promise<ConfigListPage> {
-  const res = await http.get<ConfigListPage>(CONFIG_URL, { params })
+export async function listConfig(params: ListConfigParams = {}): Promise<HttpConfigListV1Response> {
+  const res = await http.get<HttpConfigListV1Response>(CONFIG_URL, { params })
   return res.data
 }
 

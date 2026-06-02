@@ -82,6 +82,34 @@ async function onModalSubmit(payload: CreateFlagPayload | UpdateFlagPayload): Pr
   }
 }
 
+// ─── toggle handler ──────────────────────────────────────────────────────────
+/**
+ * Handle the v1-switch checkbox change.
+ * - enabled → disabled: prevent the native checkbox flip, open kill-switch confirm.
+ *   The checkbox stays visually checked until the user confirms; the store refreshes
+ *   and the :checked binding reflects the real state after confirmation.
+ * - disabled → enabled: immediately call store.toggle(enabled=true).
+ *   Any error surfaces via the kill dialog's errorKey for symmetry.
+ */
+function onToggleChange(event: Event, flag: FeatureFlag): void {
+  if (flag.enabled) {
+    // Kill-switch path: revert the native checkbox flip and open confirmation.
+    ;(event.target as HTMLInputElement).checked = true
+    event.preventDefault()
+    askKill(flag)
+  } else {
+    // Enable path: apply immediately (no confirmation needed).
+    void store
+      .toggle(flag.key, { enabled: true, expectedVersion: flag.version })
+      .catch((err: unknown) => {
+        killErrorKey.value = isGoCellRequestError(err)
+          ? (err.i18nKey ?? 'errors.unknown')
+          : 'errors.unknown'
+        killFlag.value = flag
+      })
+  }
+}
+
 // ─── kill switch confirm ─────────────────────────────────────────────────────
 const killFlag = ref<FeatureFlag | null>(null)
 const killBusy = ref(false)
@@ -216,24 +244,25 @@ async function onDeleteConfirm(): Promise<void> {
             {{ t('flags.list.card.variantComingSoon') }}
           </span>
 
-          <!-- Enabled toggle (v1-switch) -->
-          <!-- Switch is labelled via aria-label on the <label>; color not sole semantic -->
-          <label
-            class="v1-switch"
-            :aria-label="
-              t('flags.list.card.toggleAriaLabel', {
-                key: flag.key,
-                state: flag.enabled ? t('flags.list.card.enabled') : t('flags.list.card.disabled'),
-              })
-            "
-          >
-            <input
-              type="checkbox"
-              :checked="flag.enabled"
-              @change="flag.enabled ? askKill(flag) : undefined"
-            />
-            <span />
-          </label>
+          <!-- Enabled toggle (v1-switch) — write-gated by <Can> -->
+          <Can action="write" resource="flag">
+            <label class="v1-switch">
+              <input
+                type="checkbox"
+                :checked="flag.enabled"
+                :aria-label="
+                  t('flags.list.card.toggleAriaLabel', {
+                    key: flag.key,
+                    state: flag.enabled
+                      ? t('flags.list.card.enabled')
+                      : t('flags.list.card.disabled'),
+                  })
+                "
+                @change="onToggleChange($event, flag)"
+              />
+              <span />
+            </label>
+          </Can>
 
           <!-- Row actions -->
           <div class="flags__actions">
@@ -302,6 +331,7 @@ async function onDeleteConfirm(): Promise<void> {
       title-key="flags.list.confirm.kill.title"
       message-key="flags.list.confirm.kill.message"
       confirm-key="flags.list.confirm.kill.confirm"
+      cancel-key="flags.list.confirm.cancel"
       :danger="true"
       :busy="killBusy"
       :error-key="killErrorKey"
@@ -315,6 +345,7 @@ async function onDeleteConfirm(): Promise<void> {
       title-key="flags.list.confirm.delete.title"
       message-key="flags.list.confirm.delete.message"
       confirm-key="flags.list.confirm.delete.confirm"
+      cancel-key="flags.list.confirm.cancel"
       :danger="true"
       :busy="deleteBusy"
       :error-key="deleteErrorKey"
@@ -470,7 +501,7 @@ async function onDeleteConfirm(): Promise<void> {
 .v1-flag-bar {
   height: 4px;
   background: var(--line-soft);
-  border-radius: 4px;
+  border-radius: var(--r-sm);
   overflow: hidden;
 }
 
@@ -513,7 +544,7 @@ async function onDeleteConfirm(): Promise<void> {
 .v1-switch span {
   position: absolute;
   inset: 0;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: var(--line);
   transition: background 0.2s;
   pointer-events: none;

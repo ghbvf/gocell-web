@@ -239,7 +239,7 @@ async function onDeleteConfirm(): Promise<void> {
               <span
                 v-if="entry.sensitive"
                 class="config__redacted"
-                aria-label="config.entries.table.sensitiveAriaLabel"
+                :aria-label="t('config.entries.table.sensitiveAriaLabel')"
               >
                 <span aria-hidden="true">{{ REDACTED }}</span>
                 <span class="config__sensitive-tag">{{
@@ -334,7 +334,9 @@ async function onDeleteConfirm(): Promise<void> {
       @cancel="publishEntry = null"
     />
 
-    <!-- Rollback confirm dialog (with version number input) -->
+    <!-- Rollback confirm dialog (with version number input injected via slot) -->
+    <!-- The version input is inside the ConfirmDialog slot so it lives within the
+         ModalShell panel and focus trap, avoiding inert-attribute isolation. -->
     <ConfirmDialog
       :open="rollbackEntry !== null"
       title-key="config.entries.confirm.rollback.title"
@@ -345,28 +347,26 @@ async function onDeleteConfirm(): Promise<void> {
       @confirm="onRollbackConfirm"
       @cancel="rollbackEntry = null"
     >
-      <!-- Version picker injected via slot — no version-history endpoint (BR-008 pending):
+      <!-- Version picker — no version-history endpoint (BR-008 pending):
            user manually supplies target version. min=1, max=current-1. -->
+      <div class="config__rollback-version">
+        <label class="config__filter-label" for="config-rollback-version">
+          {{ t('config.entries.confirm.rollback.versionLabel') }}
+        </label>
+        <input
+          id="config-rollback-version"
+          v-model.number="rollbackVersion"
+          type="number"
+          class="config__filter config__rollback-input"
+          :min="1"
+          :max="rollbackMax"
+          aria-describedby="config-rollback-version-hint"
+        />
+        <p id="config-rollback-version-hint" class="config__hint">
+          {{ t('config.entries.confirm.rollback.versionHint', { max: rollbackMax }) }}
+        </p>
+      </div>
     </ConfirmDialog>
-
-    <!-- Rollback version input (shown alongside the rollback dialog) -->
-    <div v-if="rollbackEntry !== null" class="config__rollback-version" aria-live="polite">
-      <label class="config__filter-label" for="config-rollback-version">
-        {{ t('config.entries.confirm.rollback.versionLabel') }}
-      </label>
-      <input
-        id="config-rollback-version"
-        v-model.number="rollbackVersion"
-        type="number"
-        class="config__filter config__rollback-input"
-        :min="1"
-        :max="rollbackMax"
-        :aria-describedby="'config-rollback-version-hint'"
-      />
-      <p id="config-rollback-version-hint" class="config__hint">
-        {{ t('config.entries.confirm.rollback.versionHint', { max: rollbackMax }) }}
-      </p>
-    </div>
 
     <!-- Delete confirm dialog -->
     <ConfirmDialog

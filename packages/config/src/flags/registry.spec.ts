@@ -25,10 +25,11 @@ describe('FLAG_KEYS registry', () => {
   })
 
   it('FlagKey union includes all FLAG_KEYS values', () => {
-    // Exhaustively verify each value is assignable to FlagKey at runtime
+    // Exhaustively verify each value is assignable to FlagKey at compile time.
+    // Object.values(FLAG_KEYS) infers FlagKey[] from the `as const` declaration,
+    // so direct assignment (no cast) is the true type check.
     for (const v of Object.values(FLAG_KEYS)) {
-      // Cast to FlagKey — valid keys must be assignable
-      const asKey: FlagKey = v as FlagKey
+      const asKey: FlagKey = v
       expect(typeof asKey).toBe('string')
     }
   })

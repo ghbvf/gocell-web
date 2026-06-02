@@ -41,6 +41,10 @@ const { t } = useI18n()
     <h2 id="config-confirm-dialog-title" class="confirm__title">{{ t(titleKey) }}</h2>
     <p id="config-confirm-dialog-message" class="confirm__message">{{ t(messageKey) }}</p>
 
+    <!-- Optional slot for additional content inside the dialog panel (e.g. version picker).
+         Rendered between message and error so it sits within the focus trap. -->
+    <slot />
+
     <p v-if="errorKey" class="confirm__error" role="alert">{{ t(errorKey) }}</p>
 
     <div class="confirm__actions">

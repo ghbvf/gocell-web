@@ -264,7 +264,8 @@ function onSubmit(): void {
 }
 
 .drawer__input:focus-visible {
-  outline: none;
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
   border-color: var(--accent);
 }
 

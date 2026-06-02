@@ -27,10 +27,12 @@ describe('RolloutSlider · rendering', () => {
     expect(input.attributes('aria-valuemax')).toBe('100')
   })
 
-  it('sets aria-label for accessibility', () => {
+  it('has an id attribute for label association (accessible name via <label for>)', () => {
+    // RolloutSlider no longer uses aria-label; accessible name comes from
+    // the parent's <label :for="inputId">. The input must have an id set.
     const wrapper = mount(RolloutSlider, { props: { modelValue: 50 } })
     const input = wrapper.find('input[type="range"]')
-    expect(input.attributes('aria-label')).toBeTruthy()
+    expect(input.attributes('id')).toBeTruthy()
   })
 
   it('sets min=0 and max=100 on the input', () => {

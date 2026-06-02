@@ -327,6 +327,26 @@ describe('ConfigView · rollback confirm', () => {
       dialogs.some((d) => d.props('titleKey') === 'config.entries.confirm.rollback.title'),
     ).toBe(true)
   })
+
+  it('version number input is inside the rollback ConfirmDialog slot', async () => {
+    const entry = mkEntry({ version: 3 })
+    const { wrapper } = mountView({ entries: [entry] }, true)
+
+    // Open the rollback dialog
+    const actionBtns = wrapper.findAll('.config__action')
+    await actionBtns[2]?.trigger('click')
+    await flushPromises()
+
+    const rollbackDialog = wrapper
+      .findAllComponents({ name: 'ConfirmDialog' })
+      .find((d) => d.props('titleKey') === 'config.entries.confirm.rollback.title')
+
+    expect(rollbackDialog?.props('open')).toBe(true)
+
+    // The number input must be rendered inside the dialog slot (within its DOM subtree)
+    const versionInput = rollbackDialog?.find('input[type="number"]')
+    expect(versionInput?.exists()).toBe(true)
+  })
 })
 
 describe('ConfigView · SR-only live region', () => {

@@ -36,21 +36,16 @@ const flagItemUrl = (key: string): string => `${FLAGS_URL}${encodeURIComponent(k
  */
 export type FeatureFlag = HttpConfigFlagsListV1Response['data'][number]
 
-/** Cursor-paginated list page. */
-export interface FlagListPage {
-  data: FeatureFlag[]
-  nextCursor: string
-  hasMore: boolean
-}
-
 export interface ListFlagsParams {
   cursor?: string
   limit?: number
 }
 
 /** GET /api/v1/flags/ — cursor-paginated feature flag list. */
-export async function listFlags(params: ListFlagsParams = {}): Promise<FlagListPage> {
-  const res = await http.get<FlagListPage>(FLAGS_URL, { params })
+export async function listFlags(
+  params: ListFlagsParams = {},
+): Promise<HttpConfigFlagsListV1Response> {
+  const res = await http.get<HttpConfigFlagsListV1Response>(FLAGS_URL, { params })
   return res.data
 }
 

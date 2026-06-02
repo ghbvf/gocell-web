@@ -17,7 +17,7 @@
  *   - create mode: { key, description, enabled, rolloutPercentage }
  *   - edit mode: { key, enabled, rolloutPercentage, description, expectedVersion }
  */
-import { computed, reactive, ref, watch } from 'vue'
+import { computed, reactive, ref, useId, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ModalShell } from '@gocell/core/components'
 import type { FeatureFlag } from '../api/flags'
@@ -82,6 +82,9 @@ watch(
 )
 
 const titleKey = computed(() => (isEdit.value ? 'flags.form.editTitle' : 'flags.form.createTitle'))
+
+/** Unique id for the rollout slider input — binds <label for> to <input id>. */
+const rolloutSliderId = useId()
 
 function validateKey(k: string): string | null {
   if (!k.trim()) return 'flags.form.key.required'
@@ -179,13 +182,10 @@ function onSubmit(): void {
 
       <!-- Rollout percentage -->
       <div class="flag-modal__field">
-        <label class="flag-modal__label" for="rollout-slider-input">
+        <label class="flag-modal__label" :for="rolloutSliderId">
           {{ t('flags.form.rollout.label') }}
         </label>
-        <RolloutSlider
-          v-model="form.rolloutPercentage"
-          :aria-label="t('flags.form.rollout.ariaLabel')"
-        />
+        <RolloutSlider v-model="form.rolloutPercentage" :input-id="rolloutSliderId" />
       </div>
 
       <!-- Type display (read-only) — shown in edit mode only -->
@@ -278,7 +278,8 @@ function onSubmit(): void {
 }
 
 .flag-modal__input:focus-visible {
-  outline: none;
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
   border-color: var(--accent);
 }
 

@@ -73,6 +73,29 @@ describe('ConfirmDialog · cancel button', () => {
   })
 })
 
+describe('ConfirmDialog · default slot', () => {
+  it('renders slot content between message and error sections', () => {
+    const wrapper = mount(ConfirmDialog, {
+      props: {
+        open: true,
+        titleKey: 'config.entries.confirm.rollback.title',
+        messageKey: 'config.entries.confirm.rollback.message',
+        confirmKey: 'config.entries.confirm.rollback.confirm',
+      },
+      slots: {
+        default: '<input data-testid="slot-input" type="number" value="2" />',
+      },
+    })
+    expect(wrapper.find('[data-testid="slot-input"]').exists()).toBe(true)
+  })
+
+  it('renders no slot content when nothing is passed', () => {
+    const wrapper = mountDialog()
+    // The <slot /> element renders empty — no extra DOM between message and error
+    expect(wrapper.find('[data-testid="slot-input"]').exists()).toBe(false)
+  })
+})
+
 describe('ConfirmDialog · confirm button', () => {
   it('emits confirm when confirm button is clicked', async () => {
     const wrapper = mountDialog()

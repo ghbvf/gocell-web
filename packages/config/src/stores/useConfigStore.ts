@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref, computed, shallowRef } from 'vue'
 import { toI18nKey } from '@gocell/request'
 import type {
   HttpConfigWriteV1Request,
@@ -39,7 +39,7 @@ const PAGE_SIZE = 50
  */
 export const useConfigStore = defineStore('config.entries', () => {
   // ─── state ──────────────────────────────────────────────────────────────
-  const entries = ref<ConfigEntry[]>([])
+  const entries = shallowRef<ConfigEntry[]>([])
   const loading = ref(false)
   const errorKey = ref<string | null>(null)
   const nextCursor = ref('')

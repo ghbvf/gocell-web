@@ -604,6 +604,7 @@ const zhCN = {
         variantComingSoon: 'variant 配置即将推出',
       },
       confirm: {
+        cancel: '取消',
         kill: {
           title: '关闭 flag？',
           message: '此操作将立即关闭该 flag，使受影响用户回退到默认行为。',
