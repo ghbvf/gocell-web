@@ -50,4 +50,22 @@ describe('router layout fork', () => {
     expect(m.meta.requiredAction).toBe('read')
     expect(m.meta.requiredResource).toBe('audit')
   })
+
+  it('renders /config nested under the shell, behind the auth + PDP gates (Batch 4)', () => {
+    const m = router.resolve('/config')
+    expect(m.name).toBe('config')
+    expect(m.matched.length).toBeGreaterThanOrEqual(2)
+    expect(m.meta.requiresAuth).toBe(true)
+    expect(m.meta.requiredAction).toBe('read')
+    expect(m.meta.requiredResource).toBe('config')
+  })
+
+  it('renders /flags nested under the shell, behind the auth + PDP gates (Batch 4)', () => {
+    const m = router.resolve('/flags')
+    expect(m.name).toBe('flags')
+    expect(m.matched.length).toBeGreaterThanOrEqual(2)
+    expect(m.meta.requiresAuth).toBe(true)
+    expect(m.meta.requiredAction).toBe('read')
+    expect(m.meta.requiredResource).toBe('flag')
+  })
 })

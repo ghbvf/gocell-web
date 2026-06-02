@@ -495,6 +495,166 @@ const enUS = {
       },
     },
   },
+  config: {
+    entries: {
+      title: 'Configuration',
+      subtitle: 'Versioned config entries — edits stage until you publish.',
+      loading: 'Loading…',
+      empty: 'No config entries',
+      loadMore: 'Load more',
+      resultCount: '{count} entries',
+      filter: {
+        label: 'Filter by key',
+        placeholder: 'Type a key…',
+      },
+      table: {
+        label: 'Config entries',
+        key: 'Key',
+        value: 'Value',
+        version: 'Version',
+        updatedAt: 'Updated',
+        actions: 'Actions',
+        sensitiveTag: 'Sensitive',
+        sensitiveAriaLabel: 'Sensitive value is redacted',
+      },
+      actions: {
+        create: '+ New key',
+        edit: 'Edit',
+        editAriaLabel: 'Edit {key}',
+        publish: 'Publish',
+        publishAriaLabel: 'Publish {key}',
+        rollback: 'Rollback',
+        rollbackAriaLabel: 'Rollback {key}',
+        delete: 'Delete',
+        deleteAriaLabel: 'Delete {key}',
+      },
+      drawer: {
+        createTitle: 'New config entry',
+        editTitle: 'Edit config entry',
+        stageHint: 'Saving stages the change; click Publish to make it live.',
+        cancel: 'Cancel',
+        submit: 'Stage change',
+        submitting: 'Submitting…',
+        sensitive: {
+          label: 'Mark as sensitive (value redacted in responses)',
+        },
+        key: {
+          label: 'Key',
+          placeholder: 'e.g. app.debug',
+        },
+        value: {
+          label: 'Value',
+          placeholder: 'Enter config value',
+          sensitiveLabel: 'Sensitive',
+          sensitivePlaceholder: 'Enter a new value (the original is redacted)',
+          sensitiveHint:
+            'The original sensitive value cannot be read back; enter a new value to submit.',
+        },
+      },
+      confirm: {
+        cancel: 'Cancel',
+        publish: {
+          title: 'Publish config',
+          message: 'Publish the current entry as the live version?',
+          confirm: 'Publish',
+        },
+        rollback: {
+          title: 'Rollback config',
+          message: 'Roll the entry back to a specific version?',
+          confirm: 'Rollback',
+          versionLabel: 'Target version',
+          versionHint: 'Enter a version between 1 and {max}',
+        },
+        delete: {
+          title: 'Delete config entry',
+          message: 'This cannot be undone. Delete this entry?',
+          confirm: 'Delete',
+        },
+      },
+      validation: {
+        key: {
+          required: 'Key is required',
+          tooLong: 'Key must not exceed 255 characters',
+          invalidChars: 'Key contains invalid control characters',
+        },
+        value: {
+          required: 'Value is required',
+          sensitiveRedacted: 'The sensitive value is redacted — enter the actual value',
+        },
+      },
+    },
+  },
+  flags: {
+    list: {
+      title: 'Feature flags',
+      subtitle: 'Runtime toggles with rollout %. Changes propagate via configcore.',
+      loading: 'Loading…',
+      empty: 'No feature flags',
+      loadMore: 'Load more',
+      resultCount: '{count} flags',
+      filter: {
+        label: 'Filter by key',
+        placeholder: 'Search flag key…',
+      },
+      actions: {
+        create: '+ New flag',
+        edit: 'Edit',
+        editAriaLabel: 'Edit flag {key}',
+        kill: 'Kill',
+        killAriaLabel: 'Kill switch — disable flag {key} immediately',
+        delete: 'Delete',
+        deleteAriaLabel: 'Delete flag {key}',
+      },
+      card: {
+        enabled: 'Enabled',
+        disabled: 'Disabled',
+        rolloutAriaLabel: 'rollout {pct}%',
+        toggleAriaLabel: '{key} — currently {state}',
+        variantComingSoon: 'Variant configuration is coming soon',
+      },
+      confirm: {
+        kill: {
+          title: 'Kill this flag?',
+          message:
+            'This immediately disables the flag; affected users fall back to default behaviour.',
+          confirm: 'Kill now',
+        },
+        delete: {
+          title: 'Delete this flag?',
+          message:
+            'This cannot be undone. Code referencing this flag key falls back to fail-safe (off).',
+          confirm: 'Delete',
+        },
+      },
+    },
+    form: {
+      createTitle: 'New flag',
+      editTitle: 'Edit flag',
+      cancel: 'Cancel',
+      submit: 'Save',
+      submitting: 'Saving…',
+      variantComingSoon: 'Variant configuration is coming soon',
+      key: {
+        label: 'Flag key',
+        placeholder: 'e.g. payments.new-checkout',
+        required: 'Flag key is required',
+      },
+      description: {
+        label: 'Description',
+        placeholder: 'Briefly describe what this flag controls',
+      },
+      enabled: {
+        label: 'Enable immediately',
+      },
+      rollout: {
+        label: 'Rollout %',
+        ariaLabel: 'Rollout percentage (0–100)',
+      },
+      type: {
+        label: 'Type',
+      },
+    },
+  },
   errors: {
     unknown: 'An unknown error occurred. Please try again.',
     network: 'Network connection failed. Please check your connection.',
