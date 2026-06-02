@@ -9,8 +9,25 @@
 - `.` → `src/index.ts`：manifest 类型、`CELL_MANIFEST`、`useCellsStore`、共享组件（`CellDurabilityBadge` / `UnavailablePanel`）
 - `./views/cells-list` → `CellsListView.vue`（`/cells` 列表页，T503）
 - `./views/cell-detail` → `CellDetailView.vue`（`/cells/:id` 12-tab 详情，T504）
+- `./views/contracts` → `ContractsView.vue`（`/contracts` 平台级 contract registry，T601）
+- `./views/deps` → `DepsView.vue`（`/deps` cell 依赖 explorer，4 视图 list/graph/tree/matrix，T602）
+- `./views/coverage` → `CoverageView.vue`（`/coverage` 实施进度矩阵，T603）
+- `./views/groups` → `GroupsView.vue`（`/groups` Smart Groups preview，T604）
 
 未列出的路径外部不可访问（`package.json#exports` 唯一收口）。
+
+## Batch 6 DevTools 只读页（平台级，区别于 cell-detail 内同名 tab）
+
+四页全部落本包，零跨包 import、零后端调用、零图形库依赖（graph/tree/matrix 纯 SVG/CSS）。数据分两类，严守 **绝不伪造**：
+
+| 页面 | 真实派生（自 `CELL_MANIFEST`） | 静态快照（明确标注，待后端） |
+|---|---|---|
+| `/contracts` | contract registry：聚合所有 cell 的 `produces`/`consumes` → serve/call 关系（`composables/useContractsRegistry.ts`） | governance gates CH-01..06 + typed response envelope（`data/governanceGates.ts` / `data/responseEnvelopes.ts`，页头 `静态快照` banner，待接 `gocell validate --strict`） |
+| `/deps` | cell 间依赖图：自 `dependsOnCells`/`requiredByCells` 派生 edges/forest/matrix（`composables/useDepsGraph.ts`） | —（不引入 go mod 包级快照，避免伪造；cell 级依赖随后端真实增长） |
+| `/coverage` | —（与 `CELL_MANIFEST` 正交） | 实施进度矩阵（`data/coverageMatrix.ts`，手维护 meta，真相源 `dev-coverage.jsx`，PRD §514） |
+| `/groups` | 成员实时计算：predicate 对真实 manifest 字段求值（`data/smartGroups.ts` `groupMembers`） | 分组规则定义（5 条，predicate 仅用可派生字段 domain/tier/durability/依赖数/契约数，preview 级无持久化） |
+
+PDP 门：后端无 `contract`/`dep`/`group` resource，路由守卫降级到 `requiredResource: 'cell'`（同 `/cells`）；`/coverage` 为 dev-tool 自览，仅 `requiresAuth`（设 `requiredAction` 会对不存在的 resource fail-closed）。
 
 ## Cell manifest 派生（T502，AI-robust Hard）
 

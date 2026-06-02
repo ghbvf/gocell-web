@@ -6,7 +6,11 @@
   "exports": {
     ".": "./src/index.ts",
     "./views/cells-list": "./src/views/CellsListView.vue",
-    "./views/cell-detail": "./src/views/CellDetailView.vue"
+    "./views/cell-detail": "./src/views/CellDetailView.vue",
+    "./views/contracts": "./src/views/ContractsView.vue",
+    "./views/deps": "./src/views/DepsView.vue",
+    "./views/coverage": "./src/views/CoverageView.vue",
+    "./views/groups": "./src/views/GroupsView.vue"
   },
   "files": [
     "src"
