@@ -83,13 +83,18 @@ async function onModalSubmit(payload: CreateFlagPayload | UpdateFlagPayload): Pr
 }
 
 // ─── toggle handler ──────────────────────────────────────────────────────────
+/** Enable-path error (surfaced inline; a failed enable must NOT open the kill dialog). */
+const toggleErrorKey = ref<string | null>(null)
+
 /**
  * Handle the v1-switch checkbox change.
  * - enabled → disabled: prevent the native checkbox flip, open kill-switch confirm.
  *   The checkbox stays visually checked until the user confirms; the store refreshes
  *   and the :checked binding reflects the real state after confirmation.
- * - disabled → enabled: immediately call store.toggle(enabled=true).
- *   Any error surfaces via the kill dialog's errorKey for symmetry.
+ * - disabled → enabled: immediately call store.toggle(enabled=true). On failure,
+ *   revert the optimistic native flip and surface the error inline — reusing the
+ *   kill-switch confirm dialog here would show a "disable this flag?" prompt after
+ *   a failed *enable*, which is misleading.
  */
 function onToggleChange(event: Event, flag: FeatureFlag): void {
   if (flag.enabled) {
@@ -99,13 +104,16 @@ function onToggleChange(event: Event, flag: FeatureFlag): void {
     askKill(flag)
   } else {
     // Enable path: apply immediately (no confirmation needed).
+    const input = event.target as HTMLInputElement
+    toggleErrorKey.value = null
     void store
       .toggle(flag.key, { enabled: true, expectedVersion: flag.version })
       .catch((err: unknown) => {
-        killErrorKey.value = isGoCellRequestError(err)
+        // Revert the optimistic native flip; the store state is still disabled.
+        input.checked = false
+        toggleErrorKey.value = isGoCellRequestError(err)
           ? (err.i18nKey ?? 'errors.unknown')
           : 'errors.unknown'
-        killFlag.value = flag
       })
   }
 }
@@ -195,6 +203,11 @@ async function onDeleteConfirm(): Promise<void> {
         :placeholder="t('flags.list.filter.placeholder')"
       />
     </div>
+
+    <!-- Enable-toggle error — surfaced inline, never via the kill dialog -->
+    <p v-if="toggleErrorKey" class="flags__error" data-testid="toggle-error" role="alert">
+      {{ t(toggleErrorKey) }}
+    </p>
 
     <!-- Error state -->
     <p v-if="errorKey" class="flags__error" role="alert">{{ t(errorKey) }}</p>

@@ -577,7 +577,7 @@ const zhCN = {
   },
   flags: {
     list: {
-      title: 'Feature flags',
+      title: '功能开关',
       subtitle: '运行时开关，支持 rollout 百分比；变更经 configcore 传播。',
       loading: '加载中…',
       empty: '暂无 feature flags',

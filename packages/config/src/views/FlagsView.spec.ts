@@ -317,6 +317,28 @@ describe('FlagsView · toggle guard (Can)', () => {
 
     expect(store.toggle).toHaveBeenCalledWith(flag.key, expect.objectContaining({ enabled: true }))
   })
+
+  it('surfaces an enable failure inline without opening the kill dialog', async () => {
+    const flag = mkFlag({ enabled: false })
+    const { wrapper, store } = mountView({ flags: [flag] }, true)
+    vi.mocked(store.toggle).mockRejectedValue(
+      Object.assign(new Error('409'), {
+        isAxiosError: true,
+        i18nKey: 'errors.ERR_VERSION_CONFLICT',
+      }),
+    )
+
+    const checkbox = wrapper.find('.v1-switch input[type="checkbox"]')
+    await checkbox.trigger('change')
+    await flushPromises()
+
+    // Error surfaces inline; the kill-switch confirm dialog must stay closed.
+    expect(wrapper.find('[data-testid="toggle-error"]').exists()).toBe(true)
+    const killDialog = wrapper
+      .findAllComponents({ name: 'ConfirmDialog' })
+      .find((d) => d.props('titleKey') === 'flags.list.confirm.kill.title')
+    expect(killDialog?.props('open')).toBe(false)
+  })
 })
 
 describe('FlagsView · kill switch (toggle)', () => {
