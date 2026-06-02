@@ -38,6 +38,10 @@
       "@gocell/access": ["packages/access/src/index.ts"],
       "@gocell/audit": ["packages/audit/src/index.ts"],
       "@gocell/config": ["packages/config/src/index.ts"],
+      "@gocell/config/composables": ["packages/config/src/composables/index.ts"],
+      "@gocell/config/stores": ["packages/config/src/stores/index.ts"],
+      "@gocell/config/views/config": ["packages/config/src/views/ConfigView.vue"],
+      "@gocell/config/views/flags": ["packages/config/src/views/FlagsView.vue"],
       "@gocell/observability": ["packages/observability/src/index.ts"],
       "@gocell/devboard": ["packages/devboard/src/index.ts"]
     }

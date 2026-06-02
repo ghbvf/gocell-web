@@ -71,6 +71,22 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@gocell/audit/views/audit'),
         meta: { requiresAuth: true, requiredAction: 'read', requiredResource: 'audit' },
       },
+      {
+        // Operate · Configuration (Batch 4). PDP-gated read on `config`; own
+        // async chunk via the @gocell/config/views/config subpath export.
+        path: 'config',
+        name: 'config',
+        component: () => import('@gocell/config/views/config'),
+        meta: { requiresAuth: true, requiredAction: 'read', requiredResource: 'config' },
+      },
+      {
+        // Operate · Feature flags (Batch 4). PDP-gated read on `flag`; flags +
+        // config share the @gocell/config cell but resolve as separate chunks.
+        path: 'flags',
+        name: 'flags',
+        component: () => import('@gocell/config/views/flags'),
+        meta: { requiresAuth: true, requiredAction: 'read', requiredResource: 'flag' },
+      },
     ],
   },
 ]
