@@ -664,6 +664,7 @@ const enUS = {
       searchLabel: 'Search cells',
       searchPlaceholder: 'Search by id or name…',
       domainAll: 'All',
+      domainFilterLabel: 'Filter by domain',
       count: '{count} cells',
       empty: 'No matching cells',
       openCell: 'Open {name} details',
@@ -715,7 +716,6 @@ const enUS = {
       lifecycle: 'Lifecycle',
       health: 'Health',
       runtime: 'Runtime',
-      activity: 'Recent activity',
     },
     interfaces: {
       ispTitle: 'ISP sub-interfaces',

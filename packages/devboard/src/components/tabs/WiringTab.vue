@@ -44,11 +44,11 @@ const hasAnyDeps = computed(
       </section>
 
       <!-- Inline SVG diagram: infra → cell flow -->
-      <section class="card wiring-diagram" aria-label="{{ t('cells.wiring.infraToCell') }}">
+      <section class="card wiring-diagram" :aria-label="t('cells.wiring.infraToCell')">
         <p class="card__heading">{{ t('cells.wiring.infraToCell') }}</p>
         <div class="diagram">
           <!-- Infra boxes on the left -->
-          <div class="diagram__col" aria-label="{{ t('cells.wiring.requires') }}">
+          <div class="diagram__col" :aria-label="t('cells.wiring.requires')">
             <div
               v-for="dep in props.cell.requires"
               :key="dep"
@@ -113,7 +113,7 @@ const hasAnyDeps = computed(
   padding: 14px;
   border: 1px solid var(--line-soft);
   border-radius: var(--r);
-  background: var(--bg-elevated);
+  background: var(--bg-raised);
 }
 
 .card__heading {
@@ -190,7 +190,7 @@ const hasAnyDeps = computed(
 }
 
 .diagram__box--cell {
-  background: var(--bg-elevated);
+  background: var(--bg-raised);
   border-color: var(--accent);
   color: var(--fg);
 }

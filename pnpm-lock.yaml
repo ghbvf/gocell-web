@@ -420,9 +420,6 @@ importers:
 
   packages/devboard:
     dependencies:
-      '@gocell/access':
-        specifier: workspace:*
-        version: link:../access
       '@gocell/contracts':
         specifier: workspace:*
         version: link:../contracts

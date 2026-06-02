@@ -42,7 +42,7 @@ const { query, domain, domains, filtered } = useCellsFilter(cells)
           :placeholder="t('cells.list.searchPlaceholder')"
         />
 
-        <div class="cells-list__seg" role="group">
+        <div class="cells-list__seg" role="group" :aria-label="t('cells.list.domainFilterLabel')">
           <button
             v-for="d in domains"
             :key="d"
@@ -142,14 +142,14 @@ const { query, domain, domains, filtered } = useCellsFilter(cells)
   align-items: baseline;
   gap: 8px;
   margin: 0;
-  font-size: var(--text-xl);
+  font-size: 20px;
   font-weight: 600;
   color: var(--fg);
   font-family: var(--font-sans);
 }
 
 .cells-list__count {
-  font-size: var(--text-sm);
+  font-size: 12px;
   font-weight: 400;
   color: var(--fg-muted);
   font-family: var(--font-mono);
@@ -157,7 +157,7 @@ const { query, domain, domains, filtered } = useCellsFilter(cells)
 
 .cells-list__subtitle {
   margin: 0;
-  font-size: var(--text-sm);
+  font-size: 12px;
   color: var(--fg-muted);
 }
 
@@ -184,7 +184,7 @@ const { query, domain, domains, filtered } = useCellsFilter(cells)
 .cells-list__search {
   width: 200px;
   padding: 4px 8px;
-  font-size: var(--text-sm);
+  font-size: 12px;
   font-family: var(--font-mono);
   color: var(--fg);
   background: var(--bg);
@@ -208,7 +208,7 @@ const { query, domain, domains, filtered } = useCellsFilter(cells)
 
 .cells-list__seg-btn {
   padding: 4px 10px;
-  font-size: var(--text-sm);
+  font-size: 12px;
   font-family: var(--font-sans);
   color: var(--fg-muted);
   background: var(--bg);
@@ -232,7 +232,7 @@ const { query, domain, domains, filtered } = useCellsFilter(cells)
 }
 
 .cells-list__seg-btn:hover:not([aria-pressed='true']) {
-  background: var(--bg-subtle);
+  background: var(--bg-sunken);
 }
 
 .cells-list__seg-btn:focus-visible {
@@ -248,7 +248,7 @@ const { query, domain, domains, filtered } = useCellsFilter(cells)
 .cells-list__table {
   width: 100%;
   border-collapse: collapse;
-  font-size: var(--text-sm);
+  font-size: 12px;
   color: var(--fg);
 }
 
@@ -272,7 +272,7 @@ const { query, domain, domains, filtered } = useCellsFilter(cells)
 }
 
 .cells-list__row:hover td {
-  background: var(--bg-subtle);
+  background: var(--bg-sunken);
 }
 
 /* Cell column */
@@ -306,7 +306,7 @@ const { query, domain, domains, filtered } = useCellsFilter(cells)
 }
 
 .cells-list__cell-name {
-  font-size: calc(var(--text-sm) - 1px);
+  font-size: 12px;
   color: var(--fg-muted);
 }
 
@@ -314,7 +314,7 @@ const { query, domain, domains, filtered } = useCellsFilter(cells)
 .cells-list__tier-chip {
   display: inline-block;
   padding: 1px 6px;
-  font-size: var(--text-xs);
+  font-size: 11px;
   font-family: var(--font-mono);
   color: var(--fg-muted);
   background: var(--bg-sunken);

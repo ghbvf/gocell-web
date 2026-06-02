@@ -12,6 +12,12 @@ export interface RovingTablistOptions {
   tabIds: () => readonly string[]
   /** Maps a tab id to the DOM element id of its button. */
   idFor: (id: string) => string
+  /**
+   * Optional automatic-activation callback (APG pattern).
+   * Called with the target tab id after focus moves on Arrow/Home/End.
+   * Keeps roving "home" position in sync with the active tab.
+   */
+  onActivate?: ((id: string) => void) | undefined
 }
 
 export interface RovingTablistReturn {
@@ -48,6 +54,7 @@ export function useRovingTablist(opts: RovingTablistOptions): RovingTablistRetur
 
     e.preventDefault()
     document.getElementById(opts.idFor(targetId))?.focus()
+    opts.onActivate?.(targetId)
   }
 
   return { onKeydown }

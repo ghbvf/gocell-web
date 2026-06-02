@@ -81,7 +81,7 @@ const hasCrossCell = computed(
   padding: 14px;
   border: 1px solid var(--line-soft);
   border-radius: var(--r);
-  background: var(--bg-elevated);
+  background: var(--bg-raised);
 }
 
 .card__heading {
@@ -122,7 +122,7 @@ const hasCrossCell = computed(
 .cell-link:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
-  border-radius: 2px;
+  border-radius: var(--r-sm);
 }
 
 .infra-list {

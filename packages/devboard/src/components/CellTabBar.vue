@@ -20,6 +20,7 @@ const panelId = (id: string) => `cell-panel-${props.cellId}-${id}`
 const { onKeydown } = useRovingTablist({
   tabIds: () => props.tabs.map((tab) => tab.id),
   idFor: tabBtnId,
+  onActivate: (id) => emit('select', id),
 })
 </script>
 
@@ -32,7 +33,7 @@ const { onKeydown } = useRovingTablist({
       type="button"
       role="tab"
       :aria-selected="tab.id === activeId"
-      :aria-controls="panelId(tab.id)"
+      :aria-controls="tab.id === activeId ? panelId(tab.id) : undefined"
       :tabindex="tab.id === activeId ? 0 : -1"
       class="tab-bar__btn"
       :class="{ 'tab-bar__btn--active': tab.id === activeId }"

@@ -157,7 +157,7 @@ function roleKey(usage: ContractUsage): string {
   padding: 14px;
   border: 1px solid var(--line-soft);
   border-radius: var(--r);
-  background: var(--bg-elevated);
+  background: var(--bg-raised);
 }
 
 .card__heading {

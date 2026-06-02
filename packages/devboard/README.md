@@ -30,7 +30,7 @@
 
 依赖规则见仓库根 `CLAUDE.md` §依赖规则 / `.claude/rules/gocellweb/package-boundaries.md`。跨包仅经 `@gocell/contracts` 类型 + `@gocell/request` client，禁深路径 import。
 
-**已批准设计性例外**：可依赖 `@gocell/access`（消费其 PDP client 能力）——因 devboard 所有页面都依赖 PDP；其他业务包不享有此例外。**禁**直接 import `@gocell/audit` / `@gocell/config`（Audit/Config tab 经 `@gocell/request` + `@gocell/contracts` 复用同一后端端点，T505 边界洁净方案）。
+**已批准设计性例外**：*允许*依赖 `@gocell/access`（消费其 PDP client 能力）——因 devboard 所有页面都依赖 PDP；其他业务包不享有此例外。当前 Cells 页为只读、页面级 PDP 由路由守卫执行，故 **暂未**实际 import `@gocell/access`（需要 in-component 决策时再加 dep）。**禁**直接 import `@gocell/audit` / `@gocell/config`（Audit/Config tab 经 `@gocell/request` + `@gocell/contracts` 复用同一后端端点，T505 边界洁净方案）。
 
 **`<Can>` / PDP 归属**（PRD §9/§211）：`<Can>` 组件 + `useDecision()` 注入点唯一归属 `@gocell/core`；PDP client 实现（`createPdpClient`）归属 `@gocell/access`，由 `apps/web` 装配层注入。Cells 页为只读，页面级 PDP 门由路由守卫（`requiredAction: 'read'`, `requiredResource: 'cell'`，fail-closed）执行。
 

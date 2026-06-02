@@ -259,7 +259,7 @@ export function buildManifest(rawCells: RawCellWithSlices[]): CellManifest {
   // Step 1: parse cells + slices
   const entries: CellEntry[] = rawCells.map(({ cell, slices }) => {
     const parsed = parseCell(cell)
-    const parsedSlices = (slices as unknown[]).map(parseSlice)
+    const parsedSlices = slices.map(parseSlice)
     const { produces, consumes } = deriveProducesConsumes(parsedSlices)
     return {
       ...parsed,

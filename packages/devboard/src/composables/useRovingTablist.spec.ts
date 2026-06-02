@@ -18,10 +18,11 @@ describe('useRovingTablist', () => {
     })
   })
 
-  const makeRoving = () =>
+  const makeRoving = (onActivate?: (id: string) => void) =>
     useRovingTablist({
       tabIds: () => TAB_IDS,
       idFor: (id) => `cell-tab-test-${id}`,
+      onActivate,
     })
 
   const makeKeyEvent = (key: string): KeyboardEvent =>
@@ -103,5 +104,47 @@ describe('useRovingTablist', () => {
     onKeydown(e, 'overview')
     expect(preventSpy).not.toHaveBeenCalled()
     expect(focusMock).not.toHaveBeenCalled()
+  })
+
+  it('onActivate is called with target id on ArrowRight', () => {
+    const onActivate = vi.fn()
+    const { onKeydown } = makeRoving(onActivate)
+    onKeydown(makeKeyEvent('ArrowRight'), 'overview')
+    expect(onActivate).toHaveBeenCalledWith('interfaces')
+  })
+
+  it('onActivate is called with target id on ArrowLeft', () => {
+    const onActivate = vi.fn()
+    const { onKeydown } = makeRoving(onActivate)
+    onKeydown(makeKeyEvent('ArrowLeft'), 'wiring')
+    expect(onActivate).toHaveBeenCalledWith('interfaces')
+  })
+
+  it('onActivate is called with target id on Home', () => {
+    const onActivate = vi.fn()
+    const { onKeydown } = makeRoving(onActivate)
+    onKeydown(makeKeyEvent('Home'), 'wiring')
+    expect(onActivate).toHaveBeenCalledWith('overview')
+  })
+
+  it('onActivate is called with target id on End', () => {
+    const onActivate = vi.fn()
+    const { onKeydown } = makeRoving(onActivate)
+    onKeydown(makeKeyEvent('End'), 'overview')
+    expect(onActivate).toHaveBeenCalledWith('wiring')
+  })
+
+  it('onActivate is NOT called on unrelated key (Tab)', () => {
+    const onActivate = vi.fn()
+    const { onKeydown } = makeRoving(onActivate)
+    onKeydown(makeKeyEvent('Tab'), 'overview')
+    expect(onActivate).not.toHaveBeenCalled()
+  })
+
+  it('onActivate is NOT called on Enter key', () => {
+    const onActivate = vi.fn()
+    const { onKeydown } = makeRoving(onActivate)
+    onKeydown(makeKeyEvent('Enter'), 'overview')
+    expect(onActivate).not.toHaveBeenCalled()
   })
 })

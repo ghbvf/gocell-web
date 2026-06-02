@@ -123,6 +123,12 @@ function selectTab(id: string): void {
   color: var(--accent);
 }
 
+.cell-detail__back:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--r-sm);
+}
+
 .cell-detail__title-group {
   display: flex;
   flex-direction: column;

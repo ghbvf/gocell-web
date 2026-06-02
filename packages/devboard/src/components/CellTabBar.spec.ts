@@ -41,12 +41,22 @@ describe('CellTabBar', () => {
     }
   })
 
-  it('aria-controls matches panelId helper', () => {
+  it('active tab has aria-controls matching panelId helper', () => {
     const wrapper = mount(CellTabBar, {
       props: { tabs: TABS, activeId: 'overview', cellId: 'mycel' },
     })
-    const firstBtn = wrapper.findAll('[role="tab"]')[0]
-    expect(firstBtn?.attributes('aria-controls')).toBe('cell-panel-mycel-overview')
+    const activeBtn = wrapper.find('[aria-selected="true"]')
+    expect(activeBtn.attributes('aria-controls')).toBe('cell-panel-mycel-overview')
+  })
+
+  it('inactive tabs have no aria-controls attribute', () => {
+    const wrapper = mount(CellTabBar, {
+      props: { tabs: TABS, activeId: 'overview', cellId: 'mycel' },
+    })
+    const inactiveBtns = wrapper.findAll('[aria-selected="false"]')
+    for (const btn of inactiveBtns) {
+      expect(btn.attributes('aria-controls')).toBeUndefined()
+    }
   })
 
   it('tab button id matches tabBtnId helper', () => {
@@ -102,6 +112,30 @@ describe('CellTabBar', () => {
     const focusSpy = vi.spyOn(secondBtn.element as HTMLElement, 'focus')
     await firstBtn.trigger('keydown', { key: 'ArrowRight' })
     expect(focusSpy).toHaveBeenCalled()
+    wrapper.unmount()
+  })
+
+  it('ArrowRight keydown emits select with the adjacent tab id (automatic activation)', async () => {
+    const wrapper = mount(CellTabBar, {
+      props: { tabs: TABS, activeId: 'overview', cellId: 'kc' },
+      attachTo: document.body,
+    })
+    const firstBtn = wrapper.find('#cell-tab-kc-overview')
+    await firstBtn.trigger('keydown', { key: 'ArrowRight' })
+    expect(wrapper.emitted('select')).toBeTruthy()
+    expect(wrapper.emitted('select')?.[0]).toEqual(['interfaces'])
+    wrapper.unmount()
+  })
+
+  it('ArrowLeft keydown emits select with the adjacent tab id (automatic activation)', async () => {
+    const wrapper = mount(CellTabBar, {
+      props: { tabs: TABS, activeId: 'interfaces', cellId: 'kc' },
+      attachTo: document.body,
+    })
+    const secondBtn = wrapper.find('#cell-tab-kc-interfaces')
+    await secondBtn.trigger('keydown', { key: 'ArrowLeft' })
+    expect(wrapper.emitted('select')).toBeTruthy()
+    expect(wrapper.emitted('select')?.[0]).toEqual(['overview'])
     wrapper.unmount()
   })
 })

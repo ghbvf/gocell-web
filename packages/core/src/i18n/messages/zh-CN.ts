@@ -652,6 +652,7 @@ const zhCN = {
       searchLabel: '搜索 cell',
       searchPlaceholder: '按 id 或名称搜索…',
       domainAll: '全部',
+      domainFilterLabel: '按域筛选',
       count: '{count} 个 cell',
       empty: '没有匹配的 cell',
       openCell: '打开 {name} 详情',
@@ -703,7 +704,6 @@ const zhCN = {
       lifecycle: '生命周期',
       health: '健康度',
       runtime: '运行时',
-      activity: '最近活动',
     },
     interfaces: {
       ispTitle: 'ISP 子接口',

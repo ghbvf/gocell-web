@@ -89,7 +89,7 @@ onMounted(async () => {
 .audit-tab__table-wrap {
   overflow-x: auto;
   border: 1px solid var(--line-soft);
-  border-radius: 6px;
+  border-radius: var(--r);
 }
 
 .audit-tab__table {

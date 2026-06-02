@@ -11,8 +11,10 @@ const { t } = useI18n()
 <template>
   <div class="overview">
     <!-- Identity card -->
-    <section class="card" aria-labelledby="overview-identity-h">
-      <h2 id="overview-identity-h" class="card__heading">{{ t('cells.overview.identity') }}</h2>
+    <section class="card" :aria-labelledby="`overview-${cell.id}-identity-h`">
+      <h2 :id="`overview-${cell.id}-identity-h`" class="card__heading">
+        {{ t('cells.overview.identity') }}
+      </h2>
       <dl class="kv">
         <div class="kv__row">
           <dt>{{ t('cells.overview.id') }}</dt>
@@ -62,8 +64,10 @@ const { t } = useI18n()
     </section>
 
     <!-- Health card — degraded (requires BR-001) -->
-    <section class="card" aria-labelledby="overview-health-h">
-      <h2 id="overview-health-h" class="card__heading">{{ t('cells.overview.health') }}</h2>
+    <section class="card" :aria-labelledby="`overview-${cell.id}-health-h`">
+      <h2 :id="`overview-${cell.id}-health-h`" class="card__heading">
+        {{ t('cells.overview.health') }}
+      </h2>
       <UnavailablePanel
         :title="t('cells.overview.health')"
         :message="t('cells.unavailable.runtime')"
@@ -71,8 +75,10 @@ const { t } = useI18n()
     </section>
 
     <!-- Runtime card — degraded (requires BR-001) -->
-    <section class="card" aria-labelledby="overview-runtime-h">
-      <h2 id="overview-runtime-h" class="card__heading">{{ t('cells.overview.runtime') }}</h2>
+    <section class="card" :aria-labelledby="`overview-${cell.id}-runtime-h`">
+      <h2 :id="`overview-${cell.id}-runtime-h`" class="card__heading">
+        {{ t('cells.overview.runtime') }}
+      </h2>
       <UnavailablePanel
         :title="t('cells.overview.runtime')"
         :message="t('cells.unavailable.runtime')"
@@ -93,7 +99,7 @@ const { t } = useI18n()
   padding: 16px;
   border: 1px solid var(--line-soft);
   border-radius: var(--r);
-  background: var(--bg-elevated);
+  background: var(--bg-raised);
 }
 
 .card__heading {
