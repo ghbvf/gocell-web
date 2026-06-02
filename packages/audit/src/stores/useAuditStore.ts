@@ -26,6 +26,11 @@ export type ActionNsFilter =
 /** Server page size for the cursor-paginated audit list. */
 const PAGE_SIZE = 50
 
+/** Narrows an unknown value to an indexable record (no `as` cast at call sites). */
+function isRecord(v: unknown): v is Record<string, unknown> {
+  return typeof v === 'object' && v !== null
+}
+
 /**
  * audit.query — audit log query state.
  *
@@ -96,20 +101,18 @@ export const useAuditStore = defineStore('audit.query', () => {
     // unavailable immediately.
     const hasAnyHashField = entries.value.some((e) => {
       const o: unknown = e
-      if (typeof o !== 'object' || o === null) return false
-      return 'hash' in o && typeof (o as Record<string, unknown>)['hash'] === 'string'
+      return isRecord(o) && typeof o['hash'] === 'string'
     })
     if (!hasAnyHashField) return { status: 'unavailable' }
 
-    // Build ChainEntry objects safely via unknown + type guard — no `as` cast
+    // Build ChainEntry objects safely via the isRecord type guard — no `as` cast
     // that would skip contract constraints (G).
     const chainEntries = entries.value.map((e) => {
       const o: unknown = e
       const entry: { hash?: string; prevHash?: string } = {}
-      if (typeof o === 'object' && o !== null) {
-        const rec = o as Record<string, unknown>
-        if (typeof rec['hash'] === 'string') entry.hash = rec['hash']
-        if (typeof rec['prevHash'] === 'string') entry.prevHash = rec['prevHash']
+      if (isRecord(o)) {
+        if (typeof o['hash'] === 'string') entry.hash = o['hash']
+        if (typeof o['prevHash'] === 'string') entry.prevHash = o['prevHash']
       }
       return entry
     })

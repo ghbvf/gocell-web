@@ -18,16 +18,6 @@ export const AUDIT_URL = '/api/v1/audit/'
 export type AuditEntry = HttpAuditListV1Response['data'][number]
 
 /**
- * Envelope for the cursor-paginated audit list (mirrors the contract shape
- * to keep the consumer type explicit).
- */
-export interface AuditListPage {
-  data: AuditEntry[]
-  nextCursor: string
-  hasMore: boolean
-}
-
-/**
  * Local request params type.
  * Note: the backend has no audit list request schema yet; once codegen
  * derives HttpAuditListV1Request, delete this interface and import it instead.
@@ -38,7 +28,7 @@ export interface ListAuditParams {
 }
 
 /** GET /audit/ — cursor-paginated audit entry list. */
-export async function listAudit(params: ListAuditParams = {}): Promise<AuditListPage> {
-  const res = await http.get<AuditListPage>(AUDIT_URL, { params })
+export async function listAudit(params: ListAuditParams = {}): Promise<HttpAuditListV1Response> {
+  const res = await http.get<HttpAuditListV1Response>(AUDIT_URL, { params })
   return res.data
 }
