@@ -16,6 +16,10 @@ export interface HttpAuditListV1Response {
      * Opaque cross-cell correlation identifier from the originating request context. Lets consumers stitch an audited action back to its request. Empty for entries predating its introduction.
      */
     correlationId?: string;
+    /**
+     * Opaque distributed trace identifier from the originating request context. Lets consumers correlate an audited action back to its trace. Empty for entries predating its introduction.
+     */
+    traceId?: string;
     occurredAt?: string;
     timestamp: string;
     payload?: unknown;
