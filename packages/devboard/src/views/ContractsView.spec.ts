@@ -153,11 +153,11 @@ describe('ContractsView', () => {
     expect(wrapper.text()).toContain('contracts.detail.empty')
   })
 
-  it('clicking a row sets aria-selected on that row', async () => {
+  it('clicking a row sets aria-current on that row', async () => {
     const wrapper = mountView()
     const firstRow = wrapper.find('tbody tr')
     await firstRow.trigger('click')
-    expect(firstRow.attributes('aria-selected')).toBe('true')
+    expect(firstRow.attributes('aria-current')).toBe('true')
   })
 
   it('table contains expected column headers', () => {

@@ -280,6 +280,19 @@ describe('CoverageView', () => {
     }
   })
 
+  it('coverage.none span has :aria-label bound to t("coverage.none") (not static literal)', () => {
+    const wrapper = mountView()
+    const noneSpans = wrapper.findAll('.coverage__none')
+    // At least one none-span must exist (matrix has null web/design refs)
+    expect(noneSpans.length).toBeGreaterThan(0)
+    noneSpans.forEach((span) => {
+      // With identity mock, t('coverage.none') returns 'coverage.none'
+      // Correct binding: :aria-label="t('coverage.none')" → attribute = 'coverage.none'
+      // Bug form: aria-label="t('coverage.none')" → attribute = literal string "t('coverage.none')"
+      expect(span.attributes('aria-label')).toBe('coverage.none')
+    })
+  })
+
   it('route references are rendered in data rows', () => {
     const wrapper = mountView()
     const text = wrapper.text()

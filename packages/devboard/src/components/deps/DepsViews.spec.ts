@@ -97,6 +97,12 @@ describe('DepsListView', () => {
     expect(wrapper.emitted('select')).toBeTruthy()
     expect(typeof wrapper.emitted('select')?.[0]?.[0]).toBe('string')
   })
+
+  it('table has aria-label from i18n key', () => {
+    const wrapper = mount(DepsListView, { props: { cells: CELLS } })
+    const table = wrapper.find('table')
+    expect(table.attributes('aria-label')).toBe('deps.list.tableLabel')
+  })
 })
 
 // ─── DepsGraphView ─────────────────────────────────────────────────────────
@@ -216,6 +222,25 @@ describe('DepsTreeView', () => {
     const wrapper = mount(DepsTreeView, { props: { forest: singleForest } })
     expect(wrapper.find('.sr-only').exists()).toBe(true)
     expect(wrapper.find('.sr-only').text()).toBe('deps.tree.leaf')
+  })
+
+  it('leaf nodes inside subtrees also have sr-only text', () => {
+    // auditcore is root; accesscore is its child; configcore is leaf inside subtree
+    const wrapper = mount(DepsTreeView, { props: { forest: FOREST } })
+    const srOnlyNodes = wrapper.findAll('.sr-only').filter((el) => el.text() === 'deps.tree.leaf')
+    // There must be at least one sr-only leaf inside a subtree
+    expect(srOnlyNodes.length).toBeGreaterThan(0)
+  })
+
+  it('outer wrapper is a section with aria-labelledby pointing to caption', () => {
+    const wrapper = mount(DepsTreeView, { props: { forest: FOREST } })
+    const section = wrapper.find('section.deps-tree')
+    expect(section.exists()).toBe(true)
+    const captionId = section.attributes('aria-labelledby')
+    expect(captionId).toBeTruthy()
+    const caption = wrapper.find(`#${captionId}`)
+    expect(caption.exists()).toBe(true)
+    expect(caption.text()).toBe('deps.tree.caption')
   })
 })
 

@@ -254,6 +254,23 @@ describe('GroupsView', () => {
     expect(nav.exists()).toBe(true)
   })
 
+  it('detail section has aria-live="polite" and an aria-label', () => {
+    const wrapper = mountView()
+    const section = wrapper.find('section[aria-live="polite"]')
+    expect(section.exists()).toBe(true)
+    expect(section.attributes('aria-label')).toBeTruthy()
+  })
+
+  it('members table has aria-labelledby pointing to the members heading id', async () => {
+    const wrapper = mountView()
+    const groupBtns = wrapper.findAll('[data-testid="group-btn"]')
+    await groupBtns[0]!.trigger('click')
+    const heading = wrapper.find('#groups-members-heading')
+    expect(heading.exists()).toBe(true)
+    const table = wrapper.find('table[aria-labelledby="groups-members-heading"]')
+    expect(table.exists()).toBe(true)
+  })
+
   it('cell ids in member table use mono font class', async () => {
     const wrapper = mountView()
     const groupBtns = wrapper.findAll('[data-testid="group-btn"]')

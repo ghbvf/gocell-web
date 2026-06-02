@@ -32,11 +32,7 @@ function verdictKey(verdict: GateVerdict): string {
 
         <span class="gates-panel__desc">{{ t(gate.descKey) }}</span>
 
-        <span
-          class="gates-panel__badge"
-          :class="`gates-panel__badge--${gate.verdict}`"
-          :aria-label="t(verdictKey(gate.verdict))"
-        >
+        <span class="gates-panel__badge" :class="`gates-panel__badge--${gate.verdict}`">
           <span class="sr-only">{{ t(verdictKey(gate.verdict)) }}</span>
           <span aria-hidden="true">{{ gate.verdict }}</span>
         </span>

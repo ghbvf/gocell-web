@@ -11,6 +11,8 @@ const emit = defineEmits<{
   (e: 'select', id: string): void
 }>()
 
+const CAPTION_ID = 'deps-tree-caption'
+
 const { t } = useI18n()
 
 // Inline recursive subtree renderer — avoids a separate file and the
@@ -23,7 +25,9 @@ const DepsTreeSubtree = defineComponent({
       required: true,
     },
   },
-  emits: ['select'],
+  emits: {
+    select: (id: string) => typeof id === 'string',
+  },
   setup(subtreeProps, { emit: subtreeEmit }) {
     function renderNode(node: DependencyTreeNode): ReturnType<typeof h> {
       if (node.children.length > 0) {
@@ -60,6 +64,7 @@ const DepsTreeSubtree = defineComponent({
           },
           [h('span', { class: 'deps-tree__mono' }, node.id)],
         ),
+        h('span', { class: 'sr-only' }, t('deps.tree.leaf')),
       ])
     }
 
@@ -74,8 +79,8 @@ const DepsTreeSubtree = defineComponent({
 </script>
 
 <template>
-  <div class="deps-tree" :aria-label="t('deps.tree.caption')">
-    <p class="deps-tree__caption" aria-hidden="true">{{ t('deps.tree.caption') }}</p>
+  <section class="deps-tree" :aria-labelledby="CAPTION_ID">
+    <p :id="CAPTION_ID" class="deps-tree__caption">{{ t('deps.tree.caption') }}</p>
     <ul class="deps-tree__root-list">
       <li v-for="node in forest" :key="node.id" class="deps-tree__item">
         <template v-if="node.children.length > 0">
@@ -104,7 +109,7 @@ const DepsTreeSubtree = defineComponent({
         </template>
       </li>
     </ul>
-  </div>
+  </section>
 </template>
 
 <style scoped>

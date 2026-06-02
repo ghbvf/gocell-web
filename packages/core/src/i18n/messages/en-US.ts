@@ -843,6 +843,7 @@ const enUS = {
       all: 'All',
       http: 'HTTP',
       event: 'Event',
+      filterLabel: 'Filter by kind',
     },
     table: {
       contract: 'Contract',
@@ -874,6 +875,7 @@ const enUS = {
     },
     detail: {
       empty: 'Select a contract to see details.',
+      panelLabel: 'Contract details',
       servers: 'Served by',
       callers: 'Called by',
       none: 'None',
@@ -881,6 +883,7 @@ const enUS = {
       envelopeNone: 'No response envelope snapshot for this contract.',
       status: 'Status',
       object: 'Response struct',
+      kind: 'Response kind',
     },
     envelopeKind: {
       success: 'Success response',
@@ -904,6 +907,7 @@ const enUS = {
       dependsOn: 'Depends on',
       requiredBy: 'Required by',
       none: 'None',
+      tableLabel: 'Cell dependency list',
     },
     matrix: {
       caption: 'Cell dependency matrix: rows depend on columns.',
@@ -921,6 +925,8 @@ const enUS = {
     },
     detail: {
       empty: 'Select a cell to see its dependencies.',
+      label: 'Cell dependency detail',
+      close: 'Dismiss',
       dependsOn: 'Depends on',
       requiredBy: 'Required by',
       none: 'None',
@@ -932,12 +938,14 @@ const enUS = {
     title: 'gocell-web ↔ devboard coverage',
     subtitle: 'Design routes vs shipped Vue views. Hand-maintained; truth source dev-coverage.jsx.',
     kpi: {
+      regionLabel: 'KPI summary',
       shipped: 'Routes shipped',
       drafted: 'Routes drafted',
       gaps: 'Gaps to close',
       outOfScope: 'Out of scope',
     },
     legend: {
+      regionLabel: 'Legend',
       matched: 'Matched',
       partial: 'Partial',
       designOnly: 'Design-only',
@@ -945,6 +953,7 @@ const enUS = {
       outOfScope: 'Out of scope',
     },
     filter: {
+      groupLabel: 'Filter by status',
       all: 'All',
       matched: 'Matched',
       partial: 'Partial',
@@ -966,6 +975,7 @@ const enUS = {
     },
     caption: 'gocell-web implementation progress against design coverage.',
     none: '—',
+    empty: 'No capabilities match the current filter.',
     section: {
       auth: 'Auth & onboarding',
       meta: 'Meta',
@@ -1012,6 +1022,7 @@ const enUS = {
     detail: {
       empty: 'Select a group to see its rule and members.',
       query: 'Rule',
+      and: 'AND',
       members: 'Members',
       memberCount: '{n} members',
       noMembers: 'No cell currently satisfies this rule.',

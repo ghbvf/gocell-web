@@ -66,13 +66,13 @@ describe('DepsViewBar', () => {
     expect(active.attributes('aria-controls')).toBe('deps-panel-tree')
   })
 
-  it('inactive tabs have no aria-controls attribute', () => {
+  it('all tabs have aria-controls pointing to their panel id', () => {
     const wrapper = mount(DepsViewBar, {
       props: { views: VIEWS, activeId: 'list' },
     })
-    const inactive = wrapper.findAll('[aria-selected="false"]')
-    for (const btn of inactive) {
-      expect(btn.attributes('aria-controls')).toBeUndefined()
+    for (const view of VIEWS) {
+      const btn = wrapper.find(`#deps-tab-${view.id}`)
+      expect(btn.attributes('aria-controls')).toBe(`deps-panel-${view.id}`)
     }
   })
 

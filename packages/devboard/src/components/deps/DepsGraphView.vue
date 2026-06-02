@@ -126,8 +126,8 @@ const edgePaths = computed<readonly EdgePath[]>(() => {
 
       <!-- Edges -->
       <line
-        v-for="(ep, idx) in edgePaths"
-        :key="`edge-${idx}`"
+        v-for="ep in edgePaths"
+        :key="`${ep.from}-${ep.to}`"
         :x1="ep.x1"
         :y1="ep.y1"
         :x2="ep.x2"
@@ -167,7 +167,7 @@ const edgePaths = computed<readonly EdgePath[]>(() => {
           dominant-baseline="middle"
           fill="var(--fg)"
           font-family="var(--font-mono)"
-          font-size="11"
+          class="deps-graph__label"
         >
           {{ node.id }}
         </text>
@@ -199,6 +199,10 @@ const edgePaths = computed<readonly EdgePath[]>(() => {
 .deps-graph__node:focus-visible rect {
   stroke: var(--accent);
   stroke-width: 2;
+}
+
+.deps-graph__label {
+  font-size: var(--text-xs);
 }
 
 .deps-graph__empty {

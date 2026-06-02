@@ -830,6 +830,7 @@ const zhCN = {
       all: '全部',
       http: 'HTTP',
       event: '事件',
+      filterLabel: '按类型筛选',
     },
     table: {
       contract: '契约',
@@ -861,6 +862,7 @@ const zhCN = {
     },
     detail: {
       empty: '选择一个契约查看详情。',
+      panelLabel: '契约详情',
       servers: '提供方',
       callers: '调用方',
       none: '无',
@@ -868,6 +870,7 @@ const zhCN = {
       envelopeNone: '该契约暂无响应信封快照。',
       status: '状态码',
       object: '响应结构',
+      kind: '响应类型',
     },
     envelopeKind: {
       success: '成功响应',
@@ -891,6 +894,7 @@ const zhCN = {
       dependsOn: '依赖',
       requiredBy: '被依赖',
       none: '无',
+      tableLabel: 'cell 依赖列表',
     },
     matrix: {
       caption: 'cell 依赖矩阵：行依赖列。',
@@ -908,6 +912,8 @@ const zhCN = {
     },
     detail: {
       empty: '选择一个 cell 查看其依赖。',
+      label: 'Cell 依赖详情',
+      close: '关闭',
       dependsOn: '依赖',
       requiredBy: '被依赖',
       none: '无',
@@ -919,12 +925,14 @@ const zhCN = {
     title: 'gocell-web ↔ devboard 覆盖矩阵',
     subtitle: '设计稿路由与已实现 Vue 视图的对照进度。手工维护，真相源 dev-coverage.jsx。',
     kpi: {
+      regionLabel: 'KPI 汇总',
       shipped: '已交付路由',
       drafted: '设计稿路由',
       gaps: '待补差距',
       outOfScope: '范围外',
     },
     legend: {
+      regionLabel: '图例',
       matched: '已对齐',
       partial: '部分',
       designOnly: '仅设计',
@@ -932,6 +940,7 @@ const zhCN = {
       outOfScope: '范围外',
     },
     filter: {
+      groupLabel: '按状态筛选',
       all: '全部',
       matched: '已对齐',
       partial: '部分',
@@ -953,6 +962,7 @@ const zhCN = {
     },
     caption: 'gocell-web 实现进度与设计稿覆盖对照矩阵。',
     none: '—',
+    empty: '当前筛选无匹配的能力。',
     section: {
       auth: '认证与引导',
       meta: 'Meta',
@@ -999,6 +1009,7 @@ const zhCN = {
     detail: {
       empty: '选择一个分组查看规则与成员。',
       query: '规则',
+      and: 'AND',
       members: '成员',
       memberCount: '{n} 个成员',
       noMembers: '当前无 cell 满足该规则。',

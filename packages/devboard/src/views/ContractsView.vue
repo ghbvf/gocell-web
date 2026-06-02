@@ -1,8 +1,8 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useContractsRegistry } from '../composables/useContractsRegistry'
-import { responseEnvelopeFor } from '../data/responseEnvelopes'
-import type { EnvelopeKind } from '../data/responseEnvelopes'
+import { responseEnvelopeFor, type EnvelopeKind } from '../data/responseEnvelopes'
 import GovernanceGatesPanel from '../components/contracts/GovernanceGatesPanel.vue'
 
 const { t } = useI18n()
@@ -11,6 +11,10 @@ const { registry, query, kindFilter, filtered, selectedContract, selectedEntry, 
   useContractsRegistry()
 
 const KIND_OPTIONS = ['all', 'http', 'event'] as const
+
+const selectedEnvelope = computed(() =>
+  selectedEntry.value ? responseEnvelopeFor(selectedEntry.value.contract) : null,
+)
 
 function envelopeKindKey(kind: EnvelopeKind): string {
   if (kind === '2xx') return 'contracts.envelopeKind.success'
@@ -87,7 +91,7 @@ function envelopeKindKey(kind: EnvelopeKind): string {
                 :key="entry.contract"
                 class="contracts__row"
                 :class="{ 'contracts__row--selected': selectedContract === entry.contract }"
-                :aria-selected="selectedContract === entry.contract ? 'true' : 'false'"
+                :aria-current="selectedContract === entry.contract ? 'true' : undefined"
                 tabindex="0"
                 @click="select(entry.contract)"
                 @keydown.enter="select(entry.contract)"
@@ -169,7 +173,7 @@ function envelopeKindKey(kind: EnvelopeKind): string {
               <h3 class="contracts__detail-section-title">
                 {{ t('contracts.detail.envelope') }}
               </h3>
-              <template v-if="responseEnvelopeFor(selectedEntry.contract) !== null">
+              <template v-if="selectedEnvelope !== null">
                 <table class="contracts__envelope-table">
                   <thead>
                     <tr>
@@ -180,7 +184,7 @@ function envelopeKindKey(kind: EnvelopeKind): string {
                   </thead>
                   <tbody>
                     <tr
-                      v-for="envEntry in responseEnvelopeFor(selectedEntry.contract)!"
+                      v-for="envEntry in selectedEnvelope"
                       :key="envEntry.status"
                       class="contracts__envelope-row"
                     >

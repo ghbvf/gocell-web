@@ -15,7 +15,7 @@ const { t } = useI18n()
 
 <template>
   <div class="deps-list">
-    <table class="deps-list__table">
+    <table class="deps-list__table" :aria-label="t('deps.list.tableLabel')">
       <thead>
         <tr>
           <th scope="col" class="deps-list__th">{{ t('deps.list.cell') }}</th>

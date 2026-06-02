@@ -50,7 +50,7 @@ function onSelectView(id: DepsViewId): void {
         <section
           :id="panelId('list')"
           role="tabpanel"
-          :aria-labelledby="`deps-tab-list`"
+          aria-labelledby="deps-tab-list"
           class="deps-view__panel"
           :class="{ 'deps-view__panel--hidden': activeView !== 'list' }"
           :hidden="activeView !== 'list'"
@@ -62,7 +62,7 @@ function onSelectView(id: DepsViewId): void {
         <section
           :id="panelId('graph')"
           role="tabpanel"
-          :aria-labelledby="`deps-tab-graph`"
+          aria-labelledby="deps-tab-graph"
           class="deps-view__panel"
           :class="{ 'deps-view__panel--hidden': activeView !== 'graph' }"
           :hidden="activeView !== 'graph'"
@@ -79,7 +79,7 @@ function onSelectView(id: DepsViewId): void {
         <section
           :id="panelId('tree')"
           role="tabpanel"
-          :aria-labelledby="`deps-tab-tree`"
+          aria-labelledby="deps-tab-tree"
           class="deps-view__panel"
           :class="{ 'deps-view__panel--hidden': activeView !== 'tree' }"
           :hidden="activeView !== 'tree'"
@@ -91,7 +91,7 @@ function onSelectView(id: DepsViewId): void {
         <section
           :id="panelId('matrix')"
           role="tabpanel"
-          :aria-labelledby="`deps-tab-matrix`"
+          aria-labelledby="deps-tab-matrix"
           class="deps-view__panel"
           :class="{ 'deps-view__panel--hidden': activeView !== 'matrix' }"
           :hidden="activeView !== 'matrix'"

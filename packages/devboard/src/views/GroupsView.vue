@@ -7,7 +7,7 @@ import { SMART_GROUPS, groupMembers, type SmartGroup } from '../data/smartGroups
 const { t } = useI18n()
 
 const store = useCellsStore()
-const cells = computed(() => store.cells ?? [])
+const cells = computed(() => store.cells)
 
 // ── Search ─────────────────────────────────────────────────────────────────
 const searchQuery = ref('')
@@ -38,11 +38,10 @@ const selectedMembers = computed(() => {
   return groupMembers(selectedGroup.value, cells.value)
 })
 
-// ── Predicate op symbol map (resolved via i18n keys) ──────────────────────
-// The actual symbol (= ≠ ≥ etc.) lives in i18n values, not hardcoded here.
-function memberCount(group: SmartGroup): number {
-  return groupMembers(group, cells.value).length
-}
+// ── Member counts precomputed (perf: avoid re-running groupMembers per render) ──
+const groupMemberCounts = computed(
+  () => new Map(SMART_GROUPS.map((g) => [g.id, groupMembers(g, cells.value).length])),
+)
 </script>
 
 <template>
@@ -95,7 +94,7 @@ function memberCount(group: SmartGroup): number {
           >
             <span class="groups__group-name">{{ t(group.nameKey) }}</span>
             <span class="groups__group-count">{{
-              t('groups.detail.memberCount', { n: memberCount(group) })
+              t('groups.detail.memberCount', { n: groupMemberCounts.get(group.id) ?? 0 })
             }}</span>
           </button>
         </template>
@@ -105,7 +104,7 @@ function memberCount(group: SmartGroup): number {
       </nav>
 
       <!-- ── Right: Detail panel ───────────────────────────────────────── -->
-      <section class="groups__detail" aria-live="polite">
+      <section class="groups__detail" aria-live="polite" :aria-label="t('groups.title')">
         <template v-if="selectedGroup !== null">
           <!-- Group name + description -->
           <h2 class="groups__detail-title">{{ t(selectedGroup.nameKey) }}</h2>
@@ -133,7 +132,7 @@ function memberCount(group: SmartGroup): number {
 
           <!-- Members -->
           <div class="groups__members-block">
-            <h3 class="groups__block-heading">
+            <h3 id="groups-members-heading" class="groups__block-heading">
               {{ t('groups.detail.members') }}
               <span class="groups__member-count-badge">{{
                 t('groups.detail.memberCount', { n: selectedMembers.length })
@@ -142,7 +141,7 @@ function memberCount(group: SmartGroup): number {
 
             <template v-if="selectedMembers.length > 0">
               <div class="groups__table-wrap">
-                <table class="groups__table">
+                <table class="groups__table" aria-labelledby="groups-members-heading">
                   <thead>
                     <tr>
                       <th scope="col">{{ t('groups.member.cell') }}</th>

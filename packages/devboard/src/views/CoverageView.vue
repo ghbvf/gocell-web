@@ -186,7 +186,7 @@ const FILTER_VALUES: readonly FilterValue[] = ['all', ...COVERAGE_STATUSES]
           <template v-for="section in filteredSections" :key="section.titleKey">
             <!-- Section heading row -->
             <tr class="coverage__section-row" data-section>
-              <th colspan="3" scope="colgroup" class="coverage__section-heading">
+              <th colspan="3" role="rowheader" class="coverage__section-heading">
                 {{ t(section.titleKey) }}
               </th>
             </tr>
@@ -214,7 +214,7 @@ const FILTER_VALUES: readonly FilterValue[] = ['all', ...COVERAGE_STATUSES]
                 >
                 <span class="sr-only">{{ t(`coverage.status.${STATUS_CAMEL[row.status]}`) }}</span>
                 <code v-if="row.web !== null" class="coverage__ref">{{ row.web }}</code>
-                <span v-else class="coverage__none" aria-label="t('coverage.none')">{{
+                <span v-else class="coverage__none" :aria-label="t('coverage.none')">{{
                   t('coverage.none')
                 }}</span>
               </td>
@@ -229,7 +229,7 @@ const FILTER_VALUES: readonly FilterValue[] = ['all', ...COVERAGE_STATUSES]
                 >
                 <span class="sr-only">{{ t(`coverage.status.${STATUS_CAMEL[row.status]}`) }}</span>
                 <code v-if="row.design !== null" class="coverage__ref">{{ row.design }}</code>
-                <span v-else class="coverage__none" aria-label="t('coverage.none')">{{
+                <span v-else class="coverage__none" :aria-label="t('coverage.none')">{{
                   t('coverage.none')
                 }}</span>
               </td>

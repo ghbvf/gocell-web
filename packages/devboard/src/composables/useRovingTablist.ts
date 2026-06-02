@@ -7,25 +7,27 @@
  * Blinding coverage: does not handle vertical arrow keys (ArrowUp/Down),
  * nor does it update tabindex attributes — that is the caller's responsibility.
  */
-export interface RovingTablistOptions {
+export interface RovingTablistOptions<T extends string = string> {
   /** Returns the ordered list of tab ids (called on every keydown for live lists). */
-  tabIds: () => readonly string[]
+  tabIds: () => readonly T[]
   /** Maps a tab id to the DOM element id of its button. */
-  idFor: (id: string) => string
+  idFor: (id: T) => string
   /**
    * Optional automatic-activation callback (APG pattern).
    * Called with the target tab id after focus moves on Arrow/Home/End.
    * Keeps roving "home" position in sync with the active tab.
    */
-  onActivate?: ((id: string) => void) | undefined
+  onActivate?: ((id: T) => void) | undefined
 }
 
-export interface RovingTablistReturn {
-  onKeydown(e: KeyboardEvent, currentId: string): void
+export interface RovingTablistReturn<T extends string = string> {
+  onKeydown(e: KeyboardEvent, currentId: T): void
 }
 
-export function useRovingTablist(opts: RovingTablistOptions): RovingTablistReturn {
-  function onKeydown(e: KeyboardEvent, currentId: string): void {
+export function useRovingTablist<T extends string = string>(
+  opts: RovingTablistOptions<T>,
+): RovingTablistReturn<T> {
+  function onKeydown(e: KeyboardEvent, currentId: T): void {
     const ids = opts.tabIds()
     const current = ids.indexOf(currentId)
     if (current === -1) return

@@ -18,10 +18,10 @@ const { t } = useI18n()
 const tabBtnId = (id: string) => `deps-tab-${id}`
 const panelId = (id: string) => `deps-panel-${id}`
 
-const { onKeydown } = useRovingTablist({
+const { onKeydown } = useRovingTablist<DepsViewId>({
   tabIds: () => props.views.map((v) => v.id),
   idFor: tabBtnId,
-  onActivate: (id) => emit('select', id as DepsViewId),
+  onActivate: (id) => emit('select', id),
 })
 </script>
 
@@ -34,7 +34,7 @@ const { onKeydown } = useRovingTablist({
       type="button"
       role="tab"
       :aria-selected="view.id === activeId"
-      :aria-controls="view.id === activeId ? panelId(view.id) : undefined"
+      :aria-controls="panelId(view.id)"
       :tabindex="view.id === activeId ? 0 : -1"
       class="tab-bar__btn"
       :class="{ 'tab-bar__btn--active': view.id === activeId }"
