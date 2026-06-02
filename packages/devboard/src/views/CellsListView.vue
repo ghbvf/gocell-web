@@ -142,14 +142,14 @@ const { query, domain, domains, filtered } = useCellsFilter(cells)
   align-items: baseline;
   gap: 8px;
   margin: 0;
-  font-size: 20px;
+  font-size: var(--text-2xl);
   font-weight: 600;
   color: var(--fg);
   font-family: var(--font-sans);
 }
 
 .cells-list__count {
-  font-size: 12px;
+  font-size: var(--text-sm);
   font-weight: 400;
   color: var(--fg-muted);
   font-family: var(--font-mono);
@@ -157,7 +157,7 @@ const { query, domain, domains, filtered } = useCellsFilter(cells)
 
 .cells-list__subtitle {
   margin: 0;
-  font-size: 12px;
+  font-size: var(--text-sm);
   color: var(--fg-muted);
 }
 
@@ -184,7 +184,7 @@ const { query, domain, domains, filtered } = useCellsFilter(cells)
 .cells-list__search {
   width: 200px;
   padding: 4px 8px;
-  font-size: 12px;
+  font-size: var(--text-sm);
   font-family: var(--font-mono);
   color: var(--fg);
   background: var(--bg);
@@ -208,7 +208,7 @@ const { query, domain, domains, filtered } = useCellsFilter(cells)
 
 .cells-list__seg-btn {
   padding: 4px 10px;
-  font-size: 12px;
+  font-size: var(--text-sm);
   font-family: var(--font-sans);
   color: var(--fg-muted);
   background: var(--bg);
@@ -248,7 +248,7 @@ const { query, domain, domains, filtered } = useCellsFilter(cells)
 .cells-list__table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 12px;
+  font-size: var(--text-sm);
   color: var(--fg);
 }
 
@@ -306,7 +306,7 @@ const { query, domain, domains, filtered } = useCellsFilter(cells)
 }
 
 .cells-list__cell-name {
-  font-size: 12px;
+  font-size: var(--text-sm);
   color: var(--fg-muted);
 }
 
@@ -314,7 +314,7 @@ const { query, domain, domains, filtered } = useCellsFilter(cells)
 .cells-list__tier-chip {
   display: inline-block;
   padding: 1px 6px;
-  font-size: 11px;
+  font-size: var(--text-xs);
   font-family: var(--font-mono);
   color: var(--fg-muted);
   background: var(--bg-sunken);

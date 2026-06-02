@@ -35,7 +35,7 @@ const hint = computed(() =>
   align-items: center;
   gap: 5px;
   padding: 1px 8px;
-  font-size: 12px;
+  font-size: var(--text-sm);
   line-height: 18px;
   color: var(--fg);
   background: var(--bg-sunken);

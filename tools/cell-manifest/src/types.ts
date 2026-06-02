@@ -59,6 +59,5 @@ export interface CellEntry {
 
 export interface CellManifest {
   readonly cells: readonly CellEntry[]
-  readonly byId: Readonly<Record<string, CellEntry>>
   readonly generatedFrom: string
 }

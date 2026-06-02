@@ -90,13 +90,13 @@ function roleKey(usage: ContractUsage): string {
 
 .contracts__title {
   margin: 0;
-  font-size: 14px;
+  font-size: var(--text-lg);
   font-weight: 600;
   color: var(--fg);
 }
 
 .muted {
-  font-size: 12.5px;
+  font-size: var(--text-base);
   color: var(--fg-muted);
   margin: 0;
 }
@@ -112,26 +112,26 @@ function roleKey(usage: ContractUsage): string {
   align-items: center;
   gap: 8px;
   margin: 0;
-  font-size: 13px;
+  font-size: var(--text-base);
   font-weight: 600;
   color: var(--fg);
 }
 
 .count {
-  font-size: 12px;
+  font-size: var(--text-sm);
   color: var(--fg-muted);
 }
 
 .contracts-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 13px;
+  font-size: var(--text-base);
 }
 
 .contracts-table__th {
   padding: 6px 12px;
   text-align: left;
-  font-size: 12px;
+  font-size: var(--text-sm);
   font-weight: 500;
   color: var(--fg-muted);
   border-bottom: 1px solid var(--line);
@@ -150,14 +150,14 @@ function roleKey(usage: ContractUsage): string {
 
 .mono {
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: var(--text-sm);
 }
 
 .role-pill {
   display: inline-flex;
   align-items: center;
   padding: 1px 8px;
-  font-size: 11px;
+  font-size: var(--text-xs);
   color: var(--fg-muted);
   background: var(--bg-sunken);
   border: 1px solid var(--line-soft);

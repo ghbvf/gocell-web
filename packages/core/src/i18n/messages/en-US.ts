@@ -734,6 +734,13 @@ const enUS = {
       role: 'Role',
       noProduces: 'This cell does not produce any contracts.',
       noConsumes: 'This cell does not consume any contracts.',
+      fields: {
+        id: 'ID',
+        owner: 'Owner team',
+        goStruct: 'Go struct',
+        lifecycle: 'Lifecycle',
+        consistency: 'Consistency level',
+      },
     },
     wiring: {
       title: 'Infrastructure wiring',

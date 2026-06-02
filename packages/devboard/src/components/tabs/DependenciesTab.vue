@@ -66,14 +66,14 @@ const hasCrossCell = computed(
 
 .deps__title {
   margin: 0 0 4px;
-  font-size: 14px;
+  font-size: var(--text-lg);
   font-weight: 600;
   color: var(--fg);
 }
 
 .deps__hint {
   margin: 0;
-  font-size: 12.5px;
+  font-size: var(--text-base);
   color: var(--fg-muted);
 }
 
@@ -86,13 +86,13 @@ const hasCrossCell = computed(
 
 .card__heading {
   margin: 0 0 10px;
-  font-size: 12.5px;
+  font-size: var(--text-base);
   font-weight: 600;
   color: var(--fg);
 }
 
 .muted {
-  font-size: 12.5px;
+  font-size: var(--text-base);
   color: var(--fg-muted);
   margin: 0;
 }
@@ -137,7 +137,7 @@ const hasCrossCell = computed(
 .infra-list__item {
   display: inline-block;
   padding: 3px 8px;
-  font-size: 12px;
+  font-size: var(--text-sm);
   background: var(--bg-sunken);
   border: 1px solid var(--line-soft);
   border-radius: var(--r-sm);
@@ -146,6 +146,6 @@ const hasCrossCell = computed(
 
 .mono {
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: var(--text-sm);
 }
 </style>

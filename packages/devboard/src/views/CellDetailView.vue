@@ -114,7 +114,7 @@ function selectTab(id: string): void {
 
 .cell-detail__back {
   align-self: flex-start;
-  font-size: 12px;
+  font-size: var(--text-sm);
   color: var(--fg-muted);
   text-decoration: none;
 }
@@ -140,18 +140,18 @@ function selectTab(id: string): void {
   align-items: center;
   gap: 10px;
   margin: 0;
-  font-size: 20px;
+  font-size: var(--text-2xl);
   font-weight: 500;
   color: var(--fg);
 }
 
 .cell-detail__id {
-  font-size: 18px;
+  font-size: var(--text-xl);
 }
 
 .cell-detail__subtitle {
   margin: 0;
-  font-size: 13px;
+  font-size: var(--text-base);
   color: var(--fg-muted);
 }
 
@@ -177,7 +177,7 @@ function selectTab(id: string): void {
 
 .cell-detail__nf-desc {
   margin: 0;
-  font-size: 13px;
+  font-size: var(--text-base);
   color: var(--fg-muted);
 }
 </style>

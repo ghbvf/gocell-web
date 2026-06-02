@@ -253,7 +253,7 @@ type RawCellWithSlices = {
  * 2. Compute produces/consumes per cell
  * 3. Build contract → producingCellId map
  * 4. Compute cross-cell dependsOnCells / requiredByCells
- * 5. Sort cells by id, build byId map
+ * 5. Sort cells by id (byId lookup is derived at runtime in useCellsStore)
  */
 export function buildManifest(rawCells: RawCellWithSlices[]): CellManifest {
   // Step 1: parse cells + slices
@@ -311,14 +311,8 @@ export function buildManifest(rawCells: RawCellWithSlices[]): CellManifest {
     }))
     .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))
 
-  const byId: Record<string, CellEntry> = {}
-  for (const entry of finalEntries) {
-    byId[entry.id] = entry
-  }
-
   return {
     cells: finalEntries,
-    byId,
     generatedFrom: 'gocell/cells/**/{cell.yaml,slices/*/slice.yaml}',
   }
 }

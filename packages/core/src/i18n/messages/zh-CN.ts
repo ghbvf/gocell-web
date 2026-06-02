@@ -722,6 +722,13 @@ const zhCN = {
       role: '角色',
       noProduces: '该 cell 不产出任何契约。',
       noConsumes: '该 cell 不消费任何契约。',
+      fields: {
+        id: 'ID',
+        owner: '负责团队',
+        goStruct: 'Go 结构体',
+        lifecycle: '生命周期',
+        consistency: '一致性级别',
+      },
     },
     wiring: {
       title: '基础设施装配',

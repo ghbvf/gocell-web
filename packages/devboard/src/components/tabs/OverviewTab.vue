@@ -104,7 +104,7 @@ const { t } = useI18n()
 
 .card__heading {
   margin: 0 0 12px;
-  font-size: 13px;
+  font-size: var(--text-base);
   font-weight: 600;
   color: var(--fg);
 }
@@ -123,7 +123,7 @@ const { t } = useI18n()
 .kv__row dt,
 .kv__row dd {
   padding: 5px 0;
-  font-size: 13px;
+  font-size: var(--text-base);
   border-bottom: 1px solid var(--line-soft);
   margin: 0;
 }
@@ -144,6 +144,6 @@ const { t } = useI18n()
 
 .mono {
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: var(--text-sm);
 }
 </style>

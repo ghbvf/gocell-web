@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { defineComponent, h } from 'vue'
+import { createTestPinia } from '@gocell/core/testing'
 import AuditTab from './AuditTab.vue'
 import type { CellEntry } from '../../manifest/types'
 
@@ -69,6 +70,14 @@ const sampleEntries = [
   },
 ]
 
+/** Mount with a fresh testing Pinia (real actions run against the mocked fetch). */
+function mountTab() {
+  return mount(AuditTab, {
+    props: { cell },
+    global: { plugins: [createTestPinia({ createSpy: vi.fn })] },
+  })
+}
+
 describe('AuditTab', () => {
   beforeEach(() => {
     mockFetch.mockReset()
@@ -76,7 +85,7 @@ describe('AuditTab', () => {
 
   it('shows loading state before the fetch resolves', () => {
     mockFetch.mockReturnValue(new Promise(() => {}))
-    const wrapper = mount(AuditTab, { props: { cell } })
+    const wrapper = mountTab()
     expect(wrapper.find('[role="status"]').text()).toBe('cells.audit.loading')
     expect(wrapper.find('table').exists()).toBe(false)
   })
@@ -87,7 +96,7 @@ describe('AuditTab', () => {
       nextCursor: 'cur-2',
       hasMore: false,
     })
-    const wrapper = mount(AuditTab, { props: { cell } })
+    const wrapper = mountTab()
     await flushPromises()
 
     expect(wrapper.find('table').exists()).toBe(true)
@@ -103,7 +112,7 @@ describe('AuditTab', () => {
       nextCursor: '',
       hasMore: false,
     })
-    const wrapper = mount(AuditTab, { props: { cell } })
+    const wrapper = mountTab()
     await flushPromises()
 
     const headers = wrapper.findAll('th')
@@ -114,7 +123,7 @@ describe('AuditTab', () => {
 
   it('shows empty state when data array is empty', async () => {
     mockFetch.mockResolvedValue({ data: [], nextCursor: '', hasMore: false })
-    const wrapper = mount(AuditTab, { props: { cell } })
+    const wrapper = mountTab()
     await flushPromises()
 
     expect(wrapper.find('table').exists()).toBe(false)
@@ -123,7 +132,7 @@ describe('AuditTab', () => {
 
   it('shows error state when fetch rejects', async () => {
     mockFetch.mockRejectedValue(new Error('network error'))
-    const wrapper = mount(AuditTab, { props: { cell } })
+    const wrapper = mountTab()
     await flushPromises()
 
     expect(wrapper.find('[role="alert"]').exists()).toBe(true)
@@ -137,7 +146,7 @@ describe('AuditTab', () => {
       nextCursor: '',
       hasMore: false,
     })
-    const wrapper = mount(AuditTab, { props: { cell } })
+    const wrapper = mountTab()
     await flushPromises()
 
     const link = wrapper.find('a')
@@ -147,9 +156,26 @@ describe('AuditTab', () => {
 
   it('calls fetchCellAudit with limit: 20', async () => {
     mockFetch.mockResolvedValue({ data: [], nextCursor: '', hasMore: false })
-    mount(AuditTab, { props: { cell } })
+    mountTab()
     await flushPromises()
 
     expect(mockFetch).toHaveBeenCalledWith({ limit: 20 })
+  })
+
+  it('reuses the cached entries on tab re-entry (no refetch)', async () => {
+    mockFetch.mockResolvedValue({ data: sampleEntries, nextCursor: '', hasMore: false })
+    // Same store instance across both mounts → models leaving and re-entering the tab.
+    const pinia = createTestPinia({ createSpy: vi.fn })
+    const first = mount(AuditTab, { props: { cell }, global: { plugins: [pinia] } })
+    await flushPromises()
+    expect(mockFetch).toHaveBeenCalledTimes(1)
+
+    first.unmount()
+    const second = mount(AuditTab, { props: { cell }, global: { plugins: [pinia] } })
+    await flushPromises()
+
+    // Cache hit: no second request, data shown immediately.
+    expect(mockFetch).toHaveBeenCalledTimes(1)
+    expect(second.find('table').exists()).toBe(true)
   })
 })

@@ -1,28 +1,29 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink } from 'vue-router'
+import { storeToRefs } from 'pinia'
 import type { CellEntry } from '../../manifest/types'
-import { fetchCellConfig } from '../../api/cellConfig'
-import type { CellConfigEntry } from '../../api/cellConfig'
+import { useCellsStore } from '../../stores/useCellsStore'
 
 defineProps<{ cell: CellEntry }>()
 
 const { t } = useI18n()
+const store = useCellsStore()
+const { configEntries: entries, configStatus } = storeToRefs(store)
 
 type LoadState = 'loading' | 'error' | 'empty' | 'data'
 
-const state = ref<LoadState>('loading')
-const entries = ref<CellConfigEntry[]>([])
+// Recent entries are cached in the store, so re-entering this tab reuses them
+// instead of re-fetching. Display state is derived from the cache load status.
+const state = computed<LoadState>(() => {
+  if (configStatus.value === 'error') return 'error'
+  if (configStatus.value === 'loaded') return entries.value.length === 0 ? 'empty' : 'data'
+  return 'loading'
+})
 
-onMounted(async () => {
-  try {
-    const res = await fetchCellConfig({ limit: 50 })
-    entries.value = res.data
-    state.value = res.data.length === 0 ? 'empty' : 'data'
-  } catch {
-    state.value = 'error'
-  }
+onMounted(() => {
+  void store.loadRecentConfig()
 })
 </script>
 
@@ -78,7 +79,7 @@ onMounted(async () => {
 
 .config-tab__status {
   margin: 0;
-  font-size: 13px;
+  font-size: var(--text-base);
   color: var(--fg-muted);
 }
 
@@ -95,7 +96,7 @@ onMounted(async () => {
 .config-tab__table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 13px;
+  font-size: var(--text-base);
 }
 
 .config-tab__table thead th {
@@ -121,12 +122,12 @@ onMounted(async () => {
 
 .config-tab__cell--mono {
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: var(--text-sm);
 }
 
 .config-tab__cell--value {
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: var(--text-sm);
   word-break: break-all;
   max-width: 320px;
 }
@@ -134,7 +135,7 @@ onMounted(async () => {
 .config-tab__open-full {
   display: inline-block;
   margin-top: 12px;
-  font-size: 13px;
+  font-size: var(--text-base);
   color: var(--accent);
   text-decoration: none;
 }

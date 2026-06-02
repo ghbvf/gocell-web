@@ -54,7 +54,7 @@ const { onKeydown } = useRovingTablist({
 
 .tab-bar__btn {
   padding: 8px 14px;
-  font-size: 13px;
+  font-size: var(--text-base);
   font-weight: 400;
   color: var(--fg-muted);
   background: transparent;

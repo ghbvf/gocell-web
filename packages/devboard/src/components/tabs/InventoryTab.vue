@@ -52,7 +52,7 @@ const rows = computed((): InventoryRow[] => [
 
 .inventory__title {
   margin: 0 0 14px;
-  font-size: 14px;
+  font-size: var(--text-lg);
   font-weight: 600;
   color: var(--fg);
 }
@@ -60,13 +60,13 @@ const rows = computed((): InventoryRow[] => [
 .inv-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 13px;
+  font-size: var(--text-base);
 }
 
 .inv-table__th {
   padding: 6px 12px;
   text-align: left;
-  font-size: 12px;
+  font-size: var(--text-sm);
   font-weight: 500;
   color: var(--fg-muted);
   border-bottom: 1px solid var(--line);
@@ -95,6 +95,6 @@ const rows = computed((): InventoryRow[] => [
 
 .mono {
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: var(--text-sm);
 }
 </style>

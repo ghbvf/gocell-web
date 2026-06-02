@@ -48,6 +48,5 @@ export interface CellEntry {
 
 export interface CellManifest {
   readonly cells: readonly CellEntry[] // sorted by id
-  readonly byId: Readonly<Record<string, CellEntry>>
   readonly generatedFrom: string // static note, NOT a timestamp (determinism)
 }

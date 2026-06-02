@@ -476,8 +476,8 @@ describe('buildManifest', () => {
         ],
       },
     ])
-    const b = manifest.byId['bcore']
-    const a = manifest.byId['acore']
+    const b = manifest.cells.find((c) => c.id === 'bcore')
+    const a = manifest.cells.find((c) => c.id === 'acore')
     expect(b?.dependsOnCells).toContain('acore')
     expect(a?.requiredByCells).toContain('bcore')
   })
@@ -518,7 +518,7 @@ describe('buildManifest', () => {
         ],
       },
     ])
-    const self = manifest.byId['selfcore']
+    const self = manifest.cells.find((c) => c.id === 'selfcore')
     expect(self?.dependsOnCells).toEqual([])
   })
 
@@ -657,7 +657,6 @@ describe('renderManifestModule', () => {
   it('produces a TS module string with CELL_MANIFEST export', () => {
     const manifest: CellManifest = {
       cells: [],
-      byId: {},
       generatedFrom: 'gocell/cells/**/{cell.yaml,slices/*/slice.yaml}',
     }
     const output = renderManifestModule(manifest)

@@ -30,14 +30,14 @@ defineProps<{
 
 .panel__title {
   margin: 0 0 4px;
-  font-size: 13px;
+  font-size: var(--text-base);
   font-weight: 500;
   color: var(--fg-muted);
 }
 
 .panel__message {
   margin: 0;
-  font-size: 13px;
+  font-size: var(--text-base);
   color: var(--fg-muted);
 }
 </style>

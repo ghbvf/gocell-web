@@ -58,13 +58,13 @@ function earliestExpiry(slice: CellSlice): string | null {
 
 .slices__title {
   margin: 0 0 14px;
-  font-size: 14px;
+  font-size: var(--text-lg);
   font-weight: 600;
   color: var(--fg);
 }
 
 .muted {
-  font-size: 12.5px;
+  font-size: var(--text-base);
   color: var(--fg-muted);
   margin: 0;
 }
@@ -72,13 +72,13 @@ function earliestExpiry(slice: CellSlice): string | null {
 .slices-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 13px;
+  font-size: var(--text-base);
 }
 
 .slices-table__th {
   padding: 6px 12px;
   text-align: left;
-  font-size: 12px;
+  font-size: var(--text-sm);
   font-weight: 500;
   color: var(--fg-muted);
   border-bottom: 1px solid var(--line);
@@ -105,14 +105,14 @@ function earliestExpiry(slice: CellSlice): string | null {
 
 .mono {
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: var(--text-sm);
 }
 
 .waiver-count {
   display: inline-block;
   margin-right: 6px;
   padding: 1px 6px;
-  font-size: 11px;
+  font-size: var(--text-xs);
   background: var(--bg-sunken);
   border: 1px solid var(--line-soft);
   border-radius: var(--r-sm);
@@ -121,7 +121,7 @@ function earliestExpiry(slice: CellSlice): string | null {
 }
 
 .waiver-expires {
-  font-size: 11.5px;
+  font-size: var(--text-xs);
   color: var(--fg-muted);
 }
 </style>

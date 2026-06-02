@@ -27,15 +27,15 @@ function roleKey(usage: ContractUsage): string {
         <p class="card__desc">{{ t('cells.interfaces.identityDesc') }}</p>
         <dl class="kv">
           <div class="kv__row">
-            <dt>{{ t('cells.overview.id') }}</dt>
+            <dt>{{ t('cells.interfaces.fields.id') }}</dt>
             <dd class="mono">{{ props.cell.id }}</dd>
           </div>
           <div class="kv__row">
-            <dt>{{ t('cells.overview.owner') }}</dt>
+            <dt>{{ t('cells.interfaces.fields.owner') }}</dt>
             <dd>{{ props.cell.owner.team }}</dd>
           </div>
           <div class="kv__row">
-            <dt>{{ t('cells.overview.goStruct') }}</dt>
+            <dt>{{ t('cells.interfaces.fields.goStruct') }}</dt>
             <dd class="mono">{{ props.cell.goStructName }}</dd>
           </div>
         </dl>
@@ -47,11 +47,11 @@ function roleKey(usage: ContractUsage): string {
         <p class="card__desc">{{ t('cells.interfaces.lifecycleDesc') }}</p>
         <dl class="kv">
           <div class="kv__row">
-            <dt>{{ t('cells.overview.lifecycle') }}</dt>
+            <dt>{{ t('cells.interfaces.fields.lifecycle') }}</dt>
             <dd>{{ props.cell.lifecycle }}</dd>
           </div>
           <div class="kv__row">
-            <dt>{{ t('cells.overview.consistency') }}</dt>
+            <dt>{{ t('cells.interfaces.fields.consistency') }}</dt>
             <dd>{{ props.cell.consistencyLevel }}</dd>
           </div>
           <div class="kv__row">
@@ -136,14 +136,14 @@ function roleKey(usage: ContractUsage): string {
 
 .isp-header__title {
   margin: 0 0 4px;
-  font-size: 14px;
+  font-size: var(--text-lg);
   font-weight: 600;
   color: var(--fg);
 }
 
 .isp-header__hint {
   margin: 0;
-  font-size: 12.5px;
+  font-size: var(--text-base);
   color: var(--fg-muted);
 }
 
@@ -162,14 +162,14 @@ function roleKey(usage: ContractUsage): string {
 
 .card__heading {
   margin: 0 0 6px;
-  font-size: 12.5px;
+  font-size: var(--text-base);
   font-weight: 600;
   color: var(--fg);
 }
 
 .card__desc {
   margin: 0 0 10px;
-  font-size: 12px;
+  font-size: var(--text-sm);
   color: var(--fg-muted);
 }
 
@@ -187,7 +187,7 @@ function roleKey(usage: ContractUsage): string {
 .kv__row dt,
 .kv__row dd {
   padding: 4px 0;
-  font-size: 12.5px;
+  font-size: var(--text-base);
   border-bottom: 1px solid var(--line-soft);
   margin: 0;
 }
@@ -208,11 +208,11 @@ function roleKey(usage: ContractUsage): string {
 
 .mono {
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: var(--text-sm);
 }
 
 .muted {
-  font-size: 12.5px;
+  font-size: var(--text-base);
   color: var(--fg-muted);
 }
 
@@ -246,7 +246,7 @@ function roleKey(usage: ContractUsage): string {
   display: inline-flex;
   align-items: center;
   padding: 1px 8px;
-  font-size: 11px;
+  font-size: var(--text-xs);
   color: var(--fg-muted);
   background: var(--bg-sunken);
   border: 1px solid var(--line-soft);
