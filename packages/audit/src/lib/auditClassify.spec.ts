@@ -80,13 +80,32 @@ describe('groupByDay', () => {
 })
 
 describe('formatDayLabel', () => {
-  it('returns a non-empty string for a valid date key', () => {
-    const label = formatDayLabel('2026-06-01')
-    expect(typeof label).toBe('string')
-    expect(label.length).toBeGreaterThan(0)
+  it('returns kind=date and a non-empty dateLabel for an old date key', () => {
+    // Use a date far in the past so it never matches today or yesterday.
+    const result = formatDayLabel('2024-01-15')
+    expect(result.kind).toBe('date')
+    expect(typeof result.dateLabel).toBe('string')
+    expect(result.dateLabel.length).toBeGreaterThan(0)
   })
 
-  it('returns the key unchanged for an invalid date', () => {
-    expect(formatDayLabel('not-a-date')).toBe('not-a-date')
+  it('returns kind=today for todays date key', () => {
+    const today = new Date()
+    const key = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+    const result = formatDayLabel(key)
+    expect(result.kind).toBe('today')
+  })
+
+  it('returns kind=yesterday for yesterdays date key', () => {
+    const d = new Date()
+    d.setDate(d.getDate() - 1)
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+    const result = formatDayLabel(key)
+    expect(result.kind).toBe('yesterday')
+  })
+
+  it('returns kind=date and the original key as dateLabel for an invalid date', () => {
+    const result = formatDayLabel('not-a-date')
+    expect(result.kind).toBe('date')
+    expect(result.dateLabel).toBe('not-a-date')
   })
 })

@@ -422,6 +422,7 @@ const zhCN = {
       empty: '暂无匹配的审计条目',
       loadMore: '加载更多',
       list: { label: '审计日志列表' },
+      day: { today: '今天', yesterday: '昨天' },
       range: { label: '时间范围' },
       actions: {
         export: '导出 CSV',
@@ -429,8 +430,11 @@ const zhCN = {
       },
       chain: {
         label: '哈希链完整性',
+        ok: '哈希链完整',
+        broken: '哈希链已断裂',
         unavailable: '链校验不可用',
-        unavailableNote: '后端尚未暴露 hash 字段（BR-006）',
+        // BR-006 仅保留在代码注释中，不向用户暴露内部编号
+        unavailableNote: '此版本暂不支持哈希链校验',
       },
       filter: {
         label: '搜索',
@@ -463,14 +467,14 @@ const zhCN = {
       quickFilter: {
         label: '快捷过滤',
         prefix: '快捷过滤：',
-        sandboxDenials: '沙箱拒绝',
+        sandboxActions: '沙箱操作',
         secretReads: '密钥读取',
         flagFlips: '开关变更',
         roleChangesByHumans: '人工角色变更',
       },
       detail: {
         label: '条目详情',
-        entryId: 'Entry ID',
+        entryId: '条目 ID',
         eventType: '事件类型',
         actor: '操作者',
         target: '目标',

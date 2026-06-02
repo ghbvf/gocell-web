@@ -20,13 +20,23 @@ import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
 import { Can } from '@gocell/core'
 import { useAuditStore } from '../stores/useAuditStore'
+import type { ActorKindFilter, ActionNsFilter } from '../stores/useAuditStore'
 import type { AuditEntry } from '../api/audit'
 import ActorPill from '../components/ActorPill.vue'
 
 const { t } = useI18n()
 const store = useAuditStore()
-const { filteredEntries, entriesByDay, loading, errorKey, hasMore, filter, actorKind, actionNs } =
-  storeToRefs(store)
+const {
+  filteredEntries,
+  entriesByDay,
+  loading,
+  errorKey,
+  hasMore,
+  filter,
+  actorKind,
+  actionNs,
+  chainStatus,
+} = storeToRefs(store)
 
 onMounted(() => {
   void store.fetchList()
@@ -36,6 +46,14 @@ onMounted(() => {
 const range = ref<'1h' | '24h' | '7d' | '30d'>('24h')
 const RANGES = ['1h', '24h', '7d', '30d'] as const
 
+// ─── eventType helpers (C: extracted from template to avoid repeated splits) ──
+function eventNs(eventType: string): string {
+  return eventType.split('.').slice(0, -1).join('.')
+}
+function eventAction(eventType: string): string {
+  return eventType.split('.').pop() ?? eventType
+}
+
 // ─── quick filter chips ────────────────────────────────────────────────────────
 interface QuickFilter {
   labelKey: string
@@ -43,7 +61,7 @@ interface QuickFilter {
 }
 const quickFilters: QuickFilter[] = [
   {
-    labelKey: 'audit.log.quickFilter.sandboxDenials',
+    labelKey: 'audit.log.quickFilter.sandboxActions',
     apply() {
       actorKind.value = 'sandbox'
     },
@@ -109,7 +127,7 @@ function formatTs(iso: string): string {
 }
 
 // ─── actor kind options ───────────────────────────────────────────────────────
-const ACTOR_KINDS = [
+const ACTOR_KINDS: Array<{ value: ActorKindFilter; labelKey: string }> = [
   { value: 'all', labelKey: 'audit.log.filter.actorKind.all' },
   { value: 'human', labelKey: 'audit.log.filter.actorKind.human' },
   { value: 'service', labelKey: 'audit.log.filter.actorKind.service' },
@@ -119,7 +137,7 @@ const ACTOR_KINDS = [
 ]
 
 // ─── action namespace options ─────────────────────────────────────────────────
-const ACTION_NS = [
+const ACTION_NS: Array<{ value: ActionNsFilter; labelKey: string }> = [
   { value: 'all', labelKey: 'audit.log.filter.actionNs.all' },
   { value: 'slice', labelKey: 'audit.log.filter.actionNs.slice' },
   { value: 'flag', labelKey: 'audit.log.filter.actionNs.flag' },
@@ -176,13 +194,19 @@ const ACTION_NS = [
       role="status"
       :aria-label="t('audit.log.chain.label')"
     >
-      <span class="audit__chain-dot audit__chain-dot--neutral" aria-hidden="true" />
-      <span class="audit__chain-text">
-        {{ t('audit.log.chain.unavailable') }}
-      </span>
-      <span class="audit__chain-note">
-        {{ t('audit.log.chain.unavailableNote') }}
-      </span>
+      <template v-if="chainStatus.status === 'ok'">
+        <span class="audit__chain-dot audit__chain-dot--ok" aria-hidden="true" />
+        <span class="audit__chain-text">{{ t('audit.log.chain.ok') }}</span>
+      </template>
+      <template v-else-if="chainStatus.status === 'broken'">
+        <span class="audit__chain-dot audit__chain-dot--broken" aria-hidden="true" />
+        <span class="audit__chain-text">{{ t('audit.log.chain.broken') }}</span>
+      </template>
+      <template v-else>
+        <span class="audit__chain-dot audit__chain-dot--neutral" aria-hidden="true" />
+        <span class="audit__chain-text">{{ t('audit.log.chain.unavailable') }}</span>
+        <span class="audit__chain-note">{{ t('audit.log.chain.unavailableNote') }}</span>
+      </template>
     </div>
 
     <!-- ─── filter toolbar ───────────────────────────────────────────────── -->
@@ -226,7 +250,7 @@ const ACTION_NS = [
     </div>
 
     <!-- ─── quick filter chips ───────────────────────────────────────────── -->
-    <div class="audit__quick" :aria-label="t('audit.log.quickFilter.label')">
+    <div class="audit__quick" role="group" :aria-label="t('audit.log.quickFilter.label')">
       <span class="audit__quick-label">{{ t('audit.log.quickFilter.prefix') }}</span>
       <button
         v-for="qf in quickFilters"
@@ -234,7 +258,6 @@ const ACTION_NS = [
         type="button"
         class="audit__chip"
         data-testid="qf-chip"
-        tabindex="0"
         @click="applyQuickFilter(qf)"
       >
         {{ t(qf.labelKey) }}
@@ -254,54 +277,61 @@ const ACTION_NS = [
 
     <!-- ─── master–detail layout ─────────────────────────────────────────── -->
     <template v-else>
-      <p class="sr-only" role="status" aria-live="polite">
-        {{ t('audit.log.filter.count', { shown: filteredEntries.length }) }}
-      </p>
-
       <div class="audit__layout">
         <!-- left: day-grouped entry list -->
-        <div class="audit__list" role="list" :aria-label="t('audit.log.list.label')">
-          <section v-for="group in entriesByDay" :key="group.dayKey" class="audit__day-section">
-            <h2 class="audit__day-heading">
-              {{ group.label }}
-              <span class="audit__day-count">&middot; {{ group.entries.length }}</span>
-            </h2>
-            <button
-              v-for="entry in group.entries"
-              :key="entry.id"
-              type="button"
-              class="audit__row"
-              :class="{ 'audit__row--active': selectedEntry?.id === entry.id }"
-              role="listitem"
-              data-testid="audit-row"
-              :aria-current="selectedEntry?.id === entry.id ? 'true' : undefined"
-              @click="selectEntry(entry.id)"
-            >
-              <time class="audit__row-time" :datetime="entry.occurredAt ?? entry.timestamp">
-                {{ formatTs(entry.occurredAt ?? entry.timestamp) }}
-              </time>
-              <ActorPill :actor-id="entry.actorId" class="audit__row-actor" />
-              <span class="audit__row-event">
-                <span class="audit__event-ns">
-                  {{ entry.eventType.split('.').slice(0, -1).join('.') }}.
-                </span>
-                {{ entry.eventType.split('.').pop() }}
-              </span>
-              <span v-if="entry.subjectId" class="audit__row-target">{{ entry.subjectId }}</span>
-            </button>
-          </section>
+        <!-- Native <ul>/<li> for correct ARIA list semantics (A: no role=list/listitem override). -->
+        <ul class="audit__list" :aria-label="t('audit.log.list.label')">
+          <li v-for="group in entriesByDay" :key="group.dayKey" class="audit__day-item">
+            <section class="audit__day-section" :aria-labelledby="`day-${group.dayKey}`">
+              <h2 :id="`day-${group.dayKey}`" class="audit__day-heading">
+                <template v-if="group.labelKind === 'today'">{{
+                  t('audit.log.day.today')
+                }}</template>
+                <template v-else-if="group.labelKind === 'yesterday'">{{
+                  t('audit.log.day.yesterday')
+                }}</template>
+                <template v-else>{{ group.dateLabel }}</template>
+                <span class="audit__day-count">&middot; {{ group.entries.length }}</span>
+              </h2>
+              <ul class="audit__day-entries">
+                <li v-for="entry in group.entries" :key="entry.id">
+                  <button
+                    type="button"
+                    class="audit__row"
+                    :class="{ 'audit__row--active': selectedEntry?.id === entry.id }"
+                    data-testid="audit-row"
+                    :aria-current="selectedEntry?.id === entry.id ? 'true' : undefined"
+                    @click="selectEntry(entry.id)"
+                  >
+                    <time class="audit__row-time" :datetime="entry.occurredAt ?? entry.timestamp">
+                      {{ formatTs(entry.occurredAt ?? entry.timestamp) }}
+                    </time>
+                    <ActorPill :actor-id="entry.actorId" class="audit__row-actor" />
+                    <span class="audit__row-event">
+                      <span class="audit__event-ns">{{ eventNs(entry.eventType) }}.</span>
+                      {{ eventAction(entry.eventType) }}
+                    </span>
+                    <span v-if="entry.subjectId" class="audit__row-target">{{
+                      entry.subjectId
+                    }}</span>
+                  </button>
+                </li>
+              </ul>
+            </section>
+          </li>
 
-          <button
-            v-if="hasMore"
-            type="button"
-            class="audit__more"
-            data-action="load-more"
-            :disabled="loading"
-            @click="store.loadMore()"
-          >
-            {{ t('audit.log.loadMore') }}
-          </button>
-        </div>
+          <li v-if="hasMore">
+            <button
+              type="button"
+              class="audit__more"
+              data-action="load-more"
+              :disabled="loading"
+              @click="store.loadMore()"
+            >
+              {{ t('audit.log.loadMore') }}
+            </button>
+          </li>
+        </ul>
 
         <!-- right: detail panel -->
         <aside
@@ -371,7 +401,7 @@ const ACTION_NS = [
 
 <style scoped>
 .audit {
-  max-width: 1280px;
+  max-width: 1080px;
   padding: 28px 32px;
 }
 
@@ -483,6 +513,14 @@ const ACTION_NS = [
 
 .audit__chain-dot--neutral {
   background: var(--fg-faint);
+}
+
+.audit__chain-dot--ok {
+  background: var(--ok);
+}
+
+.audit__chain-dot--broken {
+  background: var(--err);
 }
 
 .audit__chain-text {
@@ -619,7 +657,7 @@ const ACTION_NS = [
 /* ─── master–detail layout ───────────────────────────────────────────────── */
 .audit__layout {
   display: grid;
-  grid-template-columns: 1fr 380px;
+  grid-template-columns: 1fr 440px;
   gap: 16px;
   align-items: start;
 }
@@ -627,6 +665,19 @@ const ACTION_NS = [
 /* ─── entry list ─────────────────────────────────────────────────────────── */
 .audit__list {
   min-width: 0;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.audit__day-item {
+  margin-bottom: 4px;
+}
+
+.audit__day-entries {
+  list-style: none;
+  margin: 0;
+  padding: 0;
 }
 
 .audit__day-section {

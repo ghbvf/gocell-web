@@ -20,7 +20,7 @@ const kind = computed<ActorKind>(() => classifyActor(props.actorId))
 </script>
 
 <template>
-  <span class="pill" :class="`pill--${kind}`" :data-variant="kind">
+  <span class="pill" :class="`pill--${kind}`" :data-variant="kind" :title="actorId">
     <span class="pill__dot" aria-hidden="true" />
     <span class="pill__label">{{ actorId }}</span>
   </span>

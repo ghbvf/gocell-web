@@ -94,6 +94,24 @@ describe('AuditView · page structure', () => {
     expect(chainCard.text()).toContain('audit.log.chain.unavailable')
   })
 
+  it('renders chain card in ok state when entries have intact hash chain', () => {
+    // Entries with matching hash/prevHash — chain is intact.
+    const e1 = mkEntry({ id: 'e1', ...({ hash: 'h2', prevHash: 'h1' } as object) })
+    const e2 = mkEntry({ id: 'e2', ...({ hash: 'h1' } as object) })
+    const { wrapper } = mountView({ entries: [e1, e2] })
+    const chainCard = wrapper.find('[data-testid="chain-integrity"]')
+    expect(chainCard.text()).toContain('audit.log.chain.ok')
+  })
+
+  it('renders chain card in broken state when entries have mismatched hashes', () => {
+    // Entries with mismatched prevHash/hash — chain is broken.
+    const e1 = mkEntry({ id: 'e1', ...({ hash: 'h2', prevHash: 'WRONG' } as object) })
+    const e2 = mkEntry({ id: 'e2', ...({ hash: 'h1' } as object) })
+    const { wrapper } = mountView({ entries: [e1, e2] })
+    const chainCard = wrapper.find('[data-testid="chain-integrity"]')
+    expect(chainCard.text()).toContain('audit.log.chain.broken')
+  })
+
   it('calls store.fetchList on mount', async () => {
     const { store } = mountView()
     await flushPromises()

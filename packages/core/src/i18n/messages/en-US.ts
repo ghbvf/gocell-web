@@ -430,6 +430,7 @@ const enUS = {
       empty: 'No audit entries match this filter',
       loadMore: 'Load more',
       list: { label: 'Audit log list' },
+      day: { today: 'Today', yesterday: 'Yesterday' },
       range: { label: 'Time range' },
       actions: {
         export: 'Export CSV',
@@ -437,8 +438,11 @@ const enUS = {
       },
       chain: {
         label: 'Chain integrity',
+        ok: 'Hash chain intact',
+        broken: 'Hash chain broken',
         unavailable: 'Verification unavailable',
-        unavailableNote: 'Backend has not exposed hash fields yet (BR-006)',
+        // BR-006 reference is kept in code comments only, not surfaced to users
+        unavailableNote: 'Hash chain verification is not yet available in this version',
       },
       filter: {
         label: 'Search',
@@ -471,7 +475,7 @@ const enUS = {
       quickFilter: {
         label: 'Quick filters',
         prefix: 'Quick filters:',
-        sandboxDenials: 'Sandbox denials',
+        sandboxActions: 'Sandbox actions',
         secretReads: 'Secret reads',
         flagFlips: 'Flag flips',
         roleChangesByHumans: 'Role changes by humans',

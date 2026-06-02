@@ -1,9 +1,27 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { shallowRef, ref, computed } from 'vue'
 import { toI18nKey } from '@gocell/request'
-import { listAudit, type AuditEntry } from '../api/audit'
-import { classifyActor, groupByDay, type DayGroup } from '../lib/auditClassify'
-import { verifyChain, type ChainResult } from '../lib/hashChain'
+import { listAudit } from '../api/audit'
+import type { AuditEntry } from '../api/audit'
+import { classifyActor, groupByDay } from '../lib/auditClassify'
+import type { DayGroup, ActorKind } from '../lib/auditClassify'
+import { verifyChain } from '../lib/hashChain'
+import type { ChainResult } from '../lib/hashChain'
+
+/** Filter union types — exported for view consumption. */
+export type ActorKindFilter = 'all' | ActorKind
+export type ActionNsFilter =
+  | 'all'
+  | 'slice'
+  | 'flag'
+  | 'config'
+  | 'sandbox'
+  | 'role'
+  | 'secret'
+  | 'cell'
+  | 'tenant'
+  | 'user'
+  | 'anomaly'
 
 /** Server page size for the cursor-paginated audit list. */
 const PAGE_SIZE = 50
@@ -21,7 +39,9 @@ const PAGE_SIZE = 50
  */
 export const useAuditStore = defineStore('audit.query', () => {
   // ─── state ──────────────────────────────────────────────────────────────
-  const entries = ref<AuditEntry[]>([])
+  // shallowRef: entries are replaced as a whole on each fetch/loadMore; element
+  // properties are never mutated in-place, so deep reactivity is unnecessary.
+  const entries = shallowRef<AuditEntry[]>([])
   const loading = ref(false)
   const errorKey = ref<string | null>(null)
   const nextCursor = ref('')
@@ -29,10 +49,10 @@ export const useAuditStore = defineStore('audit.query', () => {
 
   /** Free-text filter: matches against eventType + actorId + subjectId. */
   const filter = ref('')
-  /** Actor kind filter: 'all' | 'human' | 'service' | 'cell' | 'sandbox' | 'unknown'. */
-  const actorKind = ref('all')
-  /** Action namespace filter: 'all' | 'flag' | 'config' | 'role' | 'secret' | etc. */
-  const actionNs = ref('all')
+  /** Actor kind filter. */
+  const actorKind = ref<ActorKindFilter>('all')
+  /** Action namespace filter. */
+  const actionNs = ref<ActionNsFilter>('all')
 
   // ─── getters ────────────────────────────────────────────────────────────
 
@@ -72,14 +92,25 @@ export const useAuditStore = defineStore('audit.query', () => {
    */
   const chainStatus = computed<ChainResult>(() => {
     // Contract gap: hash/prevHash are not in HttpAuditListV1Response (BR-006).
-    // Build ChainEntry objects safely: only include the property when the value
-    // is a string, so exactOptionalPropertyTypes is satisfied.
-    type ExtendedEntry = Record<string, unknown>
+    // Early exit: if no entry has a hash field, skip the full map and return
+    // unavailable immediately.
+    const hasAnyHashField = entries.value.some((e) => {
+      const o: unknown = e
+      if (typeof o !== 'object' || o === null) return false
+      return 'hash' in o && typeof (o as Record<string, unknown>)['hash'] === 'string'
+    })
+    if (!hasAnyHashField) return { status: 'unavailable' }
+
+    // Build ChainEntry objects safely via unknown + type guard — no `as` cast
+    // that would skip contract constraints (G).
     const chainEntries = entries.value.map((e) => {
-      const ext = e as ExtendedEntry
+      const o: unknown = e
       const entry: { hash?: string; prevHash?: string } = {}
-      if (typeof ext['hash'] === 'string') entry.hash = ext['hash']
-      if (typeof ext['prevHash'] === 'string') entry.prevHash = ext['prevHash']
+      if (typeof o === 'object' && o !== null) {
+        const rec = o as Record<string, unknown>
+        if (typeof rec['hash'] === 'string') entry.hash = rec['hash']
+        if (typeof rec['prevHash'] === 'string') entry.prevHash = rec['prevHash']
+      }
       return entry
     })
     return verifyChain(chainEntries)

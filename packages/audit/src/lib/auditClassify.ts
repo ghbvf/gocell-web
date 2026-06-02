@@ -20,6 +20,9 @@ import type { AuditEntry } from '../api/audit'
 
 export type ActorKind = 'human' | 'service' | 'cell' | 'sandbox' | 'unknown'
 
+/** Day-label kind: used by the view to render i18n keys for today/yesterday. */
+export type DayLabelKind = 'today' | 'yesterday' | 'date'
+
 /** Classify an opaque actorId into a best-effort actor kind. */
 export function classifyActor(actorId: string): ActorKind {
   if (!actorId) return 'unknown'
@@ -36,18 +39,28 @@ export function classifyActor(actorId: string): ActorKind {
 export interface DayGroup {
   /** YYYY-MM-DD local date key (used as Map key and for label lookup). */
   dayKey: string
-  /** Human-readable label produced by formatDayLabel. */
-  label: string
+  /**
+   * Discriminant for i18n rendering:
+   * - 'today'/'yesterday' → use t('audit.log.day.today') / t('audit.log.day.yesterday')
+   * - 'date' → use the already-formatted `dateLabel` string from Intl
+   */
+  labelKind: DayLabelKind
+  /** Intl-formatted date string; only meaningful when labelKind === 'date'. */
+  dateLabel: string
   entries: AuditEntry[]
 }
 
-type PartialEntry = Pick<AuditEntry, 'occurredAt' | 'timestamp'> & Partial<AuditEntry>
+// Module-level Intl instance — reused across all calls (Q: avoid per-call allocation).
+const dayLabelFormat = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' })
+
+/** Precise entry type: timestamp is required, occurredAt is optional. */
+type EntryWithTs = { occurredAt?: string; timestamp: string }
 
 /**
  * Return a local-date key (YYYY-MM-DD) for an entry, preferring `occurredAt`
  * over `timestamp` (both ISO-8601).
  */
-function entryDateKey(entry: PartialEntry): string {
+function entryDateKey(entry: EntryWithTs): string {
   const iso = entry.occurredAt ?? entry.timestamp
   const d = new Date(iso)
   if (Number.isNaN(d.getTime())) return iso
@@ -59,12 +72,13 @@ function entryDateKey(entry: PartialEntry): string {
 }
 
 /**
- * Intl-based day label: "Today" / "Yesterday" / locale date string.
- * Exported so specs can assert a non-empty string without depending on locale.
+ * Classify a YYYY-MM-DD dayKey into a DayLabelKind for i18n rendering.
+ * Returns 'today', 'yesterday', or 'date' (with a pre-formatted dateLabel).
+ * Exported so specs can assert the kind without depending on locale strings.
  */
-export function formatDayLabel(dayKey: string): string {
+export function formatDayLabel(dayKey: string): { kind: DayLabelKind; dateLabel: string } {
   const d = new Date(dayKey)
-  if (Number.isNaN(d.getTime())) return dayKey
+  if (Number.isNaN(d.getTime())) return { kind: 'date', dateLabel: dayKey }
 
   const today = new Date()
   const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
@@ -72,9 +86,9 @@ export function formatDayLabel(dayKey: string): string {
   yesterday.setDate(yesterday.getDate() - 1)
   const yesterdayKey = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`
 
-  if (dayKey === todayKey) return 'Today'
-  if (dayKey === yesterdayKey) return 'Yesterday'
-  return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(d)
+  if (dayKey === todayKey) return { kind: 'today', dateLabel: '' }
+  if (dayKey === yesterdayKey) return { kind: 'yesterday', dateLabel: '' }
+  return { kind: 'date', dateLabel: dayLabelFormat.format(d) }
 }
 
 /**
@@ -94,9 +108,13 @@ export function groupByDay(entries: AuditEntry[]): DayGroup[] {
     }
   }
 
-  return Array.from(map.entries()).map(([dayKey, dayEntries]) => ({
-    dayKey,
-    label: formatDayLabel(dayKey),
-    entries: dayEntries,
-  }))
+  return Array.from(map.entries()).map(([dayKey, dayEntries]) => {
+    const { kind, dateLabel } = formatDayLabel(dayKey)
+    return {
+      dayKey,
+      labelKind: kind,
+      dateLabel,
+      entries: dayEntries,
+    }
+  })
 }
