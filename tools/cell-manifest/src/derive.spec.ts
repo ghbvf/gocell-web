@@ -25,7 +25,7 @@ import {
   buildManifest,
   renderManifestModule,
 } from './derive'
-import type { CellManifest } from '../../packages/devboard/src/manifest/types'
+import type { CellManifest } from './types'
 
 // ─── humanizeDomain ──────────────────────────────────────────────────────────
 

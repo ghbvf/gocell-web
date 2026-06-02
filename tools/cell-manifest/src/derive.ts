@@ -27,7 +27,7 @@ import type {
   ContractRole,
   ContractUsage,
   DurabilityMode,
-} from '../../packages/devboard/src/manifest/types'
+} from './types'
 
 // ─── Type guards ─────────────────────────────────────────────────────────────
 

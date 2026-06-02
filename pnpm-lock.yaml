@@ -191,6 +191,9 @@ importers:
       '@gocell/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@gocell/devboard':
+        specifier: workspace:*
+        version: link:../../packages/devboard
       '@gocell/request':
         specifier: workspace:*
         version: link:../../packages/request

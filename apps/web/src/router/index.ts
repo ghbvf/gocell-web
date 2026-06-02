@@ -87,6 +87,24 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@gocell/config/views/flags'),
         meta: { requiresAuth: true, requiredAction: 'read', requiredResource: 'flag' },
       },
+      {
+        // Operate · Cells list (Batch 5). PDP-gated read on `cell` (fail-closed
+        // until /access/decide ships, BR-004). Data is the static build-time
+        // manifest derived from cell.yaml — no backend endpoint required.
+        path: 'cells',
+        name: 'cells',
+        component: () => import('@gocell/devboard/views/cells-list'),
+        meta: { requiresAuth: true, requiredAction: 'read', requiredResource: 'cell' },
+      },
+      {
+        // Operate · Cell detail (Batch 5). Same PDP gate; 12-tab inspector with
+        // the active tab carried in the `?tab=` query param. Own async chunk via
+        // the @gocell/devboard/views/cell-detail subpath export.
+        path: 'cells/:id',
+        name: 'cell-detail',
+        component: () => import('@gocell/devboard/views/cell-detail'),
+        meta: { requiresAuth: true, requiredAction: 'read', requiredResource: 'cell' },
+      },
     ],
   },
 ]
