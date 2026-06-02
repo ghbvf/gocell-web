@@ -752,6 +752,8 @@ const enUS = {
     },
     inventory: {
       title: 'Inventory',
+      metric: 'Metric',
+      count: 'Count',
       slices: 'Slices',
       produces: 'Produced contracts',
       consumes: 'Consumed contracts',
@@ -808,6 +810,7 @@ const enUS = {
     },
     configuration: {
       title: 'Configuration',
+      tableLabel: 'Configuration entries',
       loading: 'Loading configuration…',
       error: 'Failed to load configuration.',
       empty: 'No configuration entries for this cell.',
@@ -818,6 +821,7 @@ const enUS = {
     },
     audit: {
       title: 'Audit',
+      tableLabel: 'Audit entries',
       loading: 'Loading audit records…',
       error: 'Failed to load audit records.',
       empty: 'No audit records.',

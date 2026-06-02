@@ -41,13 +41,13 @@ onMounted(() => {
       {{ t('cells.audit.error') }}
     </p>
 
-    <p v-else-if="state === 'empty'" class="audit-tab__status">
+    <p v-else-if="state === 'empty'" role="status" class="audit-tab__status">
       {{ t('cells.audit.empty') }}
     </p>
 
     <template v-else>
       <div class="audit-tab__table-wrap">
-        <table class="audit-tab__table">
+        <table class="audit-tab__table" :aria-label="t('cells.audit.tableLabel')">
           <thead>
             <tr>
               <th scope="col">{{ t('cells.audit.action') }}</th>
@@ -135,5 +135,11 @@ onMounted(() => {
 
 .audit-tab__open-full:hover {
   text-decoration: underline;
+}
+
+.audit-tab__open-full:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--r-sm);
 }
 </style>

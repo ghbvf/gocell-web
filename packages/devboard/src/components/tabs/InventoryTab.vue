@@ -9,34 +9,39 @@ const { t } = useI18n()
 const totalContracts = computed(() => props.cell.produces.length + props.cell.consumes.length)
 
 interface InventoryRow {
+  key: string
   label: string
   value: number
 }
 
 const rows = computed((): InventoryRow[] => [
-  { label: t('cells.inventory.slices'), value: props.cell.slices.length },
-  { label: t('cells.inventory.produces'), value: props.cell.produces.length },
-  { label: t('cells.inventory.consumes'), value: props.cell.consumes.length },
-  { label: t('cells.inventory.requires'), value: props.cell.requires.length },
-  { label: t('cells.inventory.smokeTests'), value: props.cell.smokeTests.length },
-  { label: t('cells.inventory.contracts'), value: totalContracts.value },
+  { key: 'slices', label: t('cells.inventory.slices'), value: props.cell.slices.length },
+  { key: 'produces', label: t('cells.inventory.produces'), value: props.cell.produces.length },
+  { key: 'consumes', label: t('cells.inventory.consumes'), value: props.cell.consumes.length },
+  { key: 'requires', label: t('cells.inventory.requires'), value: props.cell.requires.length },
+  {
+    key: 'smokeTests',
+    label: t('cells.inventory.smokeTests'),
+    value: props.cell.smokeTests.length,
+  },
+  { key: 'contracts', label: t('cells.inventory.contracts'), value: totalContracts.value },
 ])
 </script>
 
 <template>
   <div class="inventory">
-    <h2 class="inventory__title">{{ t('cells.inventory.title') }}</h2>
-    <table class="inv-table">
+    <h2 id="cell-inventory-title" class="inventory__title">{{ t('cells.inventory.title') }}</h2>
+    <table class="inv-table" aria-labelledby="cell-inventory-title">
       <thead>
         <tr>
-          <th scope="col" class="inv-table__th">{{ t('cells.overview.name') }}</th>
+          <th scope="col" class="inv-table__th">{{ t('cells.inventory.metric') }}</th>
           <th scope="col" class="inv-table__th inv-table__th--num">
-            {{ t('cells.inventory.slices') }}
+            {{ t('cells.inventory.count') }}
           </th>
         </tr>
       </thead>
       <tbody>
-        <tr v-for="row in rows" :key="row.label" class="inv-table__row">
+        <tr v-for="row in rows" :key="row.key" class="inv-table__row">
           <td class="inv-table__label">{{ row.label }}</td>
           <td class="inv-table__value mono">{{ row.value }}</td>
         </tr>

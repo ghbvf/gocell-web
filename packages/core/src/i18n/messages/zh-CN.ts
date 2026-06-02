@@ -740,6 +740,8 @@ const zhCN = {
     },
     inventory: {
       title: '清单',
+      metric: '项目',
+      count: '数量',
       slices: 'Slices',
       produces: '产出契约',
       consumes: '消费契约',
@@ -795,6 +797,7 @@ const zhCN = {
     },
     configuration: {
       title: '配置',
+      tableLabel: '配置项',
       loading: '加载配置中…',
       error: '加载配置失败。',
       empty: '该 cell 暂无配置项。',
@@ -805,6 +808,7 @@ const zhCN = {
     },
     audit: {
       title: '审计',
+      tableLabel: '审计记录',
       loading: '加载审计记录中…',
       error: '加载审计记录失败。',
       empty: '暂无审计记录。',

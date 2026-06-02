@@ -41,13 +41,13 @@ onMounted(() => {
       {{ t('cells.configuration.error') }}
     </p>
 
-    <p v-else-if="state === 'empty'" class="config-tab__status">
+    <p v-else-if="state === 'empty'" role="status" class="config-tab__status">
       {{ t('cells.configuration.empty') }}
     </p>
 
     <template v-else>
       <div class="config-tab__table-wrap">
-        <table class="config-tab__table">
+        <table class="config-tab__table" :aria-label="t('cells.configuration.tableLabel')">
           <thead>
             <tr>
               <th scope="col">{{ t('cells.configuration.key') }}</th>
@@ -142,5 +142,11 @@ onMounted(() => {
 
 .config-tab__open-full:hover {
   text-decoration: underline;
+}
+
+.config-tab__open-full:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--r-sm);
 }
 </style>

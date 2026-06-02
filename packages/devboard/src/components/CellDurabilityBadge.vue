@@ -33,10 +33,10 @@ const hint = computed(() =>
 .badge {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
   padding: 1px 8px;
   font-size: var(--text-sm);
-  line-height: 18px;
+  line-height: 1.4;
   color: var(--fg);
   background: var(--bg-sunken);
   border: 1px solid var(--line);

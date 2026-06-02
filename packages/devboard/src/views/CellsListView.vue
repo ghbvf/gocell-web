@@ -183,6 +183,7 @@ const { query, domain, domains, filtered } = useCellsFilter(cells)
 
 .cells-list__search {
   width: 200px;
+  min-height: 30px;
   padding: 4px 8px;
   font-size: var(--text-sm);
   font-family: var(--font-mono);
@@ -207,6 +208,10 @@ const { query, domain, domains, filtered } = useCellsFilter(cells)
 }
 
 .cells-list__seg-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 30px;
   padding: 4px 10px;
   font-size: var(--text-sm);
   font-family: var(--font-sans);
@@ -219,6 +224,12 @@ const { query, domain, domains, filtered } = useCellsFilter(cells)
   transition:
     background 100ms,
     color 100ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cells-list__seg-btn {
+    transition: none;
+  }
 }
 
 .cells-list__seg-btn:first-child {
@@ -332,7 +343,7 @@ const { query, domain, domains, filtered } = useCellsFilter(cells)
 
 /* Empty state */
 .cells-list__empty {
-  padding: 32px 12px;
+  padding: 28px 12px;
   text-align: center;
   color: var(--fg-muted);
 }

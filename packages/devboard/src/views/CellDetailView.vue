@@ -169,7 +169,7 @@ function selectTab(id: string): void {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  padding: 32px;
+  padding: 28px;
   background: var(--bg-sunken);
   border: 1px solid var(--line-soft);
   border-radius: var(--r-lg);

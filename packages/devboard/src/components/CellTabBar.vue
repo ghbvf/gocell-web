@@ -83,4 +83,10 @@ const { onKeydown } = useRovingTablist({
   border-bottom-color: var(--accent);
   font-weight: 500;
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .tab-bar__btn {
+    transition: none;
+  }
+}
 </style>

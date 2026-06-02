@@ -44,8 +44,8 @@ const hasAnyDeps = computed(
       </section>
 
       <!-- Inline SVG diagram: infra → cell flow -->
-      <section class="card wiring-diagram" :aria-label="t('cells.wiring.infraToCell')">
-        <p class="card__heading">{{ t('cells.wiring.infraToCell') }}</p>
+      <section class="card wiring-diagram" aria-labelledby="wiring-diagram-h">
+        <h3 id="wiring-diagram-h" class="card__heading">{{ t('cells.wiring.infraToCell') }}</h3>
         <div class="diagram">
           <!-- Infra boxes on the left -->
           <div class="diagram__col" :aria-label="t('cells.wiring.requires')">
