@@ -62,6 +62,15 @@ const routes: RouteRecordRaw[] = [
         props: { titleKey: 'nav.reviews' },
         meta: { requiresAuth: true },
       },
+      {
+        // Operate · Audit log (Batch 4). PDP-gated read on `audit` (fail-closed
+        // until the /access/decide backend ships, BR-004); own async chunk via
+        // the @gocell/audit/views/audit subpath export.
+        path: 'audit',
+        name: 'audit',
+        component: () => import('@gocell/audit/views/audit'),
+        meta: { requiresAuth: true, requiredAction: 'read', requiredResource: 'audit' },
+      },
     ],
   },
 ]

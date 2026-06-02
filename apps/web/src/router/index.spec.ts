@@ -40,4 +40,14 @@ describe('router layout fork', () => {
     expect(m.meta.requiredAction).toBe('read')
     expect(m.meta.requiredResource).toBe('identity')
   })
+
+  it('renders /audit nested under the shell, behind the auth + PDP gates (Batch 4)', () => {
+    const m = router.resolve('/audit')
+    expect(m.name).toBe('audit')
+    expect(m.matched.length).toBeGreaterThanOrEqual(2)
+    expect(m.meta.requiresAuth).toBe(true)
+    // PDP fail-closed gate (read on audit) — guards.ts denies until the PDP backend allows.
+    expect(m.meta.requiredAction).toBe('read')
+    expect(m.meta.requiredResource).toBe('audit')
+  })
 })
