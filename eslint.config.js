@@ -90,6 +90,7 @@ export default tseslint.config(
   {
     ignores: [
       'packages/contracts/src/**', // codegen-生成物，不 lint
+      'packages/devboard/src/manifest/cells.generated.ts', // cell-manifest 生成物，不 lint
       '**/dist/**',
       '**/coverage/**',
       'pnpm-lock.yaml',
@@ -392,6 +393,16 @@ export default tseslint.config(
     languageOptions: {
       parserOptions: {
         project: path.resolve(__dirname, 'tools/codegen/tsconfig.json'),
+      },
+    },
+  },
+
+  // ── tools/cell-manifest vitest.config.ts ──────────────────────────────────
+  {
+    files: ['tools/cell-manifest/vitest.config.ts'],
+    languageOptions: {
+      parserOptions: {
+        project: path.resolve(__dirname, 'tools/cell-manifest/tsconfig.json'),
       },
     },
   },
