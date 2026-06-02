@@ -97,13 +97,14 @@ describe('ContractsView', () => {
     expect(wrapper.text()).toContain('contracts.empty')
   })
 
-  it('clicking a row shows the detail aside with that contract', async () => {
+  it('clicking the contract button shows the detail aside with that contract', async () => {
     const wrapper = mountView()
     // Initially no detail aside visible
     expect(wrapper.find('[data-testid="contract-detail"]').exists()).toBe(false)
-    // Click the first data row
-    const firstRow = wrapper.find('tbody tr')
-    await firstRow.trigger('click')
+    // Activate the first row's selection button
+    const firstBtn = wrapper.find('tbody tr .contracts__select-btn')
+    expect(firstBtn.exists()).toBe(true)
+    await firstBtn.trigger('click')
     // Detail aside should now appear
     const detail = wrapper.find('[data-testid="contract-detail"]')
     expect(detail.exists()).toBe(true)
@@ -153,11 +154,13 @@ describe('ContractsView', () => {
     expect(wrapper.text()).toContain('contracts.detail.empty')
   })
 
-  it('clicking a row sets aria-current on that row', async () => {
+  it('selecting a contract sets aria-current on its row and aria-pressed on its button', async () => {
     const wrapper = mountView()
     const firstRow = wrapper.find('tbody tr')
-    await firstRow.trigger('click')
+    const firstBtn = firstRow.find('.contracts__select-btn')
+    await firstBtn.trigger('click')
     expect(firstRow.attributes('aria-current')).toBe('true')
+    expect(firstBtn.attributes('aria-pressed')).toBe('true')
   })
 
   it('table contains expected column headers', () => {

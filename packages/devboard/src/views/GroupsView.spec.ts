@@ -120,11 +120,13 @@ describe('GroupsView', () => {
     expect(groupBtns.length).toBe(5)
   })
 
-  it('preview badge is present with role="status"', () => {
+  it('preview badge is present (static label, no live-region role)', () => {
     const wrapper = mountView()
-    const badge = wrapper.find('[role="status"]')
+    const badge = wrapper.find('.groups__preview-badge')
     expect(badge.exists()).toBe(true)
     expect(badge.text()).toContain('groups.preview.label')
+    // It is a static visual label, not a live region — must not claim role="status".
+    expect(badge.attributes('role')).toBeUndefined()
   })
 
   it('preview note is present with role="note"', () => {

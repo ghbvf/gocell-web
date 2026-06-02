@@ -152,6 +152,8 @@ const edgePaths = computed<readonly EdgePath[]>(() => {
         @click="emit('select', node.id)"
         @keydown.enter.space.prevent="emit('select', node.id)"
       >
+        <!-- rx="4" = the --r-sm radius token. SVG presentation attributes can't
+             reference CSS vars, so the numeric literal is the token's only carrier here. -->
         <rect
           :width="NODE_W"
           :height="NODE_H"

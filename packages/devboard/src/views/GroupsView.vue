@@ -52,7 +52,7 @@ const groupMemberCounts = computed(
         <h1 class="groups__h1">
           {{ t('groups.title') }}
           <span class="groups__count">{{ t('groups.count', { n: SMART_GROUPS.length }) }}</span>
-          <span class="groups__preview-badge" role="status">
+          <span class="groups__preview-badge">
             {{ t('groups.preview.label') }}
           </span>
         </h1>

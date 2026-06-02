@@ -92,13 +92,19 @@ function envelopeKindKey(kind: EnvelopeKind): string {
                 class="contracts__row"
                 :class="{ 'contracts__row--selected': selectedContract === entry.contract }"
                 :aria-current="selectedContract === entry.contract ? 'true' : undefined"
-                tabindex="0"
-                @click="select(entry.contract)"
-                @keydown.enter="select(entry.contract)"
-                @keydown.space.prevent="select(entry.contract)"
               >
                 <td class="contracts__contract-col">
-                  <span class="contracts__contract-id">{{ entry.contract }}</span>
+                  <!-- Selection via a real <button> (keyboard-native, aria-pressed conveys
+                       selected state), mirroring the link-in-first-cell pattern used by
+                       CellsListView / DepsListView. Avoids the <tr tabindex> button anti-pattern. -->
+                  <button
+                    type="button"
+                    class="contracts__select-btn"
+                    :aria-pressed="selectedContract === entry.contract ? 'true' : 'false'"
+                    @click="select(entry.contract)"
+                  >
+                    <span class="contracts__contract-id">{{ entry.contract }}</span>
+                  </button>
                 </td>
                 <td>
                   <span class="contracts__kind-chip">{{ entry.kind }}</span>
@@ -421,10 +427,6 @@ function envelopeKindKey(kind: EnvelopeKind): string {
   vertical-align: middle;
 }
 
-.contracts__row {
-  cursor: pointer;
-}
-
 .contracts__row:hover td {
   background: var(--bg-sunken);
 }
@@ -433,13 +435,26 @@ function envelopeKindKey(kind: EnvelopeKind): string {
   background: var(--accent-soft);
 }
 
-.contracts__row:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: -2px;
-}
-
 .contracts__contract-col {
   min-width: 200px;
+}
+
+/* Reset the native button so it reads as the contract-id cell, keeping a
+   keyboard-visible focus ring. The whole row highlights via .contracts__row--selected. */
+.contracts__select-btn {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  border-radius: var(--r-sm);
+}
+
+.contracts__select-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .contracts__contract-id {
