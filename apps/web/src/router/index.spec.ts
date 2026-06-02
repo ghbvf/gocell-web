@@ -68,4 +68,23 @@ describe('router layout fork', () => {
     expect(m.meta.requiredAction).toBe('read')
     expect(m.meta.requiredResource).toBe('flag')
   })
+
+  it('renders /cells nested under the shell, behind the auth + PDP gates (Batch 5)', () => {
+    const m = router.resolve('/cells')
+    expect(m.name).toBe('cells')
+    expect(m.matched.length).toBeGreaterThanOrEqual(2)
+    expect(m.meta.requiresAuth).toBe(true)
+    expect(m.meta.requiredAction).toBe('read')
+    expect(m.meta.requiredResource).toBe('cell')
+  })
+
+  it('renders /cells/:id detail behind the auth + PDP gates, carrying the id param (Batch 5)', () => {
+    const m = router.resolve('/cells/accesscore')
+    expect(m.name).toBe('cell-detail')
+    expect(m.params.id).toBe('accesscore')
+    expect(m.matched.length).toBeGreaterThanOrEqual(2)
+    expect(m.meta.requiresAuth).toBe(true)
+    expect(m.meta.requiredAction).toBe('read')
+    expect(m.meta.requiredResource).toBe('cell')
+  })
 })

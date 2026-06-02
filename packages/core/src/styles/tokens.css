@@ -9,6 +9,14 @@
   --font-mono: 'Geist Mono', 'JetBrains Mono', ui-monospace, monospace;
   --font-serif: 'Instrument Serif', Georgia, serif;
 
+  /* font-size ladder (theme-invariant) */
+  --text-xs: 11px;
+  --text-sm: 12px;
+  --text-base: 13px;
+  --text-lg: 14px;
+  --text-xl: 18px;
+  --text-2xl: 20px;
+
   /* light palette — nearly white with subtle cool tint */
   --bg: oklch(0.995 0.002 270);
   --bg-sunken: oklch(0.975 0.003 270);
