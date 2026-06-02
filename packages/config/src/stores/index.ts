@@ -1,2 +1,4 @@
-// config.entries store — C2 will append useFlagsStore here
+// config.entries store
 export { useConfigStore } from './useConfigStore'
+// config.flags store
+export { useFlagsStore } from './useFlagsStore'

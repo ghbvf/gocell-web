@@ -59,3 +59,49 @@ pnpm -F @gocell/config typecheck
 
 config 域（config CRUD/stage/publish/rollback）由 C1 agent 实现。
 flags 域（feature flags）由 C2 agent 追加（`src/stores/index.ts`、`src/index.ts`、本 README 的 flags 段）。
+
+---
+
+## flags 域（feature flags）
+
+feature flag 增删改查 + rollout% + kill switch + typed composable。
+
+### 对外 exports（flags 域）
+
+- `.` → 追加：`useFlagsStore`, `useFlag`, `FLAG_KEYS`, `type FlagKey`, `type FeatureFlag`
+- `./stores` → 追加：`useFlagsStore`
+- `./composables` → `useFlag`, `FLAG_KEYS`, `type FlagKey`
+- `./views/flags` → `FlagsView.vue`（flags 管理页面）
+
+### 依赖的 contract（flags 域）
+
+- `HttpConfigFlagsListV1Response` → `FeatureFlag` 行类型
+- `HttpConfigFlagsCreateV1Request` → 创建 payload
+- `HttpConfigFlagsUpdateV1Request` → 全量更新（含 rollout%）
+- `HttpConfigFlagsToggleV1Request` → kill switch partial flip
+- `HttpConfigFlagsEvaluateV1Request/Response` → admin evaluate（仅 api 层暴露）
+
+### 能力（flags 域）
+
+- `useFlagsStore` — Pinia setup store (id: `config.flags`)
+  - state: `flags`, `loading`, `errorKey`, `nextCursor`, `hasMore`, `filter`, `mutating`
+  - getters: `filteredFlags`（client-side key filter）, `isEnabled(key)`（供 useFlag 消费）
+  - read: `fetchList()`, `loadMore()`
+  - mutations (re-throw on failure): `create()`, `update()` (CAS, full), `toggle()` (CAS, partial flip), `remove()`
+- `useFlag(key: FlagKey)` — **Hard档 AI-robust** typed composable
+  - 形参 `FlagKey` 为 `FLAG_KEYS as const` 的字面量联合，传未知字符串 → 编译期 error
+  - 数据源：`useFlagsStore.isEnabled()` list 缓存；不调用 /evaluate
+  - fail-safe: key 不在缓存 → `enabled = false`
+- `FLAG_KEYS` — 已知 flag key 注册表（`as const`，逐条显式登记）
+- `FlagKey` — 字面量联合类型，`typeof FLAG_KEYS[keyof typeof FLAG_KEYS]`
+- `FeatureFlag` — codegen-derived flag 行类型（list contract）
+
+### 设计决策（降级，flags 域）
+
+| 决策 | 原因 |
+|------|------|
+| variant 配置 UI 不实现，type 字段只读展示 + 占位提示 | 后端 create/update/evaluate 无 variant payload（BR-007 pending） |
+| kill switch = toggle 端点 `enabled:false`，danger 二次确认 | 与 update 端点区分；toggle 仅翻 enabled，rollout% 走 PUT |
+| rollout% 更新走 PUT update 全量 | toggle 端点不含 rolloutPercentage |
+| useFlag 形参 FlagKey 字面量联合（Hard 档） | 禁前端硬编 flag 名（PRD §308）；未知 flag 名编译期 error |
+| useFlag 消费 list 缓存而非 /evaluate | evaluate 是 admin POST，不适合高频调用 |
