@@ -7,7 +7,7 @@
 - `.` → `src/index.ts` — 所有公开 Composable + Store + PDP 契约 + Shell UI + i18n 工厂汇总
 - `./composables` → `src/composables/index.ts` — Composable 子入口
 - `./stores` → `src/stores/index.ts` — Pinia store 子入口（`useThemeStore`、`useLocaleStore`）
-- `./components` → `src/components/index.ts` — UI 组件子入口（`Can`）
+- `./components` → `src/components/index.ts` — UI 组件子入口（`Can`、`UnavailablePanel`、`ModalShell`）
 - `./ui` → `src/ui/index.ts` — Shell 布局组件（`AppShell`、`Sidebar`、`TopBar`、`CommandPalette`、`AIBottomBar`）+ `NAV_GROUPS`
 - `./i18n` → `src/i18n/index.ts` — i18n 工厂（`createGocellI18n`）+ `syncI18nLocale`
 - `./styles/tokens.css` → `src/styles/tokens.css` — 设计 token（oklch，亮/暗双主题）
@@ -33,6 +33,8 @@
 | `PdpClient` | interface（类型） | PDP client 契约 |
 | `useDecision` | `(action, resource?) => ComputedRef<boolean>` | 响应式权限判断 |
 | `Can` | Vue SFC 组件 | 授权 UI 壳 |
+| `UnavailablePanel` | Vue SFC 组件 | 降级面板：后端不可用时展示标题 + 消息 |
+| `useRovingTablist` | `(options) => { ... }` | Roving tabindex Composable：键盘方向键导航 tablist |
 
 ## i18n 消息命名空间
 

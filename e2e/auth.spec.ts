@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test'
+import { stubHealthEndpoints } from './helpers'
 
 /**
  * Batch 1 认证入口冒烟 — login 重定向 + first-run 全流程。
@@ -17,8 +18,8 @@ async function stubSetupStatus(page: Page, hasAdmin: boolean): Promise<void> {
 
 test.describe('Login', () => {
   test('/login 直接渲染独立登录页（不套 AppShell）', async ({ page }) => {
-    // 备注：受保护路由→/login 的重定向冒烟留待 Batch 7（届时 home 改 requiresAuth:true）；
-    // 当前 home 为 public，访问 / 不重定向，故此处直接验证 /login 独立渲染。
+    // 受保护路由→/login 的重定向冒烟见 e2e/health.spec.ts（Batch 7 起 home 为
+    // requiresAuth:true）；此处直接验证 /login 独立渲染、不套 AppShell。
     await stubSetupStatus(page, true) // setup done → first-run gate passes
     await page.goto('/login')
     await expect(page.locator('#login-username')).toBeVisible()
@@ -29,6 +30,9 @@ test.describe('Login', () => {
 
   test('登录成功后跳转回受保护页并挂载 AppShell', async ({ page }) => {
     await stubSetupStatus(page, true)
+    // '/' mounts LandingView (Batch 7), which polls health/system on mount —
+    // stub them so the poll never reaches the proxy and bounces to /login.
+    await stubHealthEndpoints(page)
     await page.route(LOGIN_URL, (route) =>
       route.fulfill({
         status: 201,

@@ -165,6 +165,102 @@ describe('en-US messages', () => {
   })
 })
 
+describe('observability namespaces (Batch 7)', () => {
+  // Recursively collect dotted leaf paths so the two locale trees can be compared
+  // structurally — stronger than the top-level `Object.keys` checks above.
+  function leafKeys(obj: Record<string, unknown>, prefix = ''): string[] {
+    return Object.entries(obj).flatMap(([k, v]) => {
+      const path = prefix ? `${prefix}.${k}` : k
+      return v !== null && typeof v === 'object'
+        ? leafKeys(v as Record<string, unknown>, path)
+        : [path]
+    })
+  }
+
+  function getNested(obj: Record<string, unknown>, path: string): unknown {
+    return path
+      .split('.')
+      .reduce<unknown>(
+        (acc, k) =>
+          acc && typeof acc === 'object' ? (acc as Record<string, unknown>)[k] : undefined,
+        obj,
+      )
+  }
+
+  it('zh-CN exposes the landing + observe namespaces', () => {
+    expect(zhCN.landing.title).toBeTruthy()
+    expect(zhCN.observe.tabs.overview).toBeTruthy()
+  })
+
+  it('landing leaf-key tree is identical across locales', () => {
+    expect(leafKeys(enUS.landing).sort()).toEqual(leafKeys(zhCN.landing).sort())
+  })
+
+  it('observe leaf-key tree is identical across locales', () => {
+    expect(leafKeys(enUS.observe).sort()).toEqual(leafKeys(zhCN.observe).sort())
+  })
+
+  // Guards the recalled i18n-missing-key blind spot: t('a.b.c') for a key absent
+  // from messages passes typecheck/test/build (vue-i18n is not key-typed) and renders
+  // the raw key at runtime. Every key the Batch 7 views render is asserted here to
+  // resolve to a non-empty string in BOTH locales — these keys are frozen contract.
+  const REQUIRED_KEYS = [
+    'landing.title',
+    'landing.subtitle',
+    'landing.refresh',
+    'landing.loading',
+    'landing.unavailable.title',
+    'landing.unavailable.message',
+    'landing.unavailable.retry',
+    'landing.summary.healthy',
+    'landing.status.healthy',
+    'landing.status.degraded',
+    'landing.status.down',
+    'landing.status.starting',
+    'landing.status.stopping',
+    'landing.status.unknown',
+    'landing.cell.uptime',
+    'landing.system.title',
+    'landing.system.unavailable',
+    'landing.deploys.title',
+    'landing.deploys.unavailable',
+    'landing.kpi.title',
+    'landing.kpi.openObserve',
+    'observe.title',
+    'observe.tablistLabel',
+    'observe.unavailable.title',
+    'observe.unavailable.message',
+    'observe.unavailable.retry',
+    'observe.boundary.title',
+    'observe.boundary.message',
+    'observe.tabs.overview',
+    'observe.tabs.logs',
+    'observe.tabs.traces',
+    'observe.tabs.anomalies',
+    'observe.tabs.whatChanged',
+    'observe.tabs.serviceGraph',
+    'observe.tabs.sliceHealth',
+    'observe.overview.qps',
+    'observe.overview.empty',
+    'observe.logs.empty',
+    'observe.logs.searchLabel',
+    'observe.logs.tableCaption',
+    'observe.traces.empty',
+    'observe.traces.searchLabel',
+    'observe.traces.tableCaption',
+  ] as const
+
+  it.each(REQUIRED_KEYS)('zh-CN key "%s" resolves to a non-empty string', (key) => {
+    const v = getNested(zhCN as unknown as Record<string, unknown>, key)
+    expect(typeof v === 'string' && v.length > 0).toBe(true)
+  })
+
+  it.each(REQUIRED_KEYS)('en-US key "%s" resolves to a non-empty string', (key) => {
+    const v = getNested(enUS as unknown as Record<string, unknown>, key)
+    expect(typeof v === 'string' && v.length > 0).toBe(true)
+  })
+})
+
 describe('locale switching', () => {
   it('zh-CN → en-US: t(errors.unknown) changes', () => {
     const i18n = createGocellI18n()

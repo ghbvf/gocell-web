@@ -47,7 +47,8 @@ function makeRouter(): Router {
         path: '/',
         name: 'home',
         component: { template: '<div/>' },
-        meta: { requiresAuth: false },
+        // Batch 7: home is now auth-gated (Health overview)
+        meta: { requiresAuth: true },
       },
       {
         path: '/login',
@@ -248,9 +249,13 @@ describe('Router guards', () => {
   // ─── Auth gate ────────────────────────────────────────────────────────────
 
   describe('auth gate', () => {
-    beforeEach(() => {
-      // Default: setup is done (hasAdmin=true), first-run gate passes
+    beforeEach(async () => {
+      // Default: setup is done (hasAdmin=true), first-run gate passes.
+      // Await router.isReady() so the initial navigation triggered by app.use(router)
+      // in the outer beforeEach (home → login redirect, Batch 7) fully settles before
+      // each test, avoiding race conditions on the first-run-setup navigation test.
       httpGet.mockResolvedValue({ data: { data: { hasAdmin: true } } })
+      await router.isReady()
     })
 
     it('redirects unauthenticated user to login for protected route', async () => {
@@ -274,10 +279,12 @@ describe('Router guards', () => {
       expect(router.currentRoute.value.name).toBe('protected')
     })
 
-    it('allows unauthenticated user to access public "/" route (requiresAuth: false)', async () => {
+    it('redirects unauthenticated user from "/" (requiresAuth: true) to login (Batch 7)', async () => {
+      // Batch 7: home became auth-gated (Health overview). Unauthenticated users
+      // must be redirected to /login, not served the dashboard.
       await navigate(router, '/')
 
-      expect(router.currentRoute.value.name).toBe('home')
+      expect(router.currentRoute.value.name).toBe('login')
     })
 
     it('allows unauthenticated user to access /login', async () => {
