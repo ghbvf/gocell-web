@@ -1086,7 +1086,6 @@ const zhCN = {
       unknown: '未知',
     },
     cell: {
-      regionLabel: '{name} 健康卡片',
       version: '版本',
       commit: '提交',
       uptime: '运行时长',
@@ -1097,7 +1096,6 @@ const zhCN = {
     },
     system: {
       title: '系统信息',
-      regionLabel: '系统元信息',
       unavailable: '系统元信息暂不可用',
       build: '构建',
       version: '版本',
@@ -1169,6 +1167,7 @@ const zhCN = {
       loading: '正在查询日志…',
       empty: '无匹配日志。',
       count: '{n} 条日志',
+      tableCaption: '日志结果表',
       col: {
         time: '时间',
         level: '级别',
@@ -1184,6 +1183,7 @@ const zhCN = {
       loading: '正在查询 trace…',
       empty: '无匹配 trace。',
       count: '{n} 条 trace',
+      tableCaption: 'Trace 结果表',
       col: {
         traceId: 'Trace ID',
         service: '服务',

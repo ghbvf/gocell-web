@@ -66,7 +66,7 @@ interface PromRawResult {
 }
 
 interface PromRawResponse {
-  status: string
+  status: 'success' | 'error'
   data?: {
     resultType?: string
     result?: unknown[]
@@ -125,15 +125,30 @@ function isPromRawResult(v: unknown): v is PromRawResult {
   if (!isRecord(v)) return false
   if (!isStringRecord(v['metric'])) return false
   if (!Array.isArray(v['values'])) return false
+  // Validate that values elements are [number|string, string] tuples
+  const values = v['values'] as unknown[]
+  if (values.length > 0) {
+    const first = values[0]
+    if (!Array.isArray(first) || first.length < 2) return false
+    const t = first[0]
+    // first element must be a number or a string that can be converted to a number
+    if (typeof t !== 'number' && (typeof t !== 'string' || !Number.isFinite(Number(t))))
+      return false
+  }
   return true
 }
 
 function isLokiStreamValue(v: unknown): v is LokiStreamValue {
-  return isRecord(v)
+  if (!isRecord(v)) return false
+  // values must be absent or an array
+  if (v['values'] !== undefined && !Array.isArray(v['values'])) return false
+  return true
 }
 
 function isTempoRawTrace(v: unknown): v is TempoRawTrace {
-  return isRecord(v)
+  if (!isRecord(v)) return false
+  // Must have at least one of traceID or rootServiceName to be a valid trace
+  return 'traceID' in v || 'rootServiceName' in v
 }
 
 // ---------------------------------------------------------------------------
@@ -197,7 +212,9 @@ export async function queryMetric(
     params: { query: promql, start: range.start, end: range.end, step },
   })
   const data = res.data
-  const result: unknown[] = Array.isArray(data.data?.result) ? (data.data?.result ?? []) : []
+  if (data.status !== 'success') throw new Error('prom query failed')
+  const raw = data.data?.result
+  const result: unknown[] = Array.isArray(raw) ? raw : []
   return result.filter(isPromRawResult).map(normalizePromResult)
 }
 
@@ -210,7 +227,8 @@ export async function queryLogs(logql: string, range: TimeRange, limit = 100): P
     params: { query: logql, start: range.start, end: range.end, limit },
   })
   const data = res.data
-  const result: unknown[] = Array.isArray(data.data?.result) ? (data.data?.result ?? []) : []
+  const raw = data.data?.result
+  const result: unknown[] = Array.isArray(raw) ? raw : []
   return result.filter(isLokiStreamValue).flatMap(normalizeLokiStream)
 }
 

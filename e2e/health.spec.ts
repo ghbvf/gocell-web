@@ -1,4 +1,5 @@
-import { test, expect, type Page } from '@playwright/test'
+import { test, expect } from '@playwright/test'
+import { loginAs, stubSetupDone } from './helpers'
 
 /**
  * Batch 7 health-overview + observe smoke tests.
@@ -10,46 +11,17 @@ import { test, expect, type Page } from '@playwright/test'
  *   4. Protected redirect: unauthenticated '/' → redirected to /login.
  *
  * Backend is stubbed via page.route() (no real accesscore / observability backend needed).
- * Auth is established via the login flow (token is in-memory Pinia state — no localStorage).
+ * Auth is established via loginAs() (token is in-memory Pinia state — see e2e/helpers.ts).
+ * loginAs() lands on the target route via the post-login redirect, never a second
+ * page.goto: a reload would wipe the in-memory token and bounce back to /login.
+ *
+ * Payload shape note: fetchCellHealth/fetchSystemInfo return the response body
+ * directly (HealthCellsResponse / SystemInfoResponse) — BR-001/002 are specified
+ * envelope-less, so stubs must NOT wrap data in a `{ data: ... }` envelope.
  */
 
-const STATUS_URL = '**/api/v1/access/setup/status'
-const LOGIN_URL = '**/api/v1/access/sessions/login'
 const HEALTH_CELLS_URL = '**/api/v1/admin/health/cells'
 const SYSTEM_URL = '**/api/v1/admin/system'
-
-async function stubSetupDone(page: Page): Promise<void> {
-  await page.route(STATUS_URL, (route) => route.fulfill({ json: { data: { hasAdmin: true } } }))
-}
-
-/**
- * Establish an authenticated session by stubbing the login API and
- * submitting the login form, mirroring the pattern in auth.spec.ts.
- */
-async function loginAs(page: Page, username = 'admin', password = 'SecretPass!23'): Promise<void> {
-  await page.route(LOGIN_URL, (route) =>
-    route.fulfill({
-      status: 201,
-      json: {
-        data: {
-          accessToken: 'tok-test',
-          refreshToken: 'rt-test',
-          expiresAt: '2099-01-01T00:00:00Z',
-          sessionId: 's-test-1',
-          userId: 'u-test-1',
-          passwordResetRequired: false,
-        },
-      },
-    }),
-  )
-
-  await page.goto('/login')
-  await page.fill('#login-username', username)
-  await page.fill('#login-password', password)
-  await page.click('button[type="submit"]')
-  // After successful login the router lands on '/' (AppShell mounted)
-  await expect(page.locator('nav').first()).toBeVisible()
-}
 
 // ─── Health overview — degraded ───────────────────────────────────────────────
 
@@ -61,10 +33,8 @@ test.describe('Health overview — degraded (BR-001/002 endpoints absent)', () =
     await page.route(HEALTH_CELLS_URL, (route) => route.fulfill({ status: 404 }))
     await page.route(SYSTEM_URL, (route) => route.fulfill({ status: 404 }))
 
+    // Lands on '/' (LandingView) — the view polls the (404) health endpoints on mount.
     await loginAs(page)
-
-    // Navigate to home (already there after login, but be explicit)
-    await page.goto('/')
 
     // Page must render (h1 visible) — not a blank/error screen
     await expect(page.locator('h1').first()).toBeVisible()
@@ -80,47 +50,46 @@ test.describe('Health overview — OK (minimal payload)', () => {
   test('renders summary section when health endpoint returns one cell', async ({ page }) => {
     await stubSetupDone(page)
 
-    // Minimal valid health/cells payload: one healthy cell
+    // Valid health/cells payload: one healthy cell. Body is envelope-less and the
+    // cell carries the full CellHealthEntry shape so the cell cards render.
     await page.route(HEALTH_CELLS_URL, (route) =>
       route.fulfill({
         json: {
-          data: {
-            summary: {
-              totalCells: 1,
-              healthy: 1,
-              degraded: 0,
-              down: 0,
-              lastCheckAt: new Date().toISOString(),
+          summary: {
+            totalCells: 1,
+            healthy: 1,
+            degraded: 0,
+            down: 0,
+            lastCheckAt: new Date().toISOString(),
+          },
+          cells: [
+            {
+              name: 'accesscore',
+              type: 'core',
+              status: 'healthy',
+              durability: 'Durable',
+              version: '1.2.3',
+              commit: 'a7f3c1d',
+              startedAt: new Date().toISOString(),
+              uptimeSeconds: 7200,
+              lastHealthCheckAt: new Date().toISOString(),
+              lastHealthCheckDurationMs: 12,
+              sliceCount: 1,
+              slices: [
+                { name: 'auth', status: 'healthy', lastErrorAt: null, lastErrorMessage: null },
+              ],
             },
-            cells: [
-              {
-                name: 'accesscore',
-                status: 'healthy',
-                checkedAt: new Date().toISOString(),
-                latencyMs: 12,
-                message: null,
-              },
-            ],
-          },
+          ],
         },
       }),
     )
 
-    await page.route(SYSTEM_URL, (route) =>
-      route.fulfill({
-        json: {
-          data: {
-            build: { version: '0.1.0', commit: 'abc123', buildTime: new Date().toISOString() },
-            runtime: { goVersion: 'go1.22', os: 'linux', arch: 'amd64', numCPU: 4 },
-            assembly: { cells: 1, groups: 0 },
-            environment: { name: 'test' },
-          },
-        },
-      }),
-    )
+    // System card degrades independently — 404 keeps the test focused on the
+    // health summary path and avoids coupling to the SystemInfoResponse shape.
+    await page.route(SYSTEM_URL, (route) => route.fulfill({ status: 404 }))
 
+    // Lands on '/' (LandingView) — the view polls the (stubbed) health endpoints on mount.
     await loginAs(page)
-    await page.goto('/')
 
     // h1 visible — page renders
     await expect(page.locator('h1').first()).toBeVisible()
@@ -144,8 +113,8 @@ test.describe('Observe view smoke', () => {
     // so the panels degrade gracefully without blocking render.
     await page.route('**/api/v1/observability/**', (route) => route.fulfill({ status: 404 }))
 
-    await loginAs(page)
-    await page.goto('/observe')
+    // Lands directly on '/observe' via the post-login redirect (no reload).
+    await loginAs(page, { target: '/observe' })
 
     // h1 visible — page renders
     await expect(page.locator('h1').first()).toBeVisible()

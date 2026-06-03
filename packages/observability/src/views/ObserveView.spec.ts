@@ -72,6 +72,15 @@ async function mountAt(path: string) {
   const wrapper = mount(ObserveView, {
     global: {
       plugins: [createTestingPinia({ createSpy: vi.fn }), router],
+      // Provide synchronous stubs for the panel components so vue-test-utils
+      // doesn't have to deal with the defineAsyncComponent wrapper. This
+      // correctly represents panels (only the active one is in the DOM since
+      // ObserveView uses v-if via <component :is="activePanel">).
+      stubs: {
+        OverviewPanel: { name: 'OverviewPanel', template: '<div data-testid="overview-panel" />' },
+        LogsPanel: { name: 'LogsPanel', template: '<div data-testid="logs-panel" />' },
+        TracesPanel: { name: 'TracesPanel', template: '<div data-testid="traces-panel" />' },
+      },
     },
   })
   await flushPromises()

@@ -174,6 +174,27 @@ describe('observe api · queryMetric', () => {
     expect(res).toEqual([])
   })
 
+  it('throws when prom status is "error"', async () => {
+    mock.onGet(OBSERVE_METRICS_URL).reply(200, {
+      status: 'error',
+      data: { resultType: 'matrix', result: [] },
+    })
+    await expect(queryMetric('up', range)).rejects.toThrow('prom query failed')
+  })
+
+  it('filters out values tuples where first element is non-numeric string', async () => {
+    mock.onGet(OBSERVE_METRICS_URL).reply(200, {
+      status: 'success',
+      data: {
+        resultType: 'matrix',
+        result: [{ metric: { __name__: 'up' }, values: [['not-a-number', '1']] }],
+      },
+    })
+    const res = await queryMetric('up', range)
+    // isPromRawResult rejects the series because first value element fails numeric check
+    expect(res).toEqual([])
+  })
+
   it('rejects on 404', async () => {
     mock.onGet(OBSERVE_METRICS_URL).reply(404)
     await expect(queryMetric('up', range)).rejects.toThrow()
@@ -254,6 +275,22 @@ describe('observe api · queryLogs', () => {
     expect(res).toEqual([])
   })
 
+  it('filters out loki stream entries where values is a non-array non-undefined value', async () => {
+    mock.onGet(OBSERVE_LOGS_URL).reply(200, {
+      status: 'success',
+      data: {
+        resultType: 'streams',
+        result: [
+          { stream: { app: 'ok' }, values: null }, // values is not array and not undefined → filtered
+          { stream: { app: 'good' }, values: [['1000', 'msg']] },
+        ],
+      },
+    })
+    const res = await queryLogs('{app="x"}', range)
+    expect(res).toHaveLength(1)
+    expect(res[0]?.labels['app']).toBe('good')
+  })
+
   it('rejects on 404', async () => {
     mock.onGet(OBSERVE_LOGS_URL).reply(404)
     await expect(queryLogs('{app="x"}', range)).rejects.toThrow()
@@ -328,18 +365,31 @@ describe('observe api · searchTraces', () => {
     expect(res).toEqual([])
   })
 
-  it('normalizes a trace with all fields missing (fallback to empty strings / 0)', async () => {
-    mock.onGet(OBSERVE_TRACES_URL).reply(200, { traces: [{}] })
+  it('normalizes a trace with only traceID present (other fields fall back to defaults)', async () => {
+    // isTempoRawTrace now requires traceID or rootServiceName; use traceID to pass
+    mock.onGet(OBSERVE_TRACES_URL).reply(200, { traces: [{ traceID: 'abc' }] })
     const res = await searchTraces('x')
     expect(res).toHaveLength(1)
     expect(res[0]).toEqual({
-      traceId: '',
+      traceId: 'abc',
       rootService: '',
       rootName: '',
       startUnixNano: '',
       durationMs: 0,
       spanCount: 0,
     })
+  })
+
+  it('filters out traces that have neither traceID nor rootServiceName', async () => {
+    mock.onGet(OBSERVE_TRACES_URL).reply(200, {
+      traces: [
+        {}, // no traceID or rootServiceName → filtered
+        { traceID: 'valid', durationMs: 5 }, // valid
+      ],
+    })
+    const res = await searchTraces('x')
+    expect(res).toHaveLength(1)
+    expect(res[0]?.traceId).toBe('valid')
   })
 
   it('handles spanSets[0].matched being undefined (falls back to 0)', async () => {

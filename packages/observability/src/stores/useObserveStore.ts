@@ -5,8 +5,7 @@ import { queryMetric, queryLogs, searchTraces } from '../api/observe'
 import type { MetricSeries, LogLine, TraceSummary, TimeRange } from '../api/observe'
 import { rangeFromPreset } from '../lib/timeRange'
 import type { RangePreset } from '../lib/timeRange'
-
-type LoadStatus = 'idle' | 'loading' | 'loaded' | 'unavailable'
+import type { LoadStatus } from '../lib/loadStatus'
 
 // ---------------------------------------------------------------------------
 // PromQL queries for the four overview KPIs
@@ -142,6 +141,16 @@ export const useObserveStore = defineStore('observe.signals', () => {
     range.value = p
   }
 
+  /** Update the LogQL query string (use instead of v-model on store state). */
+  function setLogsQuery(v: string): void {
+    logsQuery.value = v
+  }
+
+  /** Update the traces service filter (use instead of v-model on store state). */
+  function setTracesService(v: string): void {
+    tracesService.value = v
+  }
+
   return {
     // query params
     range,
@@ -164,5 +173,7 @@ export const useObserveStore = defineStore('observe.signals', () => {
     loadLogs,
     loadTraces,
     setRange,
+    setLogsQuery,
+    setTracesService,
   }
 })

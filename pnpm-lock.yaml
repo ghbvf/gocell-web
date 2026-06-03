@@ -469,6 +469,9 @@ importers:
 
   packages/observability:
     dependencies:
+      '@gocell/contracts':
+        specifier: workspace:*
+        version: link:../contracts
       '@gocell/core':
         specifier: workspace:*
         version: link:../core

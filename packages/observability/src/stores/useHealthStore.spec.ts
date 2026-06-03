@@ -232,6 +232,62 @@ describe('useHealthStore', () => {
     })
   })
 
+  // ─── concurrency deduplication ───────────────────────────────────────────
+
+  describe('fetchHealth deduplication', () => {
+    it('concurrent fetchHealth calls result in only one HTTP request', async () => {
+      // Verify single-flight: only one GET hits the endpoint even when two calls race.
+      let requestCount = 0
+      mock.onGet(HEALTH_CELLS_URL).reply(() => {
+        requestCount++
+        return new Promise<[number, HealthCellsResponse]>((resolve) =>
+          setTimeout(() => resolve([200, mkHealthResponse()]), 50),
+        )
+      })
+      const store = useHealthStore()
+
+      const p1 = store.fetchHealth()
+      const p2 = store.fetchHealth()
+
+      await Promise.all([p1, p2])
+      expect(requestCount).toBe(1)
+      expect(store.healthStatus).toBe('loaded')
+    })
+
+    it('a new fetchHealth can be initiated after the previous one completes', async () => {
+      mock.onGet(HEALTH_CELLS_URL).reply(200, mkHealthResponse())
+      const store = useHealthStore()
+
+      await store.fetchHealth()
+      expect(store.healthStatus).toBe('loaded')
+
+      // Second call after completion should work fine
+      mock.onGet(HEALTH_CELLS_URL).reply(200, mkHealthResponse())
+      await store.fetchHealth()
+      expect(store.healthStatus).toBe('loaded')
+    })
+  })
+
+  describe('fetchSystem deduplication', () => {
+    it('concurrent fetchSystem calls result in only one HTTP request', async () => {
+      let requestCount = 0
+      mock.onGet(SYSTEM_URL).reply(() => {
+        requestCount++
+        return new Promise<[number, SystemInfoResponse]>((resolve) =>
+          setTimeout(() => resolve([200, mkSystemResponse()]), 50),
+        )
+      })
+      const store = useHealthStore()
+
+      const p1 = store.fetchSystem()
+      const p2 = store.fetchSystem()
+
+      await Promise.all([p1, p2])
+      expect(requestCount).toBe(1)
+      expect(store.systemStatus).toBe('loaded')
+    })
+  })
+
   // ─── refresh ──────────────────────────────────────────────────────────────
 
   describe('refresh', () => {

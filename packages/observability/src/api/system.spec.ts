@@ -88,4 +88,33 @@ describe('system api · fetchSystemInfo', () => {
     mock.onGet(SYSTEM_URL).networkError()
     await expect(fetchSystemInfo()).rejects.toThrow()
   })
+
+  // ─── runtime shape guard ──────────────────────────────────────────────────
+
+  it('throws when response is missing "build" field', async () => {
+    mock.onGet(SYSTEM_URL).reply(200, { runtime: {} })
+    await expect(fetchSystemInfo()).rejects.toThrow(/missing required fields/)
+  })
+
+  it('throws when response is missing "runtime" field', async () => {
+    mock.onGet(SYSTEM_URL).reply(200, { build: {} })
+    await expect(fetchSystemInfo()).rejects.toThrow(/missing required fields/)
+  })
+
+  it('throws when response is null', async () => {
+    mock.onGet(SYSTEM_URL).reply(200, null)
+    await expect(fetchSystemInfo()).rejects.toThrow(/missing required fields/)
+  })
+
+  it('throws when response is a plain string (standard envelope wrapping)', async () => {
+    mock.onGet(SYSTEM_URL).reply(200, 'ok')
+    await expect(fetchSystemInfo()).rejects.toThrow(/missing required fields/)
+  })
+
+  it('returns data when both "build" and "runtime" are present', async () => {
+    mock.onGet(SYSTEM_URL).reply(200, mockResponse)
+    const res = await fetchSystemInfo()
+    expect(res.build).toBeDefined()
+    expect(res.runtime).toBeDefined()
+  })
 })

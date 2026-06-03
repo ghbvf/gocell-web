@@ -41,10 +41,11 @@ function rowKey(log: LogLine, index: number): string {
       <div class="logs__search-row">
         <input
           :id="searchId"
-          v-model="store.logsQuery"
+          :value="store.logsQuery"
           type="text"
           class="logs__input"
           :placeholder="t('observe.logs.searchPlaceholder')"
+          @input="store.setLogsQuery(($event.target as HTMLInputElement).value)"
         />
         <button type="submit" class="logs__submit">
           {{ t('observe.logs.submit') }}
@@ -52,7 +53,11 @@ function rowKey(log: LogLine, index: number): string {
       </div>
     </form>
 
-    <p v-if="store.logsStatus === 'loading'" class="logs__status" role="status">
+    <p
+      v-if="store.logsStatus === 'idle' || store.logsStatus === 'loading'"
+      class="logs__status"
+      role="status"
+    >
       {{ t('observe.logs.loading') }}
     </p>
 
@@ -75,6 +80,11 @@ function rowKey(log: LogLine, index: number): string {
         <p class="logs__count">{{ t('observe.logs.count', { n: store.logs.length }) }}</p>
 
         <table class="logs__table">
+          <caption class="sr-only">
+            {{
+              t('observe.logs.tableCaption')
+            }}
+          </caption>
           <thead>
             <tr>
               <th scope="col" class="logs__col-header logs__col-header--mono">
@@ -154,7 +164,7 @@ function rowKey(log: LogLine, index: number): string {
 }
 
 .logs__submit {
-  height: 32px;
+  height: 30px;
   padding: 0 14px;
   font-size: var(--text-base);
   color: var(--fg);
@@ -182,7 +192,7 @@ function rowKey(log: LogLine, index: number): string {
 
 .logs__retry {
   margin-top: 12px;
-  height: 32px;
+  height: 30px;
   padding: 0 14px;
   font-size: var(--text-base);
   color: var(--fg);

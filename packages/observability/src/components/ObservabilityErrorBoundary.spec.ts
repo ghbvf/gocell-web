@@ -132,6 +132,24 @@ describe('ObservabilityErrorBoundary · error state', () => {
     errorSpy.mockRestore()
   })
 
+  it('moves focus into role=alert when error is captured (WCAG 2.4.3)', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+
+    const wrapper = mount(ObservabilityErrorBoundary, {
+      slots: { default: h(ThrowingChild) },
+      attachTo: document.body,
+    })
+    await flushPromises()
+
+    const alertEl = wrapper.find('[role="alert"]').element
+    expect(document.activeElement).toBe(alertEl)
+
+    wrapper.unmount()
+    warnSpy.mockRestore()
+    errorSpy.mockRestore()
+  })
+
   it('restores focus to the slot wrapper after retry (WCAG 2.4.3)', async () => {
     let renderCount = 0
     const ConditionalThrow = defineComponent({

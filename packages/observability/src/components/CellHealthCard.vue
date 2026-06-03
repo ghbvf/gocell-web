@@ -21,16 +21,19 @@ const healthySliceCount = computed(
 )
 
 const lastError = computed(() => {
-  const withErrors = props.cell.slices.filter(
-    (s) => s.lastErrorMessage !== null && s.lastErrorMessage !== undefined,
-  )
-  if (withErrors.length === 0) return null
-  const sorted = [...withErrors].sort((a, b) => {
-    const ta = a.lastErrorAt ?? ''
-    const tb = b.lastErrorAt ?? ''
-    return tb.localeCompare(ta)
-  })
-  return sorted[0]?.lastErrorMessage ?? null
+  // O(n) linear scan: find the slice with the most recent lastErrorAt
+  // without allocating a temp array + sort.
+  let bestMsg: string | null = null
+  let bestAt = ''
+  for (const s of props.cell.slices) {
+    if (s.lastErrorMessage == null) continue
+    const at = s.lastErrorAt ?? ''
+    if (at >= bestAt) {
+      bestAt = at
+      bestMsg = s.lastErrorMessage
+    }
+  }
+  return bestMsg
 })
 </script>
 

@@ -19,6 +19,7 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
+    "@gocell/contracts": "workspace:*",
     "@gocell/core": "workspace:*",
     "@gocell/request": "workspace:*",
     "pinia": "catalog:",

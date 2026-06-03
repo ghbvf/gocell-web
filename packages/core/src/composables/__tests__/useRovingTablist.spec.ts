@@ -148,3 +148,91 @@ describe('useRovingTablist', () => {
     expect(onActivate).not.toHaveBeenCalled()
   })
 })
+
+// ---------------------------------------------------------------------------
+// disabledIds — reverse self-check: not passing disabledIds must not change
+// existing behaviour (ArrowRight from overview must still call onActivate).
+// ---------------------------------------------------------------------------
+
+describe('useRovingTablist · disabledIds', () => {
+  const ALL_IDS = ['overview', 'interfaces', 'wiring', 'disabled-tab'] as const
+  type AllId = (typeof ALL_IDS)[number]
+
+  let focusMock: ReturnType<typeof vi.fn>
+  let mockEl: { focus: ReturnType<typeof vi.fn> }
+
+  beforeEach(() => {
+    focusMock = vi.fn()
+    mockEl = { focus: focusMock }
+    vi.spyOn(document, 'getElementById').mockImplementation((id: string) => {
+      const validIds = ['overview', 'interfaces', 'wiring', 'disabled-tab']
+      if (validIds.some((v) => id.includes(v))) return mockEl as unknown as HTMLElement
+      return null
+    })
+  })
+
+  const makeRovingWithDisabled = (onActivate?: (id: AllId) => void) =>
+    useRovingTablist<AllId>({
+      tabIds: () => ALL_IDS,
+      idFor: (id) => `tab-${id}`,
+      onActivate,
+      disabledIds: ['disabled-tab'] as readonly AllId[],
+    })
+
+  const makeKeyEvent = (key: string): KeyboardEvent =>
+    new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true })
+
+  it('reverse self-check: without disabledIds, ArrowRight still calls onActivate (no behaviour change)', () => {
+    // useRovingTablist without disabledIds — existing callers unaffected
+    const onActivate = vi.fn()
+    const { onKeydown } = useRovingTablist({
+      tabIds: () => TAB_IDS,
+      idFor: (id) => `cell-tab-test-${id}`,
+      onActivate,
+    })
+    onKeydown(makeKeyEvent('ArrowRight'), 'overview')
+    expect(onActivate).toHaveBeenCalledWith('interfaces')
+  })
+
+  it('focus moves to disabled tab on ArrowRight', () => {
+    const onActivate = vi.fn()
+    const { onKeydown } = makeRovingWithDisabled(onActivate)
+    // wiring → disabled-tab
+    onKeydown(makeKeyEvent('ArrowRight'), 'wiring')
+    expect(focusMock).toHaveBeenCalled()
+    expect(document.getElementById).toHaveBeenCalledWith('tab-disabled-tab')
+  })
+
+  it('onActivate is NOT called when landing on disabled tab', () => {
+    const onActivate = vi.fn()
+    const { onKeydown } = makeRovingWithDisabled(onActivate)
+    // wiring → disabled-tab (disabled)
+    onKeydown(makeKeyEvent('ArrowRight'), 'wiring')
+    expect(onActivate).not.toHaveBeenCalled()
+  })
+
+  it('onActivate IS called when landing on non-disabled tab', () => {
+    const onActivate = vi.fn()
+    const { onKeydown } = makeRovingWithDisabled(onActivate)
+    // overview → interfaces (not disabled)
+    onKeydown(makeKeyEvent('ArrowRight'), 'overview')
+    expect(onActivate).toHaveBeenCalledWith('interfaces')
+  })
+
+  it('ArrowLeft to disabled tab moves focus but does not activate', () => {
+    const onActivate = vi.fn()
+    const { onKeydown } = makeRovingWithDisabled(onActivate)
+    // disabled-tab is last; from overview ArrowLeft wraps → disabled-tab
+    onKeydown(makeKeyEvent('ArrowLeft'), 'overview')
+    expect(focusMock).toHaveBeenCalled()
+    expect(onActivate).not.toHaveBeenCalled()
+  })
+
+  it('End key to disabled tab moves focus but does not activate', () => {
+    const onActivate = vi.fn()
+    const { onKeydown } = makeRovingWithDisabled(onActivate)
+    onKeydown(makeKeyEvent('End'), 'overview')
+    expect(focusMock).toHaveBeenCalled()
+    expect(onActivate).not.toHaveBeenCalled()
+  })
+})

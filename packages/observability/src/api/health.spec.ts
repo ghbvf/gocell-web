@@ -99,4 +99,33 @@ describe('health api · fetchCellHealth', () => {
     mock.onGet(HEALTH_CELLS_URL).reply(500, { error: { code: 'internal_error' } })
     await expect(fetchCellHealth()).rejects.toThrow()
   })
+
+  // ─── runtime shape guard ──────────────────────────────────────────────────
+
+  it('throws when response is missing "summary" field', async () => {
+    mock.onGet(HEALTH_CELLS_URL).reply(200, { cells: [] })
+    await expect(fetchCellHealth()).rejects.toThrow(/missing required fields/)
+  })
+
+  it('throws when response is missing "cells" field', async () => {
+    mock.onGet(HEALTH_CELLS_URL).reply(200, { summary: {} })
+    await expect(fetchCellHealth()).rejects.toThrow(/missing required fields/)
+  })
+
+  it('throws when response is null', async () => {
+    mock.onGet(HEALTH_CELLS_URL).reply(200, null)
+    await expect(fetchCellHealth()).rejects.toThrow(/missing required fields/)
+  })
+
+  it('throws when response is a plain string (standard envelope wrapping)', async () => {
+    mock.onGet(HEALTH_CELLS_URL).reply(200, 'ok')
+    await expect(fetchCellHealth()).rejects.toThrow(/missing required fields/)
+  })
+
+  it('returns data when both "summary" and "cells" are present', async () => {
+    mock.onGet(HEALTH_CELLS_URL).reply(200, mockResponse)
+    const res = await fetchCellHealth()
+    expect(res.summary).toBeDefined()
+    expect(res.cells).toBeDefined()
+  })
 })

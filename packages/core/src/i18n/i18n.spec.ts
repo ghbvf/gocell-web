@@ -244,8 +244,10 @@ describe('observability namespaces (Batch 7)', () => {
     'observe.overview.empty',
     'observe.logs.empty',
     'observe.logs.searchLabel',
+    'observe.logs.tableCaption',
     'observe.traces.empty',
     'observe.traces.searchLabel',
+    'observe.traces.tableCaption',
   ] as const
 
   it.each(REQUIRED_KEYS)('zh-CN key "%s" resolves to a non-empty string', (key) => {

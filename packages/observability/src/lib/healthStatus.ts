@@ -4,7 +4,7 @@
  */
 
 /** Design-token variant for health status indicators. */
-export type HealthVariant = 'ok' | 'warn' | 'err' | 'accent' | 'neutral'
+export type HealthVariant = 'ok' | 'warn' | 'err' | 'neutral'
 
 /**
  * Maps a CellHealthStatus string to a design-token variant.
@@ -12,7 +12,7 @@ export type HealthVariant = 'ok' | 'warn' | 'err' | 'accent' | 'neutral'
  * healthy   → ok
  * degraded  → warn
  * down      → err
- * starting  → accent
+ * starting  → ok   (trending healthy: use the same green as healthy)
  * stopping  → warn
  * (unknown) → neutral
  */
@@ -25,7 +25,7 @@ export function statusVariant(status: string): HealthVariant {
     case 'down':
       return 'err'
     case 'starting':
-      return 'accent'
+      return 'ok'
     case 'stopping':
       return 'warn'
     default:

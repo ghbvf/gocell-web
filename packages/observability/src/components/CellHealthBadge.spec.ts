@@ -10,7 +10,7 @@ describe('CellHealthBadge', () => {
     ['healthy', 'ok'],
     ['degraded', 'warn'],
     ['down', 'err'],
-    ['starting', 'accent'],
+    ['starting', 'ok'],
     ['stopping', 'warn'],
   ]
 

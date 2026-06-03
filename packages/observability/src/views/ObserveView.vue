@@ -17,15 +17,22 @@
  * Design DNA: single --accent, tokens.css variables only, no inline colour,
  * no magic numbers, no emoji, no gradient.
  */
-import { computed } from 'vue'
+import { computed, defineAsyncComponent } from 'vue'
 import type { Component } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import ObserveTabBar from '../components/ObserveTabBar.vue'
 import ObservabilityErrorBoundary from '../components/ObservabilityErrorBoundary.vue'
-import OverviewPanel from '../components/OverviewPanel.vue'
-import LogsPanel from '../components/LogsPanel.vue'
-import TracesPanel from '../components/TracesPanel.vue'
+
+// Lazy-loaded panel chunks — each becomes its own JS chunk for code splitting.
+// ObservabilityErrorBoundary is the active-panel error boundary, so it is kept
+// eagerly to avoid nesting async boundaries inside each other.
+// aria-controls note: panels are rendered with v-if (only the active panel is in
+// the DOM). Active-only aria-controls is therefore the correct APG pattern —
+// pointing to a non-existent panel id would be invalid. See ObserveTabBar.vue.
+const OverviewPanel = defineAsyncComponent(() => import('../components/OverviewPanel.vue'))
+const LogsPanel = defineAsyncComponent(() => import('../components/LogsPanel.vue'))
+const TracesPanel = defineAsyncComponent(() => import('../components/TracesPanel.vue'))
 
 const { t } = useI18n()
 const route = useRoute()

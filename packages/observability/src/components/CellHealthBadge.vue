@@ -68,10 +68,6 @@ const labelKey = computed(() => {
   background: var(--err);
 }
 
-.badge--accent .badge__dot {
-  background: var(--accent);
-}
-
 .badge--neutral .badge__dot {
   background: var(--fg-faint);
 }

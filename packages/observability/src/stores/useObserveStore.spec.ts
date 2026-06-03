@@ -114,6 +114,38 @@ describe('useObserveStore', () => {
     })
   })
 
+  // ─── setLogsQuery / setTracesService ──────────────────────────────────────
+
+  describe('setLogsQuery', () => {
+    it('updates logsQuery ref', () => {
+      const store = useObserveStore()
+      store.setLogsQuery('{cell="accesscore"}')
+      expect(store.logsQuery).toBe('{cell="accesscore"}')
+    })
+
+    it('clears logsQuery when called with empty string', () => {
+      const store = useObserveStore()
+      store.setLogsQuery('previous')
+      store.setLogsQuery('')
+      expect(store.logsQuery).toBe('')
+    })
+  })
+
+  describe('setTracesService', () => {
+    it('updates tracesService ref', () => {
+      const store = useObserveStore()
+      store.setTracesService('auditcore')
+      expect(store.tracesService).toBe('auditcore')
+    })
+
+    it('clears tracesService when called with empty string', () => {
+      const store = useObserveStore()
+      store.setTracesService('previous')
+      store.setTracesService('')
+      expect(store.tracesService).toBe('')
+    })
+  })
+
   // ─── loadOverview ─────────────────────────────────────────────────────────
 
   describe('loadOverview', () => {

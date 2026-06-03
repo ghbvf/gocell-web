@@ -15,8 +15,8 @@ describe('statusVariant', () => {
     expect(statusVariant('down')).toBe<HealthVariant>('err')
   })
 
-  it('maps "starting" to "accent"', () => {
-    expect(statusVariant('starting')).toBe<HealthVariant>('accent')
+  it('maps "starting" to "ok" (trending healthy)', () => {
+    expect(statusVariant('starting')).toBe<HealthVariant>('ok')
   })
 
   it('maps "stopping" to "warn"', () => {

@@ -157,11 +157,22 @@ describe('LandingView · lastCheckAt display', () => {
     expect(liveRegion.attributes('aria-live')).toBe('polite')
   })
 
-  it('a11y live region is present but empty when lastCheckAt is absent', () => {
-    const { wrapper } = mountView({ lastCheckAt: null })
+  it('a11y live region announces loading when in idle state with no lastCheckAt', () => {
+    // idle + no lastCheckAt → live region shows loading text (idle is treated as loading)
+    const { wrapper } = mountView({ lastCheckAt: null, healthStatus: 'idle' })
     const liveRegion = wrapper.find('p.sr-only[role="status"]')
     expect(liveRegion.exists()).toBe(true)
-    expect(liveRegion.text().trim()).toBe('')
+    expect(liveRegion.text().trim()).toBe('landing.loading')
+  })
+
+  it('a11y live region announces loaded state via lastCheck text when loaded', () => {
+    const { wrapper } = mountView({
+      lastCheckAt: '2026-06-03T10:00:00Z',
+      healthStatus: 'loaded',
+    })
+    const liveRegion = wrapper.find('p.sr-only[role="status"]')
+    expect(liveRegion.exists()).toBe(true)
+    expect(liveRegion.text().trim()).toContain('landing.liveRegion')
   })
 })
 

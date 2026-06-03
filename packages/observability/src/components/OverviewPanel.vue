@@ -43,7 +43,11 @@ const allKpisNull = computed<boolean>(() => {
   <section class="overview" :aria-labelledby="headingId">
     <h2 :id="headingId" class="overview__heading">{{ t('observe.overview.regionLabel') }}</h2>
 
-    <p v-if="store.overviewStatus === 'loading'" class="overview__status" role="status">
+    <p
+      v-if="store.overviewStatus === 'idle' || store.overviewStatus === 'loading'"
+      class="overview__status"
+      role="status"
+    >
       {{ t('observe.overview.loading') }}
     </p>
 
@@ -107,7 +111,7 @@ const allKpisNull = computed<boolean>(() => {
 
 .overview__retry {
   margin-top: 12px;
-  height: 32px;
+  height: 30px;
   padding: 0 14px;
   font-size: var(--text-base);
   color: var(--fg);
@@ -128,7 +132,7 @@ const allKpisNull = computed<boolean>(() => {
 
 .overview__tiles {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: 12px;
 }
 

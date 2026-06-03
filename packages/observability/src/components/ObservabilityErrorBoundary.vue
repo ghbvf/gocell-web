@@ -19,9 +19,13 @@ const { t } = useI18n()
 const failed = ref(false)
 const retryKey = ref(0)
 const slotRoot = ref<HTMLElement | null>(null)
+const alertEl = ref<HTMLElement | null>(null)
 
 onErrorCaptured(() => {
   failed.value = true
+  // Move focus into the alert container so screen readers announce the error
+  // immediately (WCAG 2.4.3 / APG alert pattern).
+  void nextTick(() => alertEl.value?.focus())
   return false
 })
 
@@ -34,17 +38,26 @@ function retry(): void {
 }
 
 function renderAlert() {
-  return h('div', { role: 'alert', class: 'obs-boundary', tabindex: '-1' }, [
-    h(UnavailablePanel, {
-      title: t('observe.boundary.title'),
-      message: t('observe.boundary.message'),
-    }),
-    h(
-      'button',
-      { type: 'button', class: 'obs-boundary__retry', onClick: retry },
-      t('observe.boundary.retry'),
-    ),
-  ])
+  return h(
+    'div',
+    {
+      role: 'alert',
+      class: 'obs-boundary',
+      tabindex: '-1',
+      ref: alertEl,
+    },
+    [
+      h(UnavailablePanel, {
+        title: t('observe.boundary.title'),
+        message: t('observe.boundary.message'),
+      }),
+      h(
+        'button',
+        { type: 'button', class: 'obs-boundary__retry', onClick: retry },
+        t('observe.boundary.retry'),
+      ),
+    ],
+  )
 }
 </script>
 
@@ -68,12 +81,13 @@ function renderAlert() {
 }
 
 .obs-boundary:focus-visible {
-  outline: none;
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .obs-boundary__retry {
   margin-top: 12px;
-  height: 32px;
+  height: 30px;
   padding: 0 14px;
   font-size: var(--text-base);
   color: var(--fg);

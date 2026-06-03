@@ -1100,7 +1100,6 @@ const enUS = {
       unknown: 'Unknown',
     },
     cell: {
-      regionLabel: '{name} health card',
       version: 'Version',
       commit: 'Commit',
       uptime: 'Uptime',
@@ -1111,7 +1110,6 @@ const enUS = {
     },
     system: {
       title: 'System info',
-      regionLabel: 'System metadata',
       unavailable: 'System metadata unavailable',
       build: 'Build',
       version: 'Version',
@@ -1184,6 +1182,7 @@ const enUS = {
       loading: 'Querying logs…',
       empty: 'No matching logs.',
       count: '{n} logs',
+      tableCaption: 'Log results',
       col: {
         time: 'Time',
         level: 'Level',
@@ -1199,6 +1198,7 @@ const enUS = {
       loading: 'Querying traces…',
       empty: 'No matching traces.',
       count: '{n} traces',
+      tableCaption: 'Trace results',
       col: {
         traceId: 'Trace ID',
         service: 'Service',

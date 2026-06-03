@@ -52,8 +52,23 @@ export interface HealthCellsResponse {
   cells: CellHealthEntry[]
 }
 
+/**
+ * Lightweight shape guard for HealthCellsResponse.
+ * Throws if the top-level required fields are absent, directing the store to
+ * 'unavailable' rather than silently rendering empty data.
+ *
+ * TODO: replace with codegen-derived Zod schema once
+ * HttpAdminHealthCellsV1Response is available in @gocell/contracts.
+ */
+function assertHealthShape(data: unknown): asserts data is HealthCellsResponse {
+  if (data === null || typeof data !== 'object' || !('summary' in data) || !('cells' in data)) {
+    throw new Error('fetchCellHealth: response missing required fields "summary" or "cells"')
+  }
+}
+
 /** GET /api/v1/admin/health/cells — full cell health snapshot. */
 export async function fetchCellHealth(): Promise<HealthCellsResponse> {
-  const res = await http.get<HealthCellsResponse>(HEALTH_CELLS_URL)
+  const res = await http.get<unknown>(HEALTH_CELLS_URL)
+  assertHealthShape(res.data)
   return res.data
 }

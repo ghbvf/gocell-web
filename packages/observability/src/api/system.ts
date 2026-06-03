@@ -53,8 +53,23 @@ export interface SystemInfoResponse {
   environment: EnvironmentInfo
 }
 
+/**
+ * Lightweight shape guard for SystemInfoResponse.
+ * Throws if the top-level required fields are absent, directing the store to
+ * 'unavailable' rather than silently rendering empty data.
+ *
+ * TODO: replace with codegen-derived Zod schema once
+ * HttpAdminSystemV1Response is available in @gocell/contracts.
+ */
+function assertSystemShape(data: unknown): asserts data is SystemInfoResponse {
+  if (data === null || typeof data !== 'object' || !('build' in data) || !('runtime' in data)) {
+    throw new Error('fetchSystemInfo: response missing required fields "build" or "runtime"')
+  }
+}
+
 /** GET /api/v1/admin/system — runtime system snapshot. */
 export async function fetchSystemInfo(): Promise<SystemInfoResponse> {
-  const res = await http.get<SystemInfoResponse>(SYSTEM_URL)
+  const res = await http.get<unknown>(SYSTEM_URL)
+  assertSystemShape(res.data)
   return res.data
 }

@@ -28,10 +28,11 @@ function onSubmit(): void {
       <div class="traces__search-row">
         <input
           :id="searchId"
-          v-model="store.tracesService"
+          :value="store.tracesService"
           type="text"
           class="traces__input"
           :placeholder="t('observe.traces.searchPlaceholder')"
+          @input="store.setTracesService(($event.target as HTMLInputElement).value)"
         />
         <button type="submit" class="traces__submit">
           {{ t('observe.traces.submit') }}
@@ -39,7 +40,11 @@ function onSubmit(): void {
       </div>
     </form>
 
-    <p v-if="store.tracesStatus === 'loading'" class="traces__status" role="status">
+    <p
+      v-if="store.tracesStatus === 'idle' || store.tracesStatus === 'loading'"
+      class="traces__status"
+      role="status"
+    >
       {{ t('observe.traces.loading') }}
     </p>
 
@@ -62,6 +67,11 @@ function onSubmit(): void {
         <p class="traces__count">{{ t('observe.traces.count', { n: store.traces.length }) }}</p>
 
         <table class="traces__table">
+          <caption class="sr-only">
+            {{
+              t('observe.traces.tableCaption')
+            }}
+          </caption>
           <thead>
             <tr>
               <th scope="col" class="traces__col-header traces__col-header--mono">
@@ -151,7 +161,7 @@ function onSubmit(): void {
 }
 
 .traces__submit {
-  height: 32px;
+  height: 30px;
   padding: 0 14px;
   font-size: var(--text-base);
   color: var(--fg);
@@ -179,7 +189,7 @@ function onSubmit(): void {
 
 .traces__retry {
   margin-top: 12px;
-  height: 32px;
+  height: 30px;
   padding: 0 14px;
   font-size: var(--text-base);
   color: var(--fg);

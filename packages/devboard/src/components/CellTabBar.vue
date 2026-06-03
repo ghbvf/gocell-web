@@ -62,11 +62,14 @@ const { onKeydown } = useRovingTablist({
   border-bottom: 2px solid transparent;
   border-radius: 0;
   cursor: pointer;
-  outline: none;
   transition:
     color 0.12s,
     border-color 0.12s;
   line-height: 1.4;
+}
+
+.tab-bar__btn:focus:not(:focus-visible) {
+  outline: none;
 }
 
 .tab-bar__btn:hover {

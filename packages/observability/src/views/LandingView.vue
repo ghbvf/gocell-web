@@ -29,13 +29,30 @@ useHealthPoll()
 
 // ─── derived ─────────────────────────────────────────────────────────────────
 
-const isLoading = computed(() => health.healthStatus === 'loading' && health.cells.length === 0)
+// idle is treated the same as loading: both mean "no data yet, show spinner".
+const isLoading = computed(
+  () => health.healthStatus === 'loading' || health.healthStatus === 'idle',
+)
 
 const isUnavailable = computed(() => health.healthStatus === 'unavailable')
 
-const isLoaded = computed(
-  () => !isLoading.value && !isUnavailable.value && health.healthStatus !== 'idle',
-)
+const isLoaded = computed(() => health.healthStatus === 'loaded')
+
+// ─── single a11y live-region text ────────────────────────────────────────────
+// Exactly one polite live region must exist at any time; we drive its text via
+// a computed so screen readers announce meaningful transitions.
+const liveRegionText = computed<string>(() => {
+  if (health.healthStatus === 'loading' || health.healthStatus === 'idle') {
+    return t('landing.loading')
+  }
+  if (health.healthStatus === 'unavailable') {
+    return t('landing.unavailable.title')
+  }
+  if (health.lastCheckAt) {
+    return t('landing.liveRegion', { time: health.lastCheckAt })
+  }
+  return ''
+})
 
 const summaryHeadingId = 'landing-summary-heading'
 const deploysHeadingId = 'landing-deploys-heading'
@@ -68,15 +85,13 @@ function formatTs(iso: string): string {
       </div>
     </header>
 
-    <!-- ─── a11y live region ─────────────────────────────────────────────── -->
-    <p class="sr-only" role="status" aria-live="polite">
-      {{
-        health.lastCheckAt ? t('landing.liveRegion', { time: formatTs(health.lastCheckAt) }) : ''
-      }}
-    </p>
+    <!-- ─── a11y live region (single, always present) ──────────────────── -->
+    <!-- Only one polite live region; text is driven by liveRegionText computed. -->
+    <p class="sr-only" role="status" aria-live="polite" aria-atomic="true">{{ liveRegionText }}</p>
 
     <!-- ─── health section ───────────────────────────────────────────────── -->
-    <p v-if="isLoading" class="landing__loading" role="status">
+    <!-- No role="status" on the visible loading <p> — live region above handles announcements. -->
+    <p v-if="isLoading" class="landing__loading">
       {{ t('landing.loading') }}
     </p>
 
@@ -339,11 +354,5 @@ function formatTs(iso: string): string {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
   border-radius: var(--r-sm);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .landing__btn {
-    transition: none;
-  }
 }
 </style>

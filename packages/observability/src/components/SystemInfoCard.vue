@@ -7,13 +7,14 @@
  */
 import { useI18n } from 'vue-i18n'
 import type { SystemInfoResponse } from '../api/system'
+import type { LoadStatus } from '../lib/loadStatus'
 import { formatUptime } from '../lib/formatUptime'
 import { formatMib } from '../lib/formatBytes'
 import { UnavailablePanel } from '@gocell/core'
 
 defineProps<{
   system: SystemInfoResponse | null
-  status: 'idle' | 'loading' | 'loaded' | 'unavailable'
+  status: LoadStatus
 }>()
 const { t } = useI18n()
 
