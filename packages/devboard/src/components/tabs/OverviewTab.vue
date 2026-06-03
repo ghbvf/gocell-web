@@ -2,7 +2,7 @@
 import { useI18n } from 'vue-i18n'
 import type { CellEntry } from '../../manifest/types'
 import CellDurabilityBadge from '../CellDurabilityBadge.vue'
-import UnavailablePanel from '../UnavailablePanel.vue'
+import { UnavailablePanel } from '@gocell/core'
 
 const props = defineProps<{ cell: CellEntry }>()
 const { t } = useI18n()

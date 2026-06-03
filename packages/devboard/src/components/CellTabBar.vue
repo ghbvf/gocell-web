@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
-import { useRovingTablist } from '../composables/useRovingTablist'
+import { useRovingTablist } from '@gocell/core'
 
 const props = defineProps<{
   tabs: readonly { id: string; labelKey: string }[]

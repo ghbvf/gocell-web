@@ -7,9 +7,13 @@ vi.mock('vue-i18n', () => ({
   useI18n: () => ({ t: (k: string) => k }),
 }))
 
-vi.mock('../UnavailablePanel.vue', () => ({
-  default: { template: '<div data-testid="unavailable-panel" />' },
-}))
+vi.mock('@gocell/core', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@gocell/core')>()
+  return {
+    ...actual,
+    UnavailablePanel: { template: '<div data-testid="unavailable-panel" />' },
+  }
+})
 
 const makeCell = (overrides: Partial<CellEntry> = {}): CellEntry => ({
   id: 'accesscore',

@@ -1,5 +1,6 @@
 // Composables
-export { useTheme, useThemeTokens } from './composables/index'
+export { useTheme, useThemeTokens, useRovingTablist } from './composables/index'
+export type { RovingTablistOptions, RovingTablistReturn } from './composables/index'
 
 // Stores
 export { useThemeStore } from './stores/index'
@@ -11,7 +12,7 @@ export { useDecision, PDP_INJECTION_KEY } from './pdp/index'
 export type { PdpClient } from './pdp/index'
 
 // Components
-export { Can } from './components/index'
+export { Can, UnavailablePanel } from './components/index'
 
 // UI Shell
 export { AppShell, Sidebar, TopBar, CommandPalette, AIBottomBar } from './ui/index'

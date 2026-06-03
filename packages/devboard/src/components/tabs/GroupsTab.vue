@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import type { CellEntry } from '../../manifest/types'
-import UnavailablePanel from '../UnavailablePanel.vue'
+import { UnavailablePanel } from '@gocell/core'
 
 defineProps<{ cell: CellEntry }>()
 

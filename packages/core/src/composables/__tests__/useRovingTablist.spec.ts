@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { useRovingTablist } from './useRovingTablist'
+import { useRovingTablist } from '../useRovingTablist'
 
 const TAB_IDS = ['overview', 'interfaces', 'wiring'] as const
 
