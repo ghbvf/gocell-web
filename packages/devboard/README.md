@@ -6,7 +6,8 @@
 
 ## 对外 exports
 
-- `.` → `src/index.ts`：manifest 类型、`CELL_MANIFEST`、`useCellsStore`、共享组件（`CellDurabilityBadge` / `UnavailablePanel`）
+- `.` → `src/index.ts`：manifest 类型、`CELL_MANIFEST`、`useCellsStore`、共享组件（`CellDurabilityBadge`）
+  注：`UnavailablePanel` 已提升至 `@gocell/core`，不再由本包导出。
 - `./views/cells-list` → `CellsListView.vue`（`/cells` 列表页，T503）
 - `./views/cell-detail` → `CellDetailView.vue`（`/cells/:id` 12-tab 详情，T504）
 - `./views/contracts` → `ContractsView.vue`（`/contracts` 平台级 contract registry，T601）

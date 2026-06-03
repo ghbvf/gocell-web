@@ -1167,13 +1167,6 @@ const enUS = {
       serviceGraph: 'Service graph',
       sliceHealth: 'Slice health',
     },
-    range: {
-      label: 'Time range',
-      m15: 'Last 15 min',
-      h1: 'Last 1 hour',
-      h6: 'Last 6 hours',
-      h24: 'Last 24 hours',
-    },
     overview: {
       regionLabel: 'SLO and key-metric overview',
       qps: 'Request rate',

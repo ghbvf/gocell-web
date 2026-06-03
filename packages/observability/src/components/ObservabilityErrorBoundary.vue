@@ -1,5 +1,16 @@
 <script setup lang="ts">
-import { ref, onErrorCaptured, h } from 'vue'
+/**
+ * ObservabilityErrorBoundary — render-error boundary for the /observe tab panels
+ * (T703 safety net). onErrorCaptured isolates a thrown panel so it cannot tear
+ * down the whole view; the user can retry, which remounts the slot via :key.
+ *
+ * The alert is built with a render function (h) rather than inline template: a
+ * thrown slot and the alert cannot share the same compiled block tree without
+ * crashing Vue's block patching (patchBlockChildren) during the transition.
+ * Because h()-created nodes do NOT receive this SFC's scope-id, their styles live
+ * in the unscoped <style> block below (class names namespaced to obs-boundary*).
+ */
+import { ref, nextTick, onErrorCaptured, h } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { UnavailablePanel } from '@gocell/core'
 
@@ -7,6 +18,7 @@ const { t } = useI18n()
 
 const failed = ref(false)
 const retryKey = ref(0)
+const slotRoot = ref<HTMLElement | null>(null)
 
 onErrorCaptured(() => {
   failed.value = true
@@ -16,14 +28,13 @@ onErrorCaptured(() => {
 function retry(): void {
   failed.value = false
   retryKey.value += 1
+  // The retry button is being unmounted; restore focus to the slot wrapper so it
+  // does not fall back to <body> (WCAG 2.4.3).
+  void nextTick(() => slotRoot.value?.focus())
 }
 
-// Render the alert as a VNode outside of the compiled block tree to avoid
-// static-child patching crashes (Vue block optimization) when transitioning
-// between the slot and the error state — the mocked UnavailablePanel shape
-// differs from its production shape and breaks patchBlockChildren.
 function renderAlert() {
-  return h('div', { role: 'alert', class: 'obs-boundary' }, [
+  return h('div', { role: 'alert', class: 'obs-boundary', tabindex: '-1' }, [
     h(UnavailablePanel, {
       title: t('observe.boundary.title'),
       message: t('observe.boundary.message'),
@@ -40,15 +51,24 @@ function renderAlert() {
 <template>
   <div class="obs-boundary-root">
     <component :is="renderAlert" v-if="failed" />
-    <div v-else :key="retryKey" class="obs-boundary__slot">
+    <div v-else ref="slotRoot" :key="retryKey" tabindex="-1" class="obs-boundary__slot">
       <slot />
     </div>
   </div>
 </template>
 
-<style scoped>
+<!--
+  Unscoped on purpose: the .obs-boundary / .obs-boundary__retry nodes are produced
+  by the renderAlert() render function, which does not receive this SFC's scope-id,
+  so a scoped block would silently fail to style them. Class names are namespaced.
+-->
+<style>
 .obs-boundary {
   padding: 16px;
+}
+
+.obs-boundary:focus-visible {
+  outline: none;
 }
 
 .obs-boundary__retry {
@@ -70,5 +90,11 @@ function renderAlert() {
 .obs-boundary__retry:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
+}
+</style>
+
+<style scoped>
+.obs-boundary__slot:focus-visible {
+  outline: none;
 }
 </style>

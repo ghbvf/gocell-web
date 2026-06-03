@@ -131,4 +131,37 @@ describe('ObservabilityErrorBoundary · error state', () => {
     warnSpy.mockRestore()
     errorSpy.mockRestore()
   })
+
+  it('restores focus to the slot wrapper after retry (WCAG 2.4.3)', async () => {
+    let renderCount = 0
+    const ConditionalThrow = defineComponent({
+      name: 'ConditionalThrow',
+      render() {
+        renderCount++
+        if (renderCount === 1) throw new Error('first render error')
+        return h('div', { 'data-testid': 'recovered' }, 'recovered')
+      },
+    })
+
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+
+    renderCount = 0
+    // attachTo so document.activeElement reflects real focus moves.
+    const wrapper = mount(ObservabilityErrorBoundary, {
+      slots: { default: h(ConditionalThrow) },
+      attachTo: document.body,
+    })
+    await flushPromises()
+
+    await wrapper.find('button').trigger('click')
+    await flushPromises()
+
+    const slotWrapper = wrapper.find('.obs-boundary__slot').element
+    expect(document.activeElement).toBe(slotWrapper)
+
+    wrapper.unmount()
+    warnSpy.mockRestore()
+    errorSpy.mockRestore()
+  })
 })

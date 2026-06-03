@@ -142,8 +142,9 @@ function isTempoRawTrace(v: unknown): v is TempoRawTrace {
 
 function normalizePromResult(raw: PromRawResult): MetricSeries {
   const points = raw.values.map(([t, v]) => {
+    const tNum = typeof t === 'number' ? t : Number(t)
     const parsed = parseFloat(v)
-    return { t, v: isNaN(parsed) ? 0 : parsed }
+    return { t: Number.isFinite(tNum) ? tNum : 0, v: isNaN(parsed) ? 0 : parsed }
   })
   return { metric: raw.metric, points }
 }

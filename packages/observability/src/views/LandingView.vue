@@ -38,7 +38,6 @@ const isLoaded = computed(
 )
 
 const summaryHeadingId = 'landing-summary-heading'
-const systemHeadingId = 'landing-system-heading'
 const deploysHeadingId = 'landing-deploys-heading'
 const kpiHeadingId = 'landing-kpi-heading'
 
@@ -70,8 +69,10 @@ function formatTs(iso: string): string {
     </header>
 
     <!-- ─── a11y live region ─────────────────────────────────────────────── -->
-    <p v-if="health.lastCheckAt" class="sr-only" role="status" aria-live="polite">
-      {{ t('landing.liveRegion', { time: formatTs(health.lastCheckAt) }) }}
+    <p class="sr-only" role="status" aria-live="polite">
+      {{
+        health.lastCheckAt ? t('landing.liveRegion', { time: formatTs(health.lastCheckAt) }) : ''
+      }}
     </p>
 
     <!-- ─── health section ───────────────────────────────────────────────── -->
@@ -97,13 +98,13 @@ function formatTs(iso: string): string {
         </h2>
         <div class="landing__rollup">
           <div class="landing__rollup-item">
-            <span class="landing__rollup-count">{{ health.rollup.total }}</span>
+            <span class="landing__rollup-count" aria-hidden="true">{{ health.rollup.total }}</span>
             <span class="landing__rollup-label">
               {{ t('landing.summary.total', { n: health.rollup.total }) }}
             </span>
           </div>
           <div class="landing__rollup-item">
-            <span class="landing__rollup-count landing__rollup-count--ok">
+            <span class="landing__rollup-count landing__rollup-count--ok" aria-hidden="true">
               {{ health.rollup.healthy }}
             </span>
             <span class="landing__rollup-label">
@@ -111,7 +112,7 @@ function formatTs(iso: string): string {
             </span>
           </div>
           <div class="landing__rollup-item">
-            <span class="landing__rollup-count landing__rollup-count--warn">
+            <span class="landing__rollup-count landing__rollup-count--warn" aria-hidden="true">
               {{ health.rollup.degraded }}
             </span>
             <span class="landing__rollup-label">
@@ -119,7 +120,7 @@ function formatTs(iso: string): string {
             </span>
           </div>
           <div class="landing__rollup-item">
-            <span class="landing__rollup-count landing__rollup-count--err">
+            <span class="landing__rollup-count landing__rollup-count--err" aria-hidden="true">
               {{ health.rollup.down }}
             </span>
             <span class="landing__rollup-label">
@@ -136,10 +137,7 @@ function formatTs(iso: string): string {
     </template>
 
     <!-- ─── system info ──────────────────────────────────────────────────── -->
-    <section class="landing__section" :aria-labelledby="systemHeadingId">
-      <h2 :id="systemHeadingId" class="landing__section-h">{{ t('landing.system.title') }}</h2>
-      <SystemInfoCard :system="health.system" :status="health.systemStatus" />
-    </section>
+    <SystemInfoCard :system="health.system" :status="health.systemStatus" />
 
     <!-- ─── placeholder cards row ───────────────────────────────────────── -->
     <div class="landing__placeholders">
@@ -204,7 +202,7 @@ function formatTs(iso: string): string {
 .landing__btn {
   height: 30px;
   padding: 0 12px;
-  font-size: 12.5px;
+  font-size: var(--text-base);
   color: var(--fg);
   background: var(--bg-raised);
   border: 1px solid var(--line);
@@ -222,7 +220,7 @@ function formatTs(iso: string): string {
 }
 
 .landing__last-check {
-  font-size: 12px;
+  font-size: var(--text-sm);
   color: var(--fg-faint);
   font-family: var(--font-mono);
 }
@@ -231,7 +229,7 @@ function formatTs(iso: string): string {
 .landing__loading {
   margin: 0;
   padding: 40px 0;
-  font-size: 13px;
+  font-size: var(--text-base);
   color: var(--fg-muted);
   text-align: center;
 }
@@ -272,7 +270,7 @@ function formatTs(iso: string): string {
 
 .landing__rollup-count {
   font-family: var(--font-mono);
-  font-size: 28px;
+  font-size: var(--text-3xl);
   font-weight: 500;
   line-height: 1;
   color: var(--fg);
@@ -291,7 +289,7 @@ function formatTs(iso: string): string {
 }
 
 .landing__rollup-label {
-  font-size: 12px;
+  font-size: var(--text-sm);
   color: var(--fg-muted);
 }
 
@@ -328,7 +326,7 @@ function formatTs(iso: string): string {
 .landing__observe-link {
   align-self: flex-start;
   margin-top: 10px;
-  font-size: 13px;
+  font-size: var(--text-base);
   color: var(--accent);
   text-decoration: none;
 }

@@ -106,6 +106,26 @@ describe('observe api · queryMetric', () => {
     expect(nanPoint?.v).toBe(0)
   })
 
+  it('coerces string timestamps to finite numbers', async () => {
+    mock.onGet(OBSERVE_METRICS_URL).reply(200, {
+      status: 'success',
+      data: {
+        resultType: 'matrix',
+        result: [
+          {
+            metric: { __name__: 'up' },
+            values: [['1717372800', '1']],
+          },
+        ],
+      },
+    })
+    const res = await queryMetric('up', range)
+    const point = res[0]?.points[0]
+    expect(typeof point?.t).toBe('number')
+    expect(Number.isFinite(point?.t)).toBe(true)
+    expect(point?.t).toBe(1717372800)
+  })
+
   it('sends correct query params', async () => {
     let seenParams: Record<string, unknown> | undefined
     mock.onGet(OBSERVE_METRICS_URL).reply((config) => {

@@ -150,16 +150,18 @@ describe('LandingView · lastCheckAt display', () => {
     expect(wrapper.text()).not.toContain('landing.lastCheck')
   })
 
-  it('renders a11y live region (role=status) when lastCheckAt is set', () => {
+  it('renders a11y live region (role=status) always present', () => {
     const { wrapper } = mountView({ lastCheckAt: '2026-06-03T10:00:00Z' })
     const liveRegion = wrapper.find('p.sr-only[role="status"]')
     expect(liveRegion.exists()).toBe(true)
     expect(liveRegion.attributes('aria-live')).toBe('polite')
   })
 
-  it('does not render a11y live region when lastCheckAt is absent', () => {
+  it('a11y live region is present but empty when lastCheckAt is absent', () => {
     const { wrapper } = mountView({ lastCheckAt: null })
-    expect(wrapper.find('p.sr-only[role="status"]').exists()).toBe(false)
+    const liveRegion = wrapper.find('p.sr-only[role="status"]')
+    expect(liveRegion.exists()).toBe(true)
+    expect(liveRegion.text().trim()).toBe('')
   })
 })
 

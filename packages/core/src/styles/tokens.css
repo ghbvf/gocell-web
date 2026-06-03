@@ -16,6 +16,7 @@
   --text-lg: 14px;
   --text-xl: 18px;
   --text-2xl: 20px;
+  --text-3xl: 26px;
 
   /* light palette — nearly white with subtle cool tint */
   --bg: oklch(0.995 0.002 270);

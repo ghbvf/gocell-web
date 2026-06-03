@@ -36,7 +36,8 @@ export const useObserveStore = defineStore('observe.signals', () => {
   // ─── overview KPIs state ──────────────────────────────────────────────────
   const overviewStatus = ref<LoadStatus>('idle')
   const overviewErrorKey = ref<string | null>(null)
-  const kpis = ref<{
+  // shallowRef: kpis object is replaced wholesale; no in-place element mutation.
+  const kpis = shallowRef<{
     qps: MetricSeries | null
     p95: MetricSeries | null
     errorRate: MetricSeries | null

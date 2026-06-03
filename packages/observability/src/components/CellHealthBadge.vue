@@ -1,3 +1,8 @@
+<script lang="ts">
+// Module-level const: the Set is allocated once for the module, not per instance.
+const KNOWN_STATUSES = new Set(['healthy', 'degraded', 'down', 'starting', 'stopping'])
+</script>
+
 <script setup lang="ts">
 /**
  * CellHealthBadge — status badge for a cell health entry.
@@ -17,8 +22,9 @@ const { t } = useI18n()
 
 const variant = computed(() => statusVariant(props.status))
 const labelKey = computed(() => {
-  const known = new Set<CellHealthStatus>(['healthy', 'degraded', 'down', 'starting', 'stopping'])
-  return known.has(props.status) ? `landing.status.${props.status}` : 'landing.status.unknown'
+  return KNOWN_STATUSES.has(props.status)
+    ? `landing.status.${props.status}`
+    : 'landing.status.unknown'
 })
 </script>
 

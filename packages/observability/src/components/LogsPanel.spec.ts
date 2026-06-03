@@ -205,10 +205,9 @@ describe('LogsPanel · search form', () => {
     expect(label.attributes('for')).toBe(input.attributes('id'))
   })
 
-  it('submit button triggers loadLogs', async () => {
+  it('submit button triggers loadLogs via form submit', async () => {
     const { wrapper, store } = mountPanel({ logsStatus: 'loaded', logs: [] })
-    const btn = wrapper.find('button.logs__submit')
-    await btn.trigger('click')
+    await wrapper.find('form').trigger('submit')
     await flushPromises()
     expect(store.loadLogs).toHaveBeenCalledTimes(2)
   })

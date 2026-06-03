@@ -1152,13 +1152,6 @@ const zhCN = {
       serviceGraph: '服务图',
       sliceHealth: 'Slice 健康',
     },
-    range: {
-      label: '时间范围',
-      m15: '近 15 分钟',
-      h1: '近 1 小时',
-      h6: '近 6 小时',
-      h24: '近 24 小时',
-    },
     overview: {
       regionLabel: 'SLO 与关键指标概览',
       qps: '请求速率',

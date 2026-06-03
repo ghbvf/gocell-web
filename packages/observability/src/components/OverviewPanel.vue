@@ -149,7 +149,7 @@ const allKpisNull = computed<boolean>(() => {
 
 .overview__tile-value {
   font-family: var(--font-mono);
-  font-size: var(--text-2xl);
+  font-size: var(--text-3xl);
   color: var(--fg);
 }
 </style>

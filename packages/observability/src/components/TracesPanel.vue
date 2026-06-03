@@ -33,7 +33,7 @@ function onSubmit(): void {
           class="traces__input"
           :placeholder="t('observe.traces.searchPlaceholder')"
         />
-        <button type="submit" class="traces__submit" @click.prevent="onSubmit">
+        <button type="submit" class="traces__submit">
           {{ t('observe.traces.submit') }}
         </button>
       </div>

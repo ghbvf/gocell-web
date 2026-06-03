@@ -46,7 +46,7 @@ function rowKey(log: LogLine, index: number): string {
           class="logs__input"
           :placeholder="t('observe.logs.searchPlaceholder')"
         />
-        <button type="submit" class="logs__submit" @click.prevent="onSubmit">
+        <button type="submit" class="logs__submit">
           {{ t('observe.logs.submit') }}
         </button>
       </div>

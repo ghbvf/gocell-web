@@ -207,10 +207,9 @@ describe('TracesPanel · search form', () => {
     expect(label.attributes('for')).toBe(input.attributes('id'))
   })
 
-  it('submit button triggers loadTraces', async () => {
+  it('submit button triggers loadTraces via form submit', async () => {
     const { wrapper, store } = mountPanel({ tracesStatus: 'loaded', traces: [] })
-    const btn = wrapper.find('button.traces__submit')
-    await btn.trigger('click')
+    await wrapper.find('form').trigger('submit')
     await flushPromises()
     expect(store.loadTraces).toHaveBeenCalledTimes(2)
   })
