@@ -23,11 +23,12 @@ const routes: RouteRecordRaw[] = [
     component: () => import('../layouts/AppShellLayout.vue'),
     children: [
       {
+        // Health overview (Batch 7 / BR-001/002). Degrades to the unavailable
+        // panel when the health endpoints are absent.
         path: '',
         name: 'home',
-        component: () => import('../views/HomeView.vue'),
-        // TODO(Batch 7): Health Overview 需认证，改 requiresAuth: true
-        meta: { requiresAuth: false },
+        component: () => import('@gocell/observability/views/landing'),
+        meta: { requiresAuth: true },
       },
       {
         // Access · Identities (Batch 2). Behind the auth gate + the PDP gate:
@@ -104,6 +105,14 @@ const routes: RouteRecordRaw[] = [
         name: 'cell-detail',
         component: () => import('@gocell/devboard/views/cell-detail'),
         meta: { requiresAuth: true, requiredAction: 'read', requiredResource: 'cell' },
+      },
+      {
+        // Observability v1 (Batch 7). LGTM signals via the @gocell/request BFF proxy;
+        // degrades to the unavailable panel until BR-003 lands. Auth-gated only (no PDP).
+        path: 'observe',
+        name: 'observe',
+        component: () => import('@gocell/observability/views/observe'),
+        meta: { requiresAuth: true },
       },
       {
         // Build · Contract registry (Batch 6). Read-only; data derived from the

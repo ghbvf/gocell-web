@@ -20,10 +20,24 @@ describe('router layout fork', () => {
     expect(m.matched).toHaveLength(1)
   })
 
-  it('renders / nested under the shell layout', () => {
+  it('renders / nested under the shell layout, behind the auth gate (Batch 7 Health overview)', () => {
     const m = router.resolve('/')
     expect(m.name).toBe('home')
     expect(m.matched.length).toBeGreaterThanOrEqual(2)
+    expect(m.meta.requiresAuth).toBe(true)
+    // No PDP resource — operational dashboard accessible to any authenticated admin.
+    expect(m.meta.requiredAction).toBeUndefined()
+    expect(m.meta.requiredResource).toBeUndefined()
+  })
+
+  it('renders /observe nested under the shell, auth-gated only (Batch 7 Observability)', () => {
+    const m = router.resolve('/observe')
+    expect(m.name).toBe('observe')
+    expect(m.matched.length).toBeGreaterThanOrEqual(2)
+    expect(m.meta.requiresAuth).toBe(true)
+    // No PDP resource — observe view is accessible to any authenticated admin.
+    expect(m.meta.requiredAction).toBeUndefined()
+    expect(m.meta.requiredResource).toBeUndefined()
   })
 
   it('keeps auth routes public', () => {
