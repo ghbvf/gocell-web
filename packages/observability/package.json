@@ -6,6 +6,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./stores": "./src/stores/index.ts",
+    "./composables": "./src/composables/index.ts",
     "./views/landing": "./src/views/LandingView.vue",
     "./views/observe": "./src/views/ObserveView.vue"
   },

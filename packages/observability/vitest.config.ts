@@ -15,6 +15,7 @@ export default defineConfig({
         // Barrel re-export files — no logic to test, coverage from consumers
         'src/index.ts',
         'src/stores/index.ts',
+        'src/composables/index.ts',
       ],
       thresholds: {
         lines: 80,
