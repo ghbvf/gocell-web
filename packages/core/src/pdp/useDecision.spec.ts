@@ -5,6 +5,10 @@ import type { PdpClient } from './types'
 import { PDP_INJECTION_KEY } from './types'
 import { useDecision, _resetWarnFlagForTesting } from './useDecision'
 
+// useDecision consumes only can(); decide() is required by the PdpClient type
+// but unused in these tests, so a constant stub keeps the literals type-complete.
+const decide: PdpClient['decide'] = () => Promise.resolve({ effect: 'allow', reasonCode: '' })
+
 /**
  * Vue's provide/inject is parent→child only.
  * We need Outer (provides) → Inner (injects via useDecision).
@@ -103,6 +107,7 @@ describe('useDecision', () => {
     it('returns true when provider.can() returns a computed true', () => {
       const client: PdpClient = {
         can: () => computed(() => true),
+        decide,
       }
       const result = createDecisionTest(
         client,
@@ -117,6 +122,7 @@ describe('useDecision', () => {
     it('returns false when provider.can() returns a computed false', () => {
       const client: PdpClient = {
         can: () => computed(() => false),
+        decide,
       }
       const result = createDecisionTest(
         client,
@@ -132,6 +138,7 @@ describe('useDecision', () => {
       const action = ref('denied-action')
       const client: PdpClient = {
         can: (a) => computed(() => a === 'allowed-action'),
+        decide,
       }
 
       let result: ReturnType<typeof useDecision> | undefined
@@ -167,6 +174,7 @@ describe('useDecision', () => {
       const resource = ref('res:denied')
       const client: PdpClient = {
         can: (_action, res) => computed(() => res === 'res:allowed'),
+        decide,
       }
 
       let result: ReturnType<typeof useDecision> | undefined
@@ -201,6 +209,7 @@ describe('useDecision', () => {
     it('does not emit our warn when provider is present', () => {
       const client: PdpClient = {
         can: () => computed(() => true),
+        decide,
       }
       createDecisionTest(client, () => 'read')
       const ourWarns = getOurWarns(warnSpy)
