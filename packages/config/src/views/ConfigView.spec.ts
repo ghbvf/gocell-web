@@ -37,7 +37,10 @@ vi.mock('../components/ConfirmDialog.vue', () => ({
   },
 }))
 
-const pdp = (allowed: boolean): PdpClient => ({ can: () => computed(() => allowed) })
+const pdp = (allowed: boolean): PdpClient => ({
+  can: () => computed(() => allowed),
+  decide: () => Promise.resolve({ effect: allowed ? 'allow' : 'deny', reasonCode: '' }),
+})
 
 const mkEntry = (over: Partial<ConfigEntry> = {}): ConfigEntry => ({
   id: 'cfg-1',

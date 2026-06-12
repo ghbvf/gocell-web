@@ -27,7 +27,10 @@ vi.mock('../components/ConfirmDialog.vue', () => ({
   },
 }))
 
-const pdp = (allowed: boolean): PdpClient => ({ can: () => computed(() => allowed) })
+const pdp = (allowed: boolean): PdpClient => ({
+  can: () => computed(() => allowed),
+  decide: () => Promise.resolve({ effect: allowed ? 'allow' : 'deny', reasonCode: '' }),
+})
 
 const mkFlag = (over: Partial<FeatureFlag> = {}): FeatureFlag => ({
   id: 'flag-1',
