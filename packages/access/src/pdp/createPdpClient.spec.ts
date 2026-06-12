@@ -1,187 +1,225 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
-
-vi.mock('@gocell/request', () => ({
-  http: {
-    post: vi.fn(),
-  },
-}))
-
-import { http } from '@gocell/request'
+import type { Decision } from '@gocell/core'
 import { createPdpClient } from './createPdpClient'
+import type { DecideFn } from './mockDecide'
 
-const mockHttp = http as unknown as { post: ReturnType<typeof vi.fn> }
+const ALLOW: Decision = { effect: 'allow', reasonCode: '' }
+const DENY: Decision = { effect: 'deny', reasonCode: 'role-missing' }
+const TTL_MS = 5 * 60 * 1000
 
-describe('createPdpClient (fail-closed PDP stub)', () => {
+/** A vi.fn typed as a DecideFn so call assertions are available. */
+function makeDecideFn(): ReturnType<typeof vi.fn> & DecideFn {
+  return vi.fn() as unknown as ReturnType<typeof vi.fn> & DecideFn
+}
+
+describe('createPdpClient (mock-first PDP)', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
     vi.useRealTimers()
   })
-
   afterEach(() => {
     vi.useRealTimers()
   })
 
-  it('can() returns false initially (fail-closed during pending)', () => {
-    // Don't resolve the mock — keep it pending
-    mockHttp.post.mockReturnValue(new Promise(() => {}))
-    const client = createPdpClient()
-    const result = client.can('read', 'cells')
-    expect(result.value).toBe(false)
-  })
+  describe('can() — reactive boolean (fail-closed)', () => {
+    it('returns false initially (fail-closed during pending)', () => {
+      const decide = makeDecideFn()
+      decide.mockReturnValue(new Promise(() => {})) // never resolves
+      const client = createPdpClient({ decide })
+      expect(client.can('read', 'cells').value).toBe(false)
+    })
 
-  it('can() becomes true when backend responds allowed=true', async () => {
-    mockHttp.post.mockResolvedValueOnce({ data: { data: { allowed: true } } })
-    const client = createPdpClient()
-    const result = client.can('read', 'cells')
+    it('becomes true when the decision is allow', async () => {
+      const decide = makeDecideFn()
+      decide.mockResolvedValueOnce(ALLOW)
+      const client = createPdpClient({ decide })
+      const ref = client.can('read', 'cells')
 
-    expect(result.value).toBe(false) // initially false
+      expect(ref.value).toBe(false) // initially pending → false
+      await flushPromises()
+      expect(ref.value).toBe(true)
+      expect(decide).toHaveBeenCalledWith({ action: 'read', resource: 'cells' })
+    })
 
-    await flushPromises()
+    it('stays false when the decision is deny (fail-closed)', async () => {
+      const decide = makeDecideFn()
+      decide.mockResolvedValueOnce(DENY)
+      const client = createPdpClient({ decide })
+      const ref = client.can('delete', 'cells')
 
-    expect(result.value).toBe(true)
-    expect(mockHttp.post).toHaveBeenCalledWith('/api/v1/access/decide', {
-      action: 'read',
-      resource: 'cells',
+      await flushPromises()
+      expect(ref.value).toBe(false)
+    })
+
+    it('stays false when the decision source rejects (fail-closed on error)', async () => {
+      const decide = makeDecideFn()
+      decide.mockRejectedValueOnce(new Error('boom'))
+      const client = createPdpClient({ decide })
+      const ref = client.can('write', 'policy')
+
+      await flushPromises()
+      expect(ref.value).toBe(false)
+    })
+
+    it('without resource passes resource undefined to the decision source', async () => {
+      const decide = makeDecideFn()
+      decide.mockResolvedValueOnce(ALLOW)
+      const client = createPdpClient({ decide })
+      const ref = client.can('list')
+      void ref.value
+
+      await flushPromises()
+      expect(ref.value).toBe(true)
+      expect(decide).toHaveBeenCalledWith({ action: 'list', resource: undefined })
     })
   })
 
-  it('can() stays false when backend responds allowed=false (fail-closed)', async () => {
-    mockHttp.post.mockResolvedValueOnce({ data: { data: { allowed: false } } })
-    const client = createPdpClient()
-    const result = client.can('delete', 'cells')
+  describe('caching', () => {
+    it('same key second can() within TTL does not re-decide; returns same ComputedRef', async () => {
+      const decide = makeDecideFn()
+      decide.mockResolvedValue(ALLOW)
+      const client = createPdpClient({ decide })
 
-    await flushPromises()
+      const ref1 = client.can('read', 'cells')
+      expect(ref1.value).toBe(false)
+      await flushPromises()
+      expect(ref1.value).toBe(true)
 
-    expect(result.value).toBe(false)
-  })
-
-  it('can() stays false when http.post rejects (fail-closed on error)', async () => {
-    mockHttp.post.mockRejectedValueOnce(new Error('network error'))
-    const client = createPdpClient()
-    const result = client.can('write', 'policies')
-
-    await flushPromises()
-
-    expect(result.value).toBe(false)
-  })
-
-  it('can() stays false when backend returns 404-like rejection (fail-closed)', async () => {
-    // Simulate a 404 response as a rejection
-    mockHttp.post.mockRejectedValueOnce({ response: { status: 404 } })
-    const client = createPdpClient()
-    const result = client.can('admin', 'system')
-
-    await flushPromises()
-
-    expect(result.value).toBe(false)
-  })
-
-  it('same key second can() within TTL does NOT make a second http.post call', async () => {
-    mockHttp.post.mockResolvedValue({ data: { data: { allowed: true } } })
-    const client = createPdpClient()
-
-    const result1 = client.can('read', 'cells')
-    expect(result1.value).toBe(false) // read .value to trigger getter + fetch
-    await flushPromises()
-    expect(result1.value).toBe(true) // cache populated
-
-    // Second can() with same key — returns the same ComputedRef instance
-    const result2 = client.can('read', 'cells')
-    expect(result2).toBe(result1) // same ComputedRef instance (identity check)
-    expect(result2.value).toBe(true) // immediately true from cache
-    await flushPromises()
-
-    expect(result2.value).toBe(true)
-    // Only ONE network request despite two can() calls
-    expect(mockHttp.post).toHaveBeenCalledTimes(1)
-  })
-
-  it('different keys each trigger a separate http.post call', async () => {
-    mockHttp.post.mockResolvedValue({ data: { data: { allowed: true } } })
-    const client = createPdpClient()
-
-    const result1 = client.can('read', 'cells')
-    void result1.value // trigger getter
-    await flushPromises()
-
-    const result2 = client.can('write', 'policies')
-    void result2.value // trigger getter
-    await flushPromises()
-
-    expect(result1.value).toBe(true)
-    expect(result2.value).toBe(true)
-    expect(mockHttp.post).toHaveBeenCalledTimes(2)
-  })
-
-  it('concurrent in-flight: two can().value calls while fetch pending only fire one http.post', async () => {
-    // Create a controlled promise to keep fetch in-flight
-    let resolveDecide!: (value: { data: { data: { allowed: boolean } } }) => void
-    const decidePending = new Promise<{ data: { data: { allowed: boolean } } }>((resolve) => {
-      resolveDecide = resolve
+      const ref2 = client.can('read', 'cells')
+      expect(ref2).toBe(ref1) // identity: same ComputedRef instance
+      expect(ref2.value).toBe(true)
+      await flushPromises()
+      expect(decide).toHaveBeenCalledTimes(1)
     })
-    mockHttp.post.mockReturnValueOnce(decidePending)
 
-    const client = createPdpClient()
+    it('different keys each trigger a separate decision', async () => {
+      const decide = makeDecideFn()
+      decide.mockResolvedValue(ALLOW)
+      const client = createPdpClient({ decide })
 
-    // Both calls while fetch is pending
-    const ref1 = client.can('read', 'cells')
-    const ref2 = client.can('read', 'cells')
+      void client.can('read', 'cells').value
+      await flushPromises()
+      void client.can('write', 'policy').value
+      await flushPromises()
 
-    // Both should be the same ref instance (ComputedRef cache)
-    expect(ref1).toBe(ref2)
-    // Both false while in-flight
-    expect(ref1.value).toBe(false)
-    expect(ref2.value).toBe(false)
+      expect(decide).toHaveBeenCalledTimes(2)
+    })
 
-    // Only one http.post fired
-    expect(mockHttp.post).toHaveBeenCalledTimes(1)
+    it('TTL expiry triggers a fresh decision after 5 minutes', async () => {
+      vi.useFakeTimers()
+      const decide = makeDecideFn()
+      decide.mockResolvedValue(ALLOW)
+      const client = createPdpClient({ decide })
 
-    // Resolve the pending fetch
-    resolveDecide({ data: { data: { allowed: true } } })
-    await flushPromises()
+      const ref = client.can('read', 'cells')
+      void ref.value // pending → fires decision
+      await vi.runAllTimersAsync()
+      expect(decide).toHaveBeenCalledTimes(1)
 
-    expect(ref1.value).toBe(true)
-    // Still only one http.post call total
-    expect(mockHttp.post).toHaveBeenCalledTimes(1)
+      // Advance past TTL without reading in between, so the computed stays dirty
+      // (invalidated by the resolve write) and re-runs its getter on next read.
+      vi.advanceTimersByTime(TTL_MS + 1)
+      void ref.value // re-run getter → expired → fresh decision
+      await vi.runAllTimersAsync()
+
+      expect(decide).toHaveBeenCalledTimes(2)
+      expect(ref.value).toBe(true)
+    })
   })
 
-  it('TTL expiry causes a new http.post call after 5 minutes', async () => {
-    vi.useFakeTimers()
-    mockHttp.post.mockResolvedValue({ data: { data: { allowed: true } } })
-    const client = createPdpClient()
+  describe('single-flight', () => {
+    it('two concurrent decide() calls share one in-flight decision', async () => {
+      let resolve!: (d: Decision) => void
+      const pending = new Promise<Decision>((r) => {
+        resolve = r
+      })
+      const decide = makeDecideFn()
+      decide.mockReturnValueOnce(pending)
+      const client = createPdpClient({ decide })
 
-    const result = client.can('read', 'cells')
-    void result.value // trigger getter → fires fetchDecision
-    // Flush pending microtasks with fake timers active
-    await vi.runAllTimersAsync()
+      const p1 = client.decide('read', 'cells')
+      const p2 = client.decide('read', 'cells')
+      expect(decide).toHaveBeenCalledTimes(1)
 
-    expect(mockHttp.post).toHaveBeenCalledTimes(1)
-
-    // Advance past 5-minute TTL
-    vi.advanceTimersByTime(5 * 60 * 1000 + 1)
-
-    // Re-read the same computed: TTL expired → should trigger new request
-    void result.value
-    await vi.runAllTimersAsync()
-
-    expect(mockHttp.post).toHaveBeenCalledTimes(2)
-    // After re-fetch, the result is true again
-    expect(result.value).toBe(true)
+      resolve(ALLOW)
+      expect(await p1).toEqual(ALLOW)
+      expect(await p2).toEqual(ALLOW)
+      expect(decide).toHaveBeenCalledTimes(1)
+    })
   })
 
-  it('can() without resource argument calls http.post with undefined resource', async () => {
-    mockHttp.post.mockResolvedValueOnce({ data: { data: { allowed: true } } })
-    const client = createPdpClient()
-    const result = client.can('list')
-    void result.value // trigger getter
+  describe('decide() — async structured decision', () => {
+    it('resolves to the structured allow decision (awaits, never pending)', async () => {
+      const decide = makeDecideFn()
+      decide.mockResolvedValueOnce(ALLOW)
+      const client = createPdpClient({ decide })
+      expect(await client.decide('read', 'cells')).toEqual(ALLOW)
+    })
 
-    await flushPromises()
+    it('resolves to the structured deny decision with reasonCode', async () => {
+      const decide = makeDecideFn()
+      decide.mockResolvedValueOnce(DENY)
+      const client = createPdpClient({ decide })
+      expect(await client.decide('delete', 'policy')).toEqual({
+        effect: 'deny',
+        reasonCode: 'role-missing',
+      })
+    })
 
-    expect(result.value).toBe(true)
-    expect(mockHttp.post).toHaveBeenCalledWith('/api/v1/access/decide', {
-      action: 'list',
-      resource: undefined,
+    it('maps a decision-source error to deny with reasonCode "error"', async () => {
+      const decide = makeDecideFn()
+      decide.mockRejectedValueOnce(new Error('network'))
+      const client = createPdpClient({ decide })
+      expect(await client.decide('read', 'cells')).toEqual({
+        effect: 'deny',
+        reasonCode: 'error',
+      })
+    })
+  })
+
+  describe('shared cache between can() and decide()', () => {
+    it('decide() populates the cache so a later can() needs no extra decision', async () => {
+      const decide = makeDecideFn()
+      decide.mockResolvedValue(ALLOW)
+      const client = createPdpClient({ decide })
+
+      await client.decide('read', 'cells')
+      expect(decide).toHaveBeenCalledTimes(1)
+
+      const ref = client.can('read', 'cells')
+      expect(ref.value).toBe(true) // immediately from cache, no pending flicker
+      await flushPromises()
+      expect(decide).toHaveBeenCalledTimes(1)
+    })
+
+    it('can() populates the cache so a later decide() returns it without re-deciding', async () => {
+      const decide = makeDecideFn()
+      decide.mockResolvedValue(DENY)
+      const client = createPdpClient({ decide })
+
+      const ref = client.can('write', 'config')
+      expect(ref.value).toBe(false) // pending
+      await flushPromises()
+      expect(ref.value).toBe(false) // deny → false
+      expect(decide).toHaveBeenCalledTimes(1)
+
+      expect(await client.decide('write', 'config')).toEqual({
+        effect: 'deny',
+        reasonCode: 'role-missing',
+      })
+      expect(decide).toHaveBeenCalledTimes(1) // served from cache
+    })
+  })
+
+  describe('default decision source (no options)', () => {
+    it('uses the admin mock → allow for any action/resource', async () => {
+      const client = createPdpClient()
+      expect((await client.decide('delete', 'config')).effect).toBe('allow')
+
+      const ref = client.can('read', 'identity')
+      expect(ref.value).toBe(false) // first .value read triggers the lazy fetch
+      await flushPromises()
+      expect(ref.value).toBe(true)
     })
   })
 })
