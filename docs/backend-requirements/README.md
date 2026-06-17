@@ -15,6 +15,7 @@
 | [BR-006](./BR-006-audit-hash-chain.md) | 审计行哈希链 + actor/result 元数据（`http.audit.list`） | 待评审 | 无（Batch 4 PR-13 已降级交付；解除后激活链校验） |
 | [BR-007](./BR-007-flag-variant.md) | Feature Flag variant 定义与取值（`http.config.flags.*`） | 待评审 | 无（Batch 4 PR-14 bool flag 已交付；variant 占位） |
 | [BR-008](./BR-008-config-version-history.md) | 配置项版本历史列表端点（`http.config.versions`） | 待评审 | 无（Batch 4 PR-14 rollback 手填版本已交付） |
+| [BR-009](./BR-009-tenant-in-session.md) | 会话响应暴露 `tenantId`（`http.auth.login`/`refresh`） | 待评审 | `/access/policies` 角色 assign/revoke（#66 前端已优雅降级，待透出后接通） |
 
 ## 状态约定
 
