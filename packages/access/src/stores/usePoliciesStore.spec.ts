@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
-import { usePoliciesStore } from './usePoliciesStore'
+import { usePoliciesStore, TenantUnavailableError } from './usePoliciesStore'
 import { useAuthStore } from './useAuthStore'
 import type { Role } from '../api/roles'
 
@@ -15,9 +15,6 @@ vi.mock('../api/roles', () => ({
 // Import mocked functions after vi.mock hoisting
 import { listUserRoles, assignRole, revokeRole } from '../api/roles'
 
-const TENANT_ID = '00000000-0000-0000-0000-000000000001'
-const ACCESS_TOKEN_WITH_TENANT = `e30.eyJ0ZW5hbnRfaWQiOiIwMDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDEifQ.sig`
-
 const mkRole = (over: Partial<Role> = {}): Role => ({
   id: 'role-1',
   name: 'admin',
@@ -28,15 +25,10 @@ const mkRole = (over: Partial<Role> = {}): Role => ({
 describe('usePoliciesStore', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
-    useAuthStore().setSession({
-      accessToken: ACCESS_TOKEN_WITH_TENANT,
-      refreshToken: 'refresh-token',
-      expiresAt: '2026-06-01T00:00:00Z',
-      sessionId: 'sess-1',
-      userId: 'operator-1',
-      passwordResetRequired: false,
-    })
     vi.resetAllMocks()
+    // Default: a tenant is in session so mutations reach the API. The
+    // tenant-missing guard is exercised explicitly below by setting it null.
+    useAuthStore().tenantId = 'tenant-1'
   })
 
   it('starts with empty state', () => {
@@ -168,7 +160,7 @@ describe('usePoliciesStore', () => {
       await store.assign('role-1')
 
       expect(assignRole).toHaveBeenCalledWith({
-        tenantId: TENANT_ID,
+        tenantId: 'tenant-1',
         userId: 'u-1',
         roleId: 'role-1',
       })
@@ -176,12 +168,12 @@ describe('usePoliciesStore', () => {
       expect(store.roles).toHaveLength(1)
     })
 
-    it('fails before mutation when the session has no tenant context', async () => {
-      useAuthStore().clearSession()
+    it('throws TenantUnavailableError and does NOT call the API when no tenant in session', async () => {
+      useAuthStore().tenantId = null
       const store = usePoliciesStore()
       store.userId = 'u-1'
 
-      await expect(store.assign('role-1')).rejects.toThrow('Tenant context is required')
+      await expect(store.assign('role-1')).rejects.toBeInstanceOf(TenantUnavailableError)
       expect(assignRole).not.toHaveBeenCalled()
       expect(store.mutating).toBe(false)
     })
@@ -253,7 +245,7 @@ describe('usePoliciesStore', () => {
       // assignRole should have been called exactly once
       expect(assignRole).toHaveBeenCalledTimes(1)
       expect(assignRole).toHaveBeenCalledWith({
-        tenantId: TENANT_ID,
+        tenantId: 'tenant-1',
         userId: 'u-1',
         roleId: 'role-1',
       })
@@ -270,11 +262,21 @@ describe('usePoliciesStore', () => {
       await store.revoke('role-1')
 
       expect(revokeRole).toHaveBeenCalledWith({
-        tenantId: TENANT_ID,
+        tenantId: 'tenant-1',
         userId: 'u-1',
         roleId: 'role-1',
       })
       expect(listUserRoles).toHaveBeenCalledWith('u-1')
+    })
+
+    it('throws TenantUnavailableError and does NOT call the API when no tenant in session', async () => {
+      useAuthStore().tenantId = null
+      const store = usePoliciesStore()
+      store.userId = 'u-1'
+
+      await expect(store.revoke('role-1')).rejects.toBeInstanceOf(TenantUnavailableError)
+      expect(revokeRole).not.toHaveBeenCalled()
+      expect(store.mutating).toBe(false)
     })
 
     it('re-throws on failure and does NOT set errorKey', async () => {
@@ -323,7 +325,7 @@ describe('usePoliciesStore', () => {
 
       expect(revokeRole).toHaveBeenCalledTimes(1)
       expect(revokeRole).toHaveBeenCalledWith({
-        tenantId: TENANT_ID,
+        tenantId: 'tenant-1',
         userId: 'u-1',
         roleId: 'role-1',
       })

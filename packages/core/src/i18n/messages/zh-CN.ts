@@ -413,6 +413,7 @@ const zhCN = {
       errors: {
         assignFailed: '分配角色失败',
         revokeFailed: '撤销角色失败',
+        tenantUnavailable: '当前会话缺少租户上下文，暂无法变更角色',
       },
     },
     comingSoon: {
@@ -485,6 +486,8 @@ const zhCN = {
         eventType: '事件类型',
         actor: '操作者',
         target: '目标',
+        tenantId: '租户',
+        scope: '范围',
         correlationId: '关联 ID',
         timestamp: '时间',
         payload: 'Payload（已签名）',

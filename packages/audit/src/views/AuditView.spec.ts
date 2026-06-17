@@ -190,6 +190,24 @@ describe('AuditView · detail panel', () => {
     })
     expect(wrapper.text()).toContain('audit.log.chain.unavailable')
   })
+
+  it('detail panel renders tenantId + scope rows when present', () => {
+    const { wrapper } = mountView({
+      entries: [mkEntry({ tenantId: 'tenant-abc', scope: 'system' })],
+    })
+    const detail = wrapper.find('[data-testid="audit-detail"]')
+    expect(detail.text()).toContain('audit.log.detail.tenantId')
+    expect(detail.text()).toContain('tenant-abc')
+    expect(detail.text()).toContain('audit.log.detail.scope')
+    expect(detail.text()).toContain('system')
+  })
+
+  it('detail panel omits tenantId + scope rows when absent (empty/system rows)', () => {
+    const { wrapper } = mountView({ entries: [mkEntry()] })
+    const detail = wrapper.find('[data-testid="audit-detail"]')
+    expect(detail.text()).not.toContain('audit.log.detail.tenantId')
+    expect(detail.text()).not.toContain('audit.log.detail.scope')
+  })
 })
 
 describe('AuditView · quick filter chips', () => {

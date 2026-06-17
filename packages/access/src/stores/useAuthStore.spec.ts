@@ -86,6 +86,14 @@ describe('useAuthStore', () => {
     expect(store.passwordResetRequired).toBe(false)
   })
 
+  it('clearSession resets tenantId to null', () => {
+    const store = useAuthStore()
+    // Simulate a future session that carries a tenant (BR-009).
+    store.tenantId = 'tenant-abc'
+    store.clearSession()
+    expect(store.tenantId).toBeNull()
+  })
+
   // Security: access token must NEVER touch localStorage
   it('localStorage is always empty after setSession (token not persisted)', () => {
     const store = useAuthStore()

@@ -5,6 +5,21 @@ import { listUserRoles, assignRole, revokeRole, type Role } from '../api/roles'
 import { useAuthStore } from './useAuthStore'
 
 /**
+ * Thrown by assign / revoke when no tenant is in session, so the backend's
+ * now-required `tenantId` cannot be supplied. The caller catches it to show a
+ * dedicated inline message instead of firing a request that would 400. The
+ * tenant becomes available once the backend exposes it in the session contract
+ * (BR-009); until then role mutations degrade gracefully rather than send a
+ * fabricated value.
+ */
+export class TenantUnavailableError extends Error {
+  constructor() {
+    super('No tenant in session — role mutation unavailable')
+    this.name = 'TenantUnavailableError'
+  }
+}
+
+/**
  * access.policies — per-user role-binding state (Batch 3 RBAC slice).
  *
  * Owns the role list for a selected user, plus assign / revoke mutations
@@ -17,6 +32,9 @@ import { useAuthStore } from './useAuthStore'
  */
 
 export const usePoliciesStore = defineStore('access.policies', () => {
+  // accesscore role mutations are tenant-scoped; the tenant comes from the
+  // session (auth store). See assign / revoke + TenantUnavailableError.
+  const auth = useAuthStore()
   // Generation counter lives inside the factory so it resets when a fresh
   // Pinia recreates the store (avoids cross-test coupling, P-F2).
   let generation = 0
@@ -26,14 +44,6 @@ export const usePoliciesStore = defineStore('access.policies', () => {
   const loading = ref(false)
   const errorKey = ref<string | null>(null)
   const mutating = ref(false)
-
-  function requireTenantId(): string {
-    const tenantId = useAuthStore().tenantId
-    if (tenantId === null) {
-      throw new Error('Tenant context is required for role mutations')
-    }
-    return tenantId
-  }
 
   // ─── read actions ───────────────────────────────────────────────────────
 
@@ -71,9 +81,11 @@ export const usePoliciesStore = defineStore('access.policies', () => {
    */
   async function assign(roleId: string): Promise<void> {
     if (mutating.value) return
+    const tenantId = auth.tenantId
+    if (tenantId === null) throw new TenantUnavailableError()
     mutating.value = true
     try {
-      await assignRole({ tenantId: requireTenantId(), userId: userId.value, roleId })
+      await assignRole({ tenantId, userId: userId.value, roleId })
       await fetchRoles(userId.value)
     } finally {
       mutating.value = false
@@ -87,9 +99,11 @@ export const usePoliciesStore = defineStore('access.policies', () => {
    */
   async function revoke(roleId: string): Promise<void> {
     if (mutating.value) return
+    const tenantId = auth.tenantId
+    if (tenantId === null) throw new TenantUnavailableError()
     mutating.value = true
     try {
-      await revokeRole({ tenantId: requireTenantId(), userId: userId.value, roleId })
+      await revokeRole({ tenantId, userId: userId.value, roleId })
       await fetchRoles(userId.value)
     } finally {
       mutating.value = false

@@ -13,10 +13,10 @@ describe('useCellsStore', () => {
     expect(store.selectedId).toBeNull()
   })
 
-  it('cells returns all manifest cells', () => {
+  it('cells returns all manifest cells (length 4)', () => {
     const store = useCellsStore()
     expect(store.cells).toBe(CELL_MANIFEST.cells)
-    expect(store.cells.length).toBe(CELL_MANIFEST.cells.length)
+    expect(store.cells.length).toBe(4)
   })
 
   it('byId returns a known cell entry', () => {

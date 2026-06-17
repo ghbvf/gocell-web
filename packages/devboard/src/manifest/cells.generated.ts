@@ -34,11 +34,18 @@ export const CELL_MANIFEST: CellManifest = {
           "belongsToCell": "accesscore",
           "consistencyLevel": "L0",
           "lifecycle": "asset",
-          "contractUsages": [],
+          "contractUsages": [
+            {
+              "contract": "http.auth.decide.v1",
+              "role": "serve"
+            }
+          ],
           "unitTests": [
             "unit.authorizationdecide.service"
           ],
-          "contractTests": [],
+          "contractTests": [
+            "contract.http.auth.decide.v1.serve"
+          ],
           "waivers": []
         },
         {
@@ -373,6 +380,25 @@ export const CELL_MANIFEST: CellManifest = {
           "waivers": []
         },
         {
+          "id": "sessionverifyrpc",
+          "belongsToCell": "accesscore",
+          "consistencyLevel": "L0",
+          "lifecycle": "experimental",
+          "contractUsages": [
+            {
+              "contract": "grpc.auth.session.verify.v1",
+              "role": "serve"
+            }
+          ],
+          "unitTests": [
+            "unit.sessionverifyrpc.server"
+          ],
+          "contractTests": [
+            "contract.grpc.auth.session.verify.v1.serve"
+          ],
+          "waivers": []
+        },
+        {
           "id": "setup",
           "belongsToCell": "accesscore",
           "consistencyLevel": "L2",
@@ -451,6 +477,14 @@ export const CELL_MANIFEST: CellManifest = {
         {
           "contract": "event.user.updated.v1",
           "role": "publish"
+        },
+        {
+          "contract": "grpc.auth.session.verify.v1",
+          "role": "serve"
+        },
+        {
+          "contract": "http.auth.decide.v1",
+          "role": "serve"
         },
         {
           "contract": "http.auth.login.v1",
@@ -765,13 +799,18 @@ export const CELL_MANIFEST: CellManifest = {
             {
               "contract": "http.audit.list.v1",
               "role": "serve"
+            },
+            {
+              "contract": "http.audit.get.v1",
+              "role": "serve"
             }
           ],
           "unitTests": [
             "unit.auditquery.service"
           ],
           "contractTests": [
-            "contract.http.audit.list.v1.serve"
+            "contract.http.audit.list.v1.serve",
+            "contract.http.audit.get.v1.serve"
           ],
           "waivers": []
         }
@@ -780,6 +819,10 @@ export const CELL_MANIFEST: CellManifest = {
         {
           "contract": "event.audit.appended.v1",
           "role": "publish"
+        },
+        {
+          "contract": "http.audit.get.v1",
+          "role": "serve"
         },
         {
           "contract": "http.audit.list.v1",

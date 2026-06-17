@@ -3,8 +3,6 @@ import MockAdapter from 'axios-mock-adapter'
 import { http } from '@gocell/request'
 import { listUserRoles, assignRole, revokeRole, ROLES_URL } from './roles'
 
-const TENANT_ID = '00000000-0000-0000-0000-000000000001'
-
 describe('roles api · listUserRoles', () => {
   let mock: MockAdapter
 
@@ -53,7 +51,7 @@ describe('roles api · assignRole', () => {
   })
 
   it('POSTs to /api/v1/access/roles/assign with the request body', async () => {
-    const body = { tenantId: TENANT_ID, userId: 'u-1', roleId: 'role-1' }
+    const body = { tenantId: 'tenant-1', userId: 'u-1', roleId: 'role-1' }
     mock.onPost(`${ROLES_URL}/assign`).reply(200, {
       data: { userId: 'u-1', roleId: 'role-1', assigned: true },
     })
@@ -66,7 +64,7 @@ describe('roles api · assignRole', () => {
   it('rejects and propagates when http rejects', async () => {
     mock.onPost(`${ROLES_URL}/assign`).networkError()
     await expect(
-      assignRole({ tenantId: TENANT_ID, userId: 'u-1', roleId: 'role-1' }),
+      assignRole({ tenantId: 'tenant-1', userId: 'u-1', roleId: 'role-1' }),
     ).rejects.toThrow()
   })
 })
@@ -83,7 +81,7 @@ describe('roles api · revokeRole', () => {
   })
 
   it('POSTs to /api/v1/access/roles/revoke with the request body', async () => {
-    const body = { tenantId: TENANT_ID, userId: 'u-1', roleId: 'role-1' }
+    const body = { tenantId: 'tenant-1', userId: 'u-1', roleId: 'role-1' }
     mock.onPost(`${ROLES_URL}/revoke`).reply(200, {
       data: { userId: 'u-1', roleId: 'role-1', revoked: true },
     })
@@ -96,7 +94,7 @@ describe('roles api · revokeRole', () => {
   it('rejects and propagates when http rejects', async () => {
     mock.onPost(`${ROLES_URL}/revoke`).networkError()
     await expect(
-      revokeRole({ tenantId: TENANT_ID, userId: 'u-1', roleId: 'role-1' }),
+      revokeRole({ tenantId: 'tenant-1', userId: 'u-1', roleId: 'role-1' }),
     ).rejects.toThrow()
   })
 })

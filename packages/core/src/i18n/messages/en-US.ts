@@ -421,6 +421,7 @@ const enUS = {
       errors: {
         assignFailed: 'Failed to assign role',
         revokeFailed: 'Failed to revoke role',
+        tenantUnavailable: 'No tenant in the current session — role changes are unavailable',
       },
     },
     comingSoon: {
@@ -493,6 +494,8 @@ const enUS = {
         eventType: 'Event type',
         actor: 'Actor',
         target: 'Target',
+        tenantId: 'Tenant',
+        scope: 'Scope',
         correlationId: 'Correlation ID',
         timestamp: 'Timestamp',
         payload: 'Payload (signed)',

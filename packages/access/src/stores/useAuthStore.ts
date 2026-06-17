@@ -45,6 +45,10 @@ export const useAuthStore = defineStore('access.auth', () => {
   // ─── state (all in-memory, never persisted) ───────────────────────────────
   const user = ref<AuthUser | null>(null)
   const accessToken = ref<string | null>(null)
+  // Tenant the session belongs to — needed by tenant-scoped mutations (e.g.
+  // accesscore role assign/revoke). Populated from the access token's `tenant_id`
+  // claim in setSession (extractTenantId); stays null when the claim is absent so
+  // consumers guard the null case rather than send a fabricated tenant (BR-009).
   const tenantId = ref<string | null>(null)
   // refreshToken is write-only from outside; only refresh() reads it internally
   const _refreshToken = ref<string | null>(null)
