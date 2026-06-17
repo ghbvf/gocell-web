@@ -487,6 +487,8 @@ const enUS = {
         eventType: 'Event type',
         actor: 'Actor',
         target: 'Target',
+        tenantId: 'Tenant',
+        scope: 'Scope',
         correlationId: 'Correlation ID',
         timestamp: 'Timestamp',
         payload: 'Payload (signed)',
