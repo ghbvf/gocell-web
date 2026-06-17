@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import type { Decision } from '@gocell/core'
 import { createPdpClient } from './createPdpClient'
-import type { DecideFn } from './mockDecide'
+import type { DecideFn } from './decideSource'
 
 const ALLOW: Decision = { effect: 'allow', reasonCode: '' }
 const DENY: Decision = { effect: 'deny', reasonCode: 'role-missing' }
@@ -214,14 +214,17 @@ describe('createPdpClient (mock-first PDP)', () => {
   })
 
   describe('default decision source (no options)', () => {
-    it('uses the admin mock → allow for any action/resource', async () => {
+    it('fails closed → deny for any action when no decide source is injected', async () => {
       const client = createPdpClient()
-      expect((await client.decide('delete', 'config')).effect).toBe('allow')
+      expect(await client.decide('read', 'identity')).toEqual({
+        effect: 'deny',
+        reasonCode: 'error',
+      })
 
       const ref = client.can('read', 'identity')
       expect(ref.value).toBe(false) // first .value read triggers the lazy fetch
       await flushPromises()
-      expect(ref.value).toBe(true)
+      expect(ref.value).toBe(false) // stays denied — never fail-open
     })
   })
 })

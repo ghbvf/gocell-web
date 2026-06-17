@@ -7,7 +7,7 @@ import { createPinia } from 'pinia'
 import App from './App.vue'
 import { router } from './router'
 import { createGocellI18n, PDP_INJECTION_KEY } from '@gocell/core'
-import { createPdpClient } from '@gocell/access'
+import { createPdpClient, createHttpDecide } from '@gocell/access'
 import { configureAxios, bootstrapSession } from './bootstrap'
 import { registerGuards } from './router/guards'
 import { useUiStore } from './stores/useUiStore'
@@ -24,8 +24,10 @@ configureAxios(router)
 app.use(createGocellI18n())
 app.use(router)
 
-// 4. PDP client provided for Can / useDecision in the whole app
-const pdpClient = createPdpClient()
+// 4. PDP client provided for Can / useDecision in the whole app.
+//    Assembly layer injects the real decision source (POST /api/v1/access/decide);
+//    createPdpClient keeps the cache / TTL / single-flight / fail-closed wrapper.
+const pdpClient = createPdpClient({ decide: createHttpDecide() })
 app.provide(PDP_INJECTION_KEY, pdpClient)
 
 // 5. Route guards (three-stage: first-run → auth → PDP). PDP deny → push the

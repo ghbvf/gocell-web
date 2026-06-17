@@ -2,13 +2,13 @@
 
 > 对应后端 cell：`cells/accesscore`
 
-auth store（全内存 token）+ first-run / login 视图 + Identities 列表 + PDP client（fail-closed stub）的实现包。
+auth store（全内存 token）+ first-run / login 视图 + Identities 列表 + PDP client（接真实后端 `/api/v1/access/decide`）的实现包。
 
 ## 对外 exports
 
 | 入口 | 内容 |
 |---|---|
-| `.` (`src/index.ts`) | `useAuthStore`、`AuthUser`（type）、`createPdpClient` |
+| `.` (`src/index.ts`) | `useAuthStore`、`AuthUser`（type）、`createPdpClient`、`createHttpDecide` |
 | `./stores` (`src/stores/index.ts`) | `useAuthStore`、`AuthUser`（type）、`useIdentitiesStore`、`usePoliciesStore`、`Role`（type） |
 | `./views/login` (`src/views/LoginView.vue`) | `LoginView`（默认导出，`apps/web` 路由懒加载） |
 | `./views/first-run` (`src/views/FirstRunSetupView.vue`) | `FirstRunSetupView`（默认导出，`apps/web` 路由懒加载） |
@@ -69,14 +69,23 @@ contract 来源：`@gocell/contracts`（codegen 派生，只读）。
 - **store getter**：`filteredUsers`（按 username / email 子串过滤当前已加载页）
 - **store read actions**：`fetchList()`（首页，replace）、`loadMore()`（cursor 续页，append；无下页或在途时 no-op）；错误经 `toI18nKey` 落 `errorKey`，不抛中文字面量
 - **store mutation actions**：`create` / `edit` / `lock` / `unlock` / `remove` / `changePassword`。**与读操作相反，mutation 失败时 re-throw**（由触发的 modal 内联展示并保持打开）；成功后 `await fetchList()` 以列表为真相源（`changePassword` 不 refetch，行可见字段不变）。
-- **`IdentitiesView`**：`AppShell` 内子路由 `/access/identities`；hand-rolled 语义 `<table>` + status pill + 客户端筛选 + 禁用「服务账号」tab 占位（FR-030，`aria-disabled` + `tabindex="-1"`）。行操作（create/edit/change-password/lock/unlock/delete）开 modal，每个动作按钮挂 `<Can>`（fail-closed：PDP 不允许即隐藏）；路由另挂 `meta.requiredAction='read'` + `requiredResource='identity'`（guards.ts fail-closed，PDP 后端未接通前整页拒绝，见 BR-004）。
+- **`IdentitiesView`**：`AppShell` 内子路由 `/access/identities`；hand-rolled 语义 `<table>` + status pill + 客户端筛选 + 禁用「服务账号」tab 占位（FR-030，`aria-disabled` + `tabindex="-1"`）。行操作（create/edit/change-password/lock/unlock/delete）开 modal，每个动作按钮挂 `<Can>`（fail-closed：PDP 不允许即隐藏）；路由另挂 `meta.requiredAction='read'` + `requiredResource='identity'`（guards.ts 经 `decide()` 查后端真实权限 `user:read`，fail-closed，见 BR-004）。
 - **BR-005**：list 端点未交付，`api/identities` 用临时信封类型（见上「依赖的 contract」）。
 
-### `createPdpClient(): PdpClient`
+### `createPdpClient(options?): PdpClient`
 
-- 实现 `@gocell/core` 的 `PdpClient` interface（`PDP_INJECTION_KEY`）。
-- 在 `apps/web` 装配层 `app.provide(PDP_INJECTION_KEY, createPdpClient())` 注入（PR-06）。
-- **PDP stub 状态**：BR-004 §4.1（`/api/v1/access/decide`）后端未交付，端点 404 → fail-closed → 所有 `can()` 恒返回 `false`。缓存 + TTL（5min）+ fail-closed 逻辑已就绪；真实接通见 PR-12 / T306。
+- 实现 `@gocell/core` 的 `PdpClient` interface（`PDP_INJECTION_KEY`）；持有缓存 + TTL（5min）+ 单飞 + fail-closed，与决策源解耦。
+- 决策源经 `options.decide` 注入。装配层（`apps/web/main.ts`）注入生产源 `createHttpDecide()`；未注入时 fail-closed deny-all 兜底（不 fail-open）。
+
+  ```ts
+  app.provide(PDP_INJECTION_KEY, createPdpClient({ decide: createHttpDecide() }))
+  ```
+
+### `createHttpDecide(): DecideFn`
+
+- 生产决策源——接后端 `POST /api/v1/access/decide`（contract `http.auth.decide.v1`，BR-004 §4.1，gocell#1863 已上线）。
+- 把 UI (action, resource) 经 `pdp/permissionMap` 的 `toPermission` 翻译成后端注册的权限名（`<domain>:<verb>`，如 `identity` read → `user:read`、`cell` read → `system:read`），coarse 检查不传后端实例 `resource`；响应 `{ data: { allowed } }` 映射回 `Decision`。HTTP 失败（400 未注册 action / 403 / 503）→ 抛出 → client 链路 fail-closed deny。
+- 真相源：后端 `framework/pkg/authz/permission.go` 的 `allPermissions`。新增 `<Can>` 动作 / 路由 meta 资源时，无对应注册权限即 fail-closed 隐藏。
 
 ## 边界
 

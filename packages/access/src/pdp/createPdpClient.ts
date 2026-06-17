@@ -1,10 +1,10 @@
 /**
- * Mock-first PDP client（issue #50 / BR-004 §4.1）。
+ * PDP client（issue #50 / BR-004 §4.1）。
  *
- * 决策源默认走本地 mock（createMockDecide）——后端 `POST /api/v1/access/decide`
- * 尚未上线（gocell#1863）。按 epic #62「mock-first」原则前端不阻塞：client 全链路
- * 就绪——响应式缓存 + TTL 失效 + 单飞 + 异步结构化决策 + fail-closed。后端端点交付后
- * 仅需 `createPdpClient({ decide: realDecideFn })` 注入对真实端点的调用，其余不变。
+ * 决策源由装配层注入：生产用 `createHttpDecide()`（接后端 `POST /api/v1/access/decide`，
+ * gocell#1863 已上线），测试注入 fake。client 持有跨决策源不变的能力——响应式缓存 +
+ * TTL 失效 + 单飞 + 异步结构化决策 + fail-closed。未注入 `decide` 时用 deny-all 兜底
+ * （fail-closed，杜绝忘记装配导致的 fail-open）。
  *
  * 两条消费路径，共享同一缓存：
  * - `can()`：响应式 ComputedRef<boolean>，供 <Can> / useDecision；pending/error → false。
@@ -14,9 +14,15 @@
 import { computed, reactive } from 'vue'
 import type { ComputedRef } from 'vue'
 import type { Decision, PdpClient } from '@gocell/core'
-import { createMockDecide, type DecideFn } from './mockDecide'
+import type { DecideFn } from './decideSource'
 
 const TTL_MS = 5 * 60 * 1000 // 5 minutes
+
+/**
+ * Fail-closed 默认决策源：未注入 `decide` 时一律 deny，杜绝忘记装配（生产应注入
+ * `createHttpDecide()`）导致的 fail-open。reasonCode 'error' → 通用「权限校验失败」提示。
+ */
+const denyAllDecide: DecideFn = () => Promise.resolve({ effect: 'deny', reasonCode: 'error' })
 
 interface CacheEntry {
   decision: Decision
@@ -34,8 +40,8 @@ function cacheKey(action: string, resource: string | undefined): string {
 
 export interface PdpClientOptions {
   /**
-   * 决策源。默认 mock-first 解析器（createMockDecide()）。
-   * 后端 `POST /api/v1/access/decide` 上线后，注入对真实端点的调用即可替换（BR-004 §4.1）。
+   * 决策源。生产由装配层注入 `createHttpDecide()`（接后端 `/api/v1/access/decide`）。
+   * 省略时 fail-closed deny-all 兜底（不 fail-open）。测试可注入 fake（BR-004 §4.1）。
    */
   decide?: DecideFn
 }
@@ -52,7 +58,7 @@ export interface PdpClientOptions {
  * - ComputedRef 缓存：同 key 始终返回同一 ComputedRef 实例，避免重复 can() 调用堆积。
  */
 export function createPdpClient(options: PdpClientOptions = {}): PdpClient {
-  const decideFn: DecideFn = options.decide ?? createMockDecide()
+  const decideFn: DecideFn = options.decide ?? denyAllDecide
   const store = reactive<Cache>({ entries: {}, expiryTick: 0 })
   const inFlight = new Map<string, Promise<Decision>>()
   const computedCache = new Map<string, ComputedRef<boolean>>()
