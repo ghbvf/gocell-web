@@ -25,6 +25,7 @@ interface CacheEntry {
 
 interface Cache {
   entries: Record<string, CacheEntry>
+  expiryTick: number
 }
 
 function cacheKey(action: string, resource: string | undefined): string {
@@ -52,9 +53,10 @@ export interface PdpClientOptions {
  */
 export function createPdpClient(options: PdpClientOptions = {}): PdpClient {
   const decideFn: DecideFn = options.decide ?? createMockDecide()
-  const store = reactive<Cache>({ entries: {} })
+  const store = reactive<Cache>({ entries: {}, expiryTick: 0 })
   const inFlight = new Map<string, Promise<Decision>>()
   const computedCache = new Map<string, ComputedRef<boolean>>()
+  const expiryTimers = new Map<string, ReturnType<typeof setTimeout>>()
 
   function isExpired(entry: CacheEntry): boolean {
     return Date.now() - entry.fetchedAt > TTL_MS
@@ -67,6 +69,18 @@ export function createPdpClient(options: PdpClientOptions = {}): PdpClient {
     return entry.decision
   }
 
+  function scheduleExpiryTick(key: string, fetchedAt: number): void {
+    const existing = expiryTimers.get(key)
+    if (existing !== undefined) clearTimeout(existing)
+
+    const delay = Math.max(0, TTL_MS - (Date.now() - fetchedAt) + 1)
+    const timer = setTimeout(() => {
+      expiryTimers.delete(key)
+      store.expiryTick += 1
+    }, delay)
+    expiryTimers.set(key, timer)
+  }
+
   /** 触发（或复用在途的）一次决策取数，结果写回缓存。fail-closed on error。 */
   function fetchDecision(action: string, resource: string | undefined): Promise<Decision> {
     const key = cacheKey(action, resource)
@@ -76,12 +90,16 @@ export function createPdpClient(options: PdpClientOptions = {}): PdpClient {
     const promise = (async (): Promise<Decision> => {
       try {
         const decision = await decideFn({ action, resource })
-        store.entries[key] = { decision, fetchedAt: Date.now() }
+        const fetchedAt = Date.now()
+        store.entries[key] = { decision, fetchedAt }
+        scheduleExpiryTick(key, fetchedAt)
         return decision
       } catch {
         // 决策源异常 → fail-closed：缓存 deny 防止刷请求，TTL 到期后重试。
         const denied: Decision = { effect: 'deny', reasonCode: 'error' }
-        store.entries[key] = { decision: denied, fetchedAt: Date.now() }
+        const fetchedAt = Date.now()
+        store.entries[key] = { decision: denied, fetchedAt }
+        scheduleExpiryTick(key, fetchedAt)
         return denied
       } finally {
         inFlight.delete(key)
@@ -98,6 +116,7 @@ export function createPdpClient(options: PdpClientOptions = {}): PdpClient {
     if (cached) return cached
 
     const ref = computed(() => {
+      void store.expiryTick
       const fresh = freshDecision(action, resource)
       if (!fresh) {
         // 缺失 / 过期 → 触发异步取数（computed 必须同步，不 await）；fail-closed 返回 false。

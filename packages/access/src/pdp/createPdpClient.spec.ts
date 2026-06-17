@@ -113,14 +113,16 @@ describe('createPdpClient (mock-first PDP)', () => {
 
       const ref = client.can('read', 'cells')
       void ref.value // pending → fires decision
-      await vi.runAllTimersAsync()
+      await flushPromises()
       expect(decide).toHaveBeenCalledTimes(1)
 
-      // Advance past TTL without reading in between, so the computed stays dirty
-      // (invalidated by the resolve write) and re-runs its getter on next read.
-      vi.advanceTimersByTime(TTL_MS + 1)
-      void ref.value // re-run getter → expired → fresh decision
-      await vi.runAllTimersAsync()
+      expect(ref.value).toBe(true)
+
+      // Reading the resolved value makes Vue cache the computed. TTL still has
+      // to invalidate that cached value without relying on Date.now() reactivity.
+      await vi.advanceTimersByTimeAsync(TTL_MS + 1)
+      expect(ref.value).toBe(false) // expired → re-fetch pending, fail-closed
+      await flushPromises()
 
       expect(decide).toHaveBeenCalledTimes(2)
       expect(ref.value).toBe(true)

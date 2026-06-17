@@ -16,8 +16,7 @@ jobs:
         with:
           path: gocell-web
 
-      # 后端 cells 源（公开仓库 ghbvf/gocell），checkout 为 gocell-web 的同级目录
-      # （cell-manifest 默认读 ../gocell/cells）。
+      # 后端 corecells 源（公开仓库 ghbvf/gocell），checkout 为 gocell-web 的同级目录。
       - name: Checkout gocell (backend cells)
         uses: actions/checkout@v4
         with:
@@ -43,6 +42,8 @@ jobs:
       - name: Regenerate cell manifest
         run: pnpm cell-manifest
         working-directory: gocell-web
+        env:
+          GOCELL_CELLS_DIR: ${{ github.workspace }}/gocell/corecells
 
       # 守门：cell manifest 产物须与提交完全一致。
       # 使用 `git status --porcelain` 同时覆盖 修改/新增/删除 三种漂移。

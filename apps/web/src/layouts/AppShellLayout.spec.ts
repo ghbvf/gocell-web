@@ -50,6 +50,14 @@ describe('AppShellLayout — PDP deny notice', () => {
     expect(alert.text()).toBe('access.pdp.deny.role-missing')
   })
 
+  it('announces a deny reasonCode that was set before the layout mounted', async () => {
+    useUiStore().notifyAccessDenied('role-missing')
+    const wrapper = mountLayout()
+    await nextTick()
+
+    expect(wrapper.find('[role="alert"]').text()).toBe('access.pdp.deny.role-missing')
+  })
+
   it('falls back to generic deny text for an unknown reasonCode (no raw key leak)', async () => {
     const wrapper = mountLayout()
     useUiStore().notifyAccessDenied('policy-expired')
@@ -70,6 +78,23 @@ describe('AppShellLayout — PDP deny notice', () => {
     expect(store.accessDeniedReasonCode).toBeNull()
     await nextTick()
     expect(wrapper.find('[role="alert"]').exists()).toBe(false)
+  })
+
+  it('restarts dismissal for repeated deny notices with the same reasonCode', async () => {
+    vi.useFakeTimers()
+    const wrapper = mountLayout()
+    const store = useUiStore()
+    store.notifyAccessDenied('role-missing')
+    await nextTick()
+
+    vi.advanceTimersByTime(5000)
+    store.notifyAccessDenied('role-missing')
+    await nextTick()
+    vi.advanceTimersByTime(1000)
+    expect(wrapper.find('[role="alert"]').exists()).toBe(true)
+
+    vi.advanceTimersByTime(5000)
+    expect(store.accessDeniedReasonCode).toBeNull()
   })
 
   it('clears the notice when the reasonCode resets to null', async () => {

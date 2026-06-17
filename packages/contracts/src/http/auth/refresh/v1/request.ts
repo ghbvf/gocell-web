@@ -6,5 +6,5 @@
  */
 
 export interface HttpAuthRefreshV1Request {
-  refreshToken: string;
+  refreshToken?: string;
 }

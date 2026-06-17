@@ -15,6 +15,7 @@ export const useUiStore = defineStore('web.ui', () => {
   const sidebarCollapsed = ref(false)
   // PDP deny reasonCode pending announcement; null = nothing to announce.
   const accessDeniedReasonCode = ref<string | null>(null)
+  const accessDeniedNoticeSeq = ref(0)
 
   function openCommandPalette(): void {
     commandPaletteOpen.value = true
@@ -31,6 +32,7 @@ export const useUiStore = defineStore('web.ui', () => {
   /** Surface a PDP deny reason (Decision.reasonCode) for the live-region notice. */
   function notifyAccessDenied(reasonCode: string): void {
     accessDeniedReasonCode.value = reasonCode
+    accessDeniedNoticeSeq.value += 1
   }
 
   /** Clear the access-denied notice (after it has been announced / dismissed). */
@@ -42,6 +44,7 @@ export const useUiStore = defineStore('web.ui', () => {
     commandPaletteOpen,
     sidebarCollapsed,
     accessDeniedReasonCode,
+    accessDeniedNoticeSeq,
     openCommandPalette,
     closeCommandPalette,
     toggleSidebar,

@@ -39,8 +39,8 @@ function resetTimer(): void {
 }
 
 watch(
-  () => uiStore.accessDeniedReasonCode,
-  (reasonCode) => {
+  () => [uiStore.accessDeniedReasonCode, uiStore.accessDeniedNoticeSeq] as const,
+  ([reasonCode]) => {
     resetTimer()
     if (reasonCode === null) {
       denyText.value = ''
@@ -52,6 +52,7 @@ watch(
     denyText.value = te(key) ? t(key) : t('access.pdp.deny.error')
     dismissTimer = setTimeout(() => uiStore.clearAccessDenied(), DENY_DISMISS_MS)
   },
+  { immediate: true },
 )
 
 onBeforeUnmount(resetTimer)

@@ -563,7 +563,7 @@ describe('buildManifest', () => {
 
   it('generatedFrom is the static note (deterministic, no timestamp)', () => {
     const manifest = buildManifest([])
-    expect(manifest.generatedFrom).toBe('gocell/cells/**/{cell.yaml,slices/*/slice.yaml}')
+    expect(manifest.generatedFrom).toBe('gocell/corecells/**/{cell.yaml,slices/*/slice.yaml}')
   })
 
   it('[blind-spot] determinism: buildManifest twice on same input → deep-equal', () => {
@@ -657,7 +657,7 @@ describe('renderManifestModule', () => {
   it('produces a TS module string with CELL_MANIFEST export', () => {
     const manifest: CellManifest = {
       cells: [],
-      generatedFrom: 'gocell/cells/**/{cell.yaml,slices/*/slice.yaml}',
+      generatedFrom: 'gocell/corecells/**/{cell.yaml,slices/*/slice.yaml}',
     }
     const output = renderManifestModule(manifest)
     expect(output).toContain('/* eslint-disable */')

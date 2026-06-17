@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { toI18nKey } from '@gocell/request'
 import { listUserRoles, assignRole, revokeRole, type Role } from '../api/roles'
+import { useAuthStore } from './useAuthStore'
 
 /**
  * access.policies — per-user role-binding state (Batch 3 RBAC slice).
@@ -25,6 +26,14 @@ export const usePoliciesStore = defineStore('access.policies', () => {
   const loading = ref(false)
   const errorKey = ref<string | null>(null)
   const mutating = ref(false)
+
+  function requireTenantId(): string {
+    const tenantId = useAuthStore().tenantId
+    if (tenantId === null) {
+      throw new Error('Tenant context is required for role mutations')
+    }
+    return tenantId
+  }
 
   // ─── read actions ───────────────────────────────────────────────────────
 
@@ -64,7 +73,7 @@ export const usePoliciesStore = defineStore('access.policies', () => {
     if (mutating.value) return
     mutating.value = true
     try {
-      await assignRole({ userId: userId.value, roleId })
+      await assignRole({ tenantId: requireTenantId(), userId: userId.value, roleId })
       await fetchRoles(userId.value)
     } finally {
       mutating.value = false
@@ -80,7 +89,7 @@ export const usePoliciesStore = defineStore('access.policies', () => {
     if (mutating.value) return
     mutating.value = true
     try {
-      await revokeRole({ userId: userId.value, roleId })
+      await revokeRole({ tenantId: requireTenantId(), userId: userId.value, roleId })
       await fetchRoles(userId.value)
     } finally {
       mutating.value = false

@@ -2,7 +2,7 @@
  * @gocell/cell-manifest — IO orchestration layer.
  *
  * Reads cell.yaml + slices/[x]/slice.yaml from GOCELL_CELLS_DIR (defaults to
- * ../gocell/cells relative to repo root), derives CellManifest via pure
+ * ../gocell/corecells relative to repo root), derives CellManifest via pure
  * derive.ts functions, and writes the generated TS module to
  * packages/devboard/src/manifest/cells.generated.ts.
  *
@@ -18,7 +18,7 @@ import { buildManifest, renderManifestModule } from './derive'
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url))
 const REPO_ROOT = resolve(SCRIPT_DIR, '../../..')
-const CELLS_DIR = resolve(process.env['GOCELL_CELLS_DIR'] ?? join(REPO_ROOT, '../gocell/cells'))
+const CELLS_DIR = resolve(process.env['GOCELL_CELLS_DIR'] ?? join(REPO_ROOT, '../gocell/corecells'))
 const OUT = join(REPO_ROOT, 'packages/devboard/src/manifest/cells.generated.ts')
 
 function main(): void {
@@ -26,7 +26,7 @@ function main(): void {
     throw new Error(
       `Cell source directory not found: ${CELLS_DIR}\n` +
         `Check out the backend repo ghbvf/gocell as a sibling of this repo, ` +
-        `or set GOCELL_CELLS_DIR to point to the cells directory.`,
+        `or set GOCELL_CELLS_DIR to point to the corecells directory.`,
     )
   }
 

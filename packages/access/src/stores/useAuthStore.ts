@@ -24,10 +24,28 @@ const REFRESH_URL = '/api/v1/access/sessions/refresh'
 /** DELETE /sessions/{id} — logout revokes the current session server-side. */
 const SESSION_URL = '/api/v1/access/sessions/'
 
+function decodeJwtPayload(token: string): Record<string, unknown> | null {
+  const payload = token.split('.')[1]
+  if (!payload) return null
+  try {
+    const normalized = payload.replace(/-/g, '+').replace(/_/g, '/')
+    const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, '=')
+    return JSON.parse(atob(padded)) as Record<string, unknown>
+  } catch {
+    return null
+  }
+}
+
+function extractTenantId(token: string): string | null {
+  const tenantId = decodeJwtPayload(token)?.['tenant_id']
+  return typeof tenantId === 'string' && tenantId.trim() ? tenantId : null
+}
+
 export const useAuthStore = defineStore('access.auth', () => {
   // ─── state (all in-memory, never persisted) ───────────────────────────────
   const user = ref<AuthUser | null>(null)
   const accessToken = ref<string | null>(null)
+  const tenantId = ref<string | null>(null)
   // refreshToken is write-only from outside; only refresh() reads it internally
   const _refreshToken = ref<string | null>(null)
   // sessionId is internal; only logout() reads it to revoke the session server-side
@@ -43,6 +61,7 @@ export const useAuthStore = defineStore('access.auth', () => {
   function setSession(payload: SessionData): void {
     user.value = { id: payload.userId }
     accessToken.value = payload.accessToken
+    tenantId.value = extractTenantId(payload.accessToken)
     _refreshToken.value = payload.refreshToken
     _sessionId.value = payload.sessionId
     passwordResetRequired.value = payload.passwordResetRequired
@@ -52,6 +71,7 @@ export const useAuthStore = defineStore('access.auth', () => {
   function clearSession(): void {
     user.value = null
     accessToken.value = null
+    tenantId.value = null
     _refreshToken.value = null
     _sessionId.value = null
     passwordResetRequired.value = false
@@ -123,6 +143,7 @@ export const useAuthStore = defineStore('access.auth', () => {
     // state (expose as readonly refs via Pinia's reactive proxy)
     user,
     accessToken,
+    tenantId,
     passwordResetRequired,
     // getters
     isAuthenticated,

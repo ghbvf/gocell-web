@@ -25,6 +25,7 @@ const sessionPayload = {
   userId: 'user-123',
   passwordResetRequired: false,
 }
+const tenantToken = 'e30.eyJ0ZW5hbnRfaWQiOiIwMDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDEifQ.sig'
 
 describe('useAuthStore', () => {
   beforeEach(() => {
@@ -44,6 +45,7 @@ describe('useAuthStore', () => {
     expect(store.isAuthenticated).toBe(false)
     expect(store.user).toBeNull()
     expect(store.accessToken).toBeNull()
+    expect(store.tenantId).toBeNull()
     // refreshToken is internal (write-only from outside) — not exposed on store
     expect(store.passwordResetRequired).toBe(false)
   })
@@ -55,6 +57,7 @@ describe('useAuthStore', () => {
     expect(store.isAuthenticated).toBe(true)
     expect(store.user).toEqual({ id: 'user-123' })
     expect(store.accessToken).toBe('access-tok-1')
+    expect(store.tenantId).toBeNull()
     // refreshToken is internal — validated indirectly via refresh() call below
     expect(store.passwordResetRequired).toBe(false)
   })
@@ -65,6 +68,12 @@ describe('useAuthStore', () => {
     expect(store.passwordResetRequired).toBe(true)
   })
 
+  it('setSession extracts tenant_id from the access JWT when present', () => {
+    const store = useAuthStore()
+    store.setSession({ ...sessionPayload, accessToken: tenantToken })
+    expect(store.tenantId).toBe('00000000-0000-0000-0000-000000000001')
+  })
+
   it('clearSession resets all state to null/false', () => {
     const store = useAuthStore()
     store.setSession(sessionPayload)
@@ -73,6 +82,7 @@ describe('useAuthStore', () => {
     expect(store.isAuthenticated).toBe(false)
     expect(store.user).toBeNull()
     expect(store.accessToken).toBeNull()
+    expect(store.tenantId).toBeNull()
     expect(store.passwordResetRequired).toBe(false)
   })
 
