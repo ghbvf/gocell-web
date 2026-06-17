@@ -17,7 +17,7 @@ jobs:
           path: gocell-web
 
       # 后端 cells 源（公开仓库 ghbvf/gocell），checkout 为 gocell-web 的同级目录
-      # （cell-manifest 默认读 ../gocell/cells）。
+      # （cell-manifest 默认读 ../gocell/corecells）。
       - name: Checkout gocell (backend cells)
         uses: actions/checkout@v4
         with:

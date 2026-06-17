@@ -1,6 +1,6 @@
 # @gocell/cell-manifest
 
-> Cell manifest 单向派生器：后端 `gocell/cells/*/cell.yaml` + `slices/*/slice.yaml` → `packages/devboard/src/manifest/cells.generated.ts`。
+> Cell manifest 单向派生器：后端 `gocell/corecells/*/cell.yaml` + `slices/*/slice.yaml` → `packages/devboard/src/manifest/cells.generated.ts`。
 
 是 AI-robust「Hard」约束的执行体（`ai-robust.md` §载体决策原则 第 1 条）：单源 YAML 派生 + CI `git diff --exit-code` 守门（`.github/workflows/cell-manifest-diff.yml`），业务包手改生成物在 CI 不可表达。生成文件带 `: CellManifest` 类型注解（来自 devboard 的规范 `./types`），任何形状漂移在 `@gocell/devboard typecheck` 失败。
 
@@ -10,7 +10,7 @@
 pnpm cell-manifest   # = pnpm -F @gocell/cell-manifest generate
 ```
 
-- **源路径**：默认 `<repo>/../gocell/cells`（gocell-web 与后端 gocell 同级 checkout；CI 亦如此布局）。可经环境变量 `GOCELL_CELLS_DIR` 覆盖（如 git worktree 本地开发：`GOCELL_CELLS_DIR=../gocell/cells pnpm cell-manifest`）。
+- **源路径**：默认 `<repo>/../gocell/corecells`（gocell-web 与后端 gocell 同级 checkout；CI 亦如此布局）。可经环境变量 `GOCELL_CELLS_DIR` 覆盖（如 git worktree 本地开发：`GOCELL_CELLS_DIR=../gocell/corecells pnpm cell-manifest`）。
 - **产物**：`packages/devboard/src/manifest/cells.generated.ts`，带 `/* eslint-disable */` + DO-NOT-EDIT banner（已加入 `eslint.config.js` ignores + `.prettierignore`）。
 
 ## 派生规则
