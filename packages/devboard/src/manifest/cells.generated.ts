@@ -34,11 +34,18 @@ export const CELL_MANIFEST: CellManifest = {
           "belongsToCell": "accesscore",
           "consistencyLevel": "L0",
           "lifecycle": "asset",
-          "contractUsages": [],
+          "contractUsages": [
+            {
+              "contract": "http.auth.decide.v1",
+              "role": "serve"
+            }
+          ],
           "unitTests": [
             "unit.authorizationdecide.service"
           ],
-          "contractTests": [],
+          "contractTests": [
+            "contract.http.auth.decide.v1.serve"
+          ],
           "waivers": []
         },
         {
@@ -473,6 +480,10 @@ export const CELL_MANIFEST: CellManifest = {
         },
         {
           "contract": "grpc.auth.session.verify.v1",
+          "role": "serve"
+        },
+        {
+          "contract": "http.auth.decide.v1",
           "role": "serve"
         },
         {
