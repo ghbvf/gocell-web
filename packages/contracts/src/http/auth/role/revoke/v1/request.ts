@@ -6,6 +6,7 @@
  */
 
 export interface HttpAuthRoleRevokeV1Request {
+  tenantId: string;
   userId: string;
   roleId: string;
 }
