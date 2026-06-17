@@ -33,6 +33,11 @@ export const useAuthStore = defineStore('access.auth', () => {
   // sessionId is internal; only logout() reads it to revoke the session server-side
   const _sessionId = ref<string | null>(null)
   const passwordResetRequired = ref(false)
+  // Tenant the session belongs to — needed by tenant-scoped mutations (e.g.
+  // accesscore role assign/revoke). The session contract does not expose it
+  // yet (BR-009), so it stays null until setSession can populate it; consumers
+  // must guard the null case rather than send a fabricated tenant.
+  const tenantId = ref<string | null>(null)
 
   // ─── getters ──────────────────────────────────────────────────────────────
   const isAuthenticated = computed(() => accessToken.value !== null)
@@ -55,6 +60,7 @@ export const useAuthStore = defineStore('access.auth', () => {
     _refreshToken.value = null
     _sessionId.value = null
     passwordResetRequired.value = false
+    tenantId.value = null
   }
 
   /**
@@ -124,6 +130,7 @@ export const useAuthStore = defineStore('access.auth', () => {
     user,
     accessToken,
     passwordResetRequired,
+    tenantId,
     // getters
     isAuthenticated,
     // actions

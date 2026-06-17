@@ -406,6 +406,7 @@ const zhCN = {
       errors: {
         assignFailed: '分配角色失败',
         revokeFailed: '撤销角色失败',
+        tenantUnavailable: '当前会话缺少租户上下文，暂无法变更角色',
       },
     },
     comingSoon: {
