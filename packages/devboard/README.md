@@ -2,7 +2,7 @@
 
 > 开发者平台聚合视图：Cells / Groups / Coverage / Contracts / Deps（Batch 5/6）
 >
-> **对应后端 cell**：无（聚合派生视图）。Cells 数据由构建期从后端 `../gocell/cells/*/cell.yaml` + `slices/*/slice.yaml` 派生（见下）。
+> **对应后端 cell**：无（聚合派生视图）。Cells 数据由构建期从后端 `../gocell/corecells/*/cell.yaml` + `slices/*/slice.yaml` 派生（见下）。
 
 ## 对外 exports
 
@@ -35,7 +35,7 @@ PDP 门：后端无 `contract`/`dep`/`group` resource，路由守卫降级到 `r
 `tools/cell-manifest/` 镜像 `tools/codegen` 模式：构建期读后端 `cell.yaml` + `slice.yaml` → 派生 `src/manifest/cells.generated.ts`（`/* eslint-disable */` + DO-NOT-EDIT banner，prettier-ignored）。
 
 - 单源派生 + CI `git diff --exit-code`（`.github/workflows/cell-manifest-diff.yml`）守门，业务包手改生成物即红 → 违反不可表达（Hard）。
-- 本地重跑：`GOCELL_CELLS_DIR=../gocell/cells pnpm cell-manifest`（CI 把 `ghbvf/gocell` checkout 为同级目录，默认路径生效）。
+- 本地重跑：`GOCELL_CELLS_DIR=../gocell/corecells pnpm cell-manifest`（CI 把 `ghbvf/gocell` checkout 为同级目录，默认路径生效）。
 - `slice.yaml` 的 `contractUsages[].role`：`serve`/`publish` → cell **produces**；`call`/`subscribe` → **consumes**；跨 cell 的 consume→produce 解析出 `dependsOnCells` / `requiredByCells`。
 - **不可派生字段**（运行时 QPS/p95/健康分、tasks、SLOC、version、oncall）→ 显式降级为 "—" / `UnavailablePanel`，**绝不伪造**。需后端健康端点（BR-001）才补。
 
