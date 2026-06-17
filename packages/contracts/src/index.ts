@@ -9,6 +9,8 @@ export type { HttpAdminHealthCellsV1Response } from './http/admin/health/cells/v
 export type { HttpAuditGetV1Request } from './http/audit/get/v1/request'
 export type { HttpAuditGetV1Response } from './http/audit/get/v1/response'
 export type { HttpAuditListV1Response } from './http/audit/list/v1/response'
+export type { HttpAuthDecideV1Request } from './http/auth/decide/v1/request'
+export type { HttpAuthDecideV1Response } from './http/auth/decide/v1/response'
 export type { HttpAuthLoginV1Request } from './http/auth/login/v1/request'
 export type { HttpAuthLoginV1Response } from './http/auth/login/v1/response'
 export type { HttpAuthRefreshV1Request } from './http/auth/refresh/v1/request'
