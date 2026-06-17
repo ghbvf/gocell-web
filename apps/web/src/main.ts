@@ -30,6 +30,7 @@ app.provide(PDP_INJECTION_KEY, pdpClient)
 // 5. Route guards (three-stage: first-run → auth → PDP)
 registerGuards(router, app, pdpClient)
 
-// 6. Attempt silent session restore before the first navigation, then mount.
-//    No-op on a cold load until the backend ships a refresh cookie (#12 H2).
+// 6. Silent session restore via the httpOnly refresh cookie before the first
+//    navigation, then mount. Awaiting before mount keeps the cold-start renewal
+//    ahead of the first guard, so a reload never flashes /login (#12 H2 / #27).
 void bootstrapSession().finally(() => app.mount('#app'))

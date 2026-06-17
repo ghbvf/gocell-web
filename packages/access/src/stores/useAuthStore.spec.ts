@@ -99,14 +99,36 @@ describe('useAuthStore', () => {
   })
 
   describe('refresh()', () => {
-    it('returns null when there is no refreshToken', async () => {
+    // Every refresh must opt the browser into sending/receiving the httpOnly
+    // refresh cookie (`__Host-gocell_rt`) so cold-start renewal works.
+    const WITH_CREDS = { withCredentials: true }
+
+    it('cookie mode: with no in-memory token, posts an empty body and restores the session from the cookie', async () => {
       const store = useAuthStore()
+      // Cold start: nothing in memory; the refresh token lives only in the
+      // browser's httpOnly cookie, which the backend reads server-side.
+      mockHttp.post.mockResolvedValueOnce({ data: { data: sessionPayload } })
+
       const result = await store.refresh()
-      expect(result).toBeNull()
-      expect(mockHttp.post).not.toHaveBeenCalled()
+
+      expect(mockHttp.post).toHaveBeenCalledWith('/api/v1/access/sessions/refresh', {}, WITH_CREDS)
+      expect(result).toBe('access-tok-1')
+      expect(store.isAuthenticated).toBe(true)
+      expect(store.accessToken).toBe('access-tok-1')
     })
 
-    it('calls http.post with refreshToken and returns new accessToken on success', async () => {
+    it('cookie mode: clears session and returns null when refresh fails (no valid cookie)', async () => {
+      const store = useAuthStore()
+      mockHttp.post.mockRejectedValueOnce(new Error('401'))
+
+      const result = await store.refresh()
+
+      expect(mockHttp.post).toHaveBeenCalledWith('/api/v1/access/sessions/refresh', {}, WITH_CREDS)
+      expect(result).toBeNull()
+      expect(store.isAuthenticated).toBe(false)
+    })
+
+    it('sends the in-memory refresh token as a body fallback and returns the new accessToken on success', async () => {
       const store = useAuthStore()
       store.setSession(sessionPayload)
 
@@ -121,9 +143,11 @@ describe('useAuthStore', () => {
       const result = await store.refresh()
 
       // Validates that the internal refreshToken was correctly stored from setSession
-      expect(mockHttp.post).toHaveBeenCalledWith('/api/v1/access/sessions/refresh', {
-        refreshToken: 'refresh-tok-1',
-      })
+      expect(mockHttp.post).toHaveBeenCalledWith(
+        '/api/v1/access/sessions/refresh',
+        { refreshToken: 'refresh-tok-1' },
+        WITH_CREDS,
+      )
       expect(result).toBe('access-tok-new')
       expect(store.accessToken).toBe('access-tok-new')
       // refreshToken is internal; verify it works by doing a second refresh
@@ -131,9 +155,11 @@ describe('useAuthStore', () => {
         data: { data: { ...newPayload, accessToken: 'access-tok-3' } },
       })
       await store.refresh()
-      expect(mockHttp.post).toHaveBeenLastCalledWith('/api/v1/access/sessions/refresh', {
-        refreshToken: 'refresh-tok-new',
-      })
+      expect(mockHttp.post).toHaveBeenLastCalledWith(
+        '/api/v1/access/sessions/refresh',
+        { refreshToken: 'refresh-tok-new' },
+        WITH_CREDS,
+      )
     })
 
     it('clearSession and returns null when http.post rejects', async () => {
@@ -183,6 +209,7 @@ describe('useAuthStore', () => {
 
       expect(mockHttp.post).toHaveBeenCalledWith('/api/v1/access/sessions/login', credentials, {
         __skipAuthRefresh: true,
+        withCredentials: true,
       })
     })
 
@@ -224,7 +251,9 @@ describe('useAuthStore', () => {
 
       await store.logout()
 
-      expect(mockHttp.delete).toHaveBeenCalledWith('/api/v1/access/sessions/sess-1')
+      expect(mockHttp.delete).toHaveBeenCalledWith('/api/v1/access/sessions/sess-1', {
+        withCredentials: true,
+      })
       expect(store.isAuthenticated).toBe(false)
       expect(store.user).toBeNull()
     })

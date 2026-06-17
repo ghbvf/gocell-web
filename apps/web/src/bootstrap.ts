@@ -44,11 +44,13 @@ let bootstrapPromise: Promise<void> | null = null
  * Attempt to restore a session on app start via a single refresh, before the
  * first route guard evaluates auth.
  *
- * Idempotent. With the current body-based, in-memory refresh token (no httpOnly
- * cookie yet — see issue #12 H2), a cold load has no token so authStore.refresh()
- * short-circuits to null and this is a silent no-op; the guards then route
- * protected pages to /login. The seam is in place for when the backend adds a
- * refresh cookie that survives reload.
+ * Idempotent. The backend ships the refresh token as an httpOnly cookie
+ * (`__Host-gocell_rt`, BR-005) that survives a reload, so authStore.refresh()
+ * renews silently from the cookie even when nothing is in memory: a warm cold
+ * load restores the session (guards let protected pages through), while a logged
+ * out / no-cookie load fails the refresh and the guards route to /login. Because
+ * main.ts awaits this before app.mount(), the first guard runs post-restore —
+ * no /login flash. (See issue #12 H2.)
  *
  * Must be called AFTER createPinia() so useAuthStore() resolves.
  */

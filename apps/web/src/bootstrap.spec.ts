@@ -135,10 +135,35 @@ describe('bootstrap bootstrapSession', () => {
     expect(spy).toHaveBeenCalledOnce()
   })
 
-  it('resolves without throwing on a cold load (no session to restore)', async () => {
+  it('resolves without throwing on a cold load with no valid cookie (refresh fails)', async () => {
     const { bootstrapSession } = await import('./bootstrap')
-    // No setSession → real refresh() short-circuits to null with no HTTP call.
+    const auth = useAuthStore()
+    // No httpOnly cookie / logged out → refresh resolves null and clears state.
+    vi.spyOn(auth, 'refresh').mockResolvedValue(null)
+
     await expect(bootstrapSession()).resolves.toBeUndefined()
-    expect(useAuthStore().isAuthenticated).toBe(false)
+    expect(auth.isAuthenticated).toBe(false)
+  })
+
+  it('restores the session before mount when refresh succeeds via cookie (warm cold-load)', async () => {
+    const { bootstrapSession } = await import('./bootstrap')
+    const auth = useAuthStore()
+    // A valid httpOnly cookie → refresh writes the restored session.
+    vi.spyOn(auth, 'refresh').mockImplementation(async () => {
+      auth.setSession({
+        userId: 'u1',
+        accessToken: 'restored-tok',
+        refreshToken: 'rt2',
+        passwordResetRequired: false,
+        expiresAt: '2099-01-01T00:00:00Z',
+        sessionId: 's2',
+      })
+      return 'restored-tok'
+    })
+
+    await bootstrapSession()
+
+    expect(auth.isAuthenticated).toBe(true)
+    expect(auth.accessToken).toBe('restored-tok')
   })
 })
