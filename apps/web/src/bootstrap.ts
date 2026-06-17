@@ -52,6 +52,10 @@ let bootstrapPromise: Promise<void> | null = null
  * main.ts awaits this before app.mount(), the first guard runs post-restore —
  * no /login flash. (See issue #12 H2.)
  *
+ * auth.refresh() swallows its own errors and is timeout-bounded, so this Promise
+ * never rejects: main.ts mounts in `.finally()` without an unhandled rejection,
+ * and a dead/slow backend still lets the app mount and route to /login.
+ *
  * Must be called AFTER createPinia() so useAuthStore() resolves.
  */
 export function bootstrapSession(): Promise<void> {

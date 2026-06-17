@@ -99,9 +99,10 @@ describe('useAuthStore', () => {
   })
 
   describe('refresh()', () => {
-    // Every refresh must opt the browser into sending/receiving the httpOnly
-    // refresh cookie (`__Host-gocell_rt`) so cold-start renewal works.
-    const WITH_CREDS = { withCredentials: true }
+    // Every refresh opts the browser into sending/receiving the httpOnly refresh
+    // cookie (`__Host-gocell_rt`) and is timeout-bounded so a hung backend cannot
+    // block app mount (bootstrapSession awaits refresh() before app.mount()).
+    const REFRESH_CONFIG = { withCredentials: true, timeout: 10_000 }
 
     it('cookie mode: with no in-memory token, posts an empty body and restores the session from the cookie', async () => {
       const store = useAuthStore()
@@ -111,7 +112,11 @@ describe('useAuthStore', () => {
 
       const result = await store.refresh()
 
-      expect(mockHttp.post).toHaveBeenCalledWith('/api/v1/access/sessions/refresh', {}, WITH_CREDS)
+      expect(mockHttp.post).toHaveBeenCalledWith(
+        '/api/v1/access/sessions/refresh',
+        {},
+        REFRESH_CONFIG,
+      )
       expect(result).toBe('access-tok-1')
       expect(store.isAuthenticated).toBe(true)
       expect(store.accessToken).toBe('access-tok-1')
@@ -123,7 +128,11 @@ describe('useAuthStore', () => {
 
       const result = await store.refresh()
 
-      expect(mockHttp.post).toHaveBeenCalledWith('/api/v1/access/sessions/refresh', {}, WITH_CREDS)
+      expect(mockHttp.post).toHaveBeenCalledWith(
+        '/api/v1/access/sessions/refresh',
+        {},
+        REFRESH_CONFIG,
+      )
       expect(result).toBeNull()
       expect(store.isAuthenticated).toBe(false)
     })
@@ -146,7 +155,7 @@ describe('useAuthStore', () => {
       expect(mockHttp.post).toHaveBeenCalledWith(
         '/api/v1/access/sessions/refresh',
         { refreshToken: 'refresh-tok-1' },
-        WITH_CREDS,
+        REFRESH_CONFIG,
       )
       expect(result).toBe('access-tok-new')
       expect(store.accessToken).toBe('access-tok-new')
@@ -158,7 +167,7 @@ describe('useAuthStore', () => {
       expect(mockHttp.post).toHaveBeenLastCalledWith(
         '/api/v1/access/sessions/refresh',
         { refreshToken: 'refresh-tok-new' },
-        WITH_CREDS,
+        REFRESH_CONFIG,
       )
     })
 

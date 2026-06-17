@@ -4,6 +4,7 @@ import { http } from '@gocell/request'
 import type {
   HttpAuthLoginV1Request,
   HttpAuthLoginV1Response,
+  HttpAuthRefreshV1Request,
   HttpAuthRefreshV1Response,
 } from '@gocell/contracts'
 
@@ -23,6 +24,12 @@ const LOGIN_URL = '/api/v1/access/sessions/login'
 const REFRESH_URL = '/api/v1/access/sessions/refresh'
 /** DELETE /sessions/{id} — logout revokes the current session server-side. */
 const SESSION_URL = '/api/v1/access/sessions/'
+
+/**
+ * Cap the silent refresh so an unresponsive backend cannot block app mount
+ * forever — apps/web bootstrapSession() awaits refresh() before app.mount().
+ */
+const REFRESH_TIMEOUT_MS = 10_000
 
 export const useAuthStore = defineStore('access.auth', () => {
   // ─── state (all in-memory, never persisted) ───────────────────────────────
@@ -118,12 +125,18 @@ export const useAuthStore = defineStore('access.auth', () => {
    * setupAxios here — that is the app assembly layer's job.
    */
   async function refresh(): Promise<string | null> {
+    // Cookie-only cold start sends an empty body; an in-memory token, when
+    // present, rides along as the backend's documented body fallback. Typed
+    // against the contract so a future schema rename surfaces here at compile
+    // time instead of silently sending a stale field name.
+    const body: HttpAuthRefreshV1Request | Record<string, never> = _refreshToken.value
+      ? { refreshToken: _refreshToken.value }
+      : {}
     try {
-      const res = await http.post<HttpAuthRefreshV1Response>(
-        REFRESH_URL,
-        _refreshToken.value ? { refreshToken: _refreshToken.value } : {},
-        { withCredentials: true },
-      )
+      const res = await http.post<HttpAuthRefreshV1Response>(REFRESH_URL, body, {
+        withCredentials: true,
+        timeout: REFRESH_TIMEOUT_MS,
+      })
       setSession(res.data.data)
       return res.data.data.accessToken
     } catch {
