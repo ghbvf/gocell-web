@@ -373,7 +373,7 @@ const ACTION_NS: Array<{ value: ActionNsFilter; labelKey: string }> = [
             </div>
             <div v-if="selectedEntry.scope" class="audit__kv-row">
               <dt class="audit__kv-key">{{ t('audit.log.detail.scope') }}</dt>
-              <dd class="audit__kv-val">{{ selectedEntry.scope }}</dd>
+              <dd class="audit__kv-val v1-mono">{{ selectedEntry.scope }}</dd>
             </div>
             <div v-if="selectedEntry.correlationId" class="audit__kv-row">
               <dt class="audit__kv-key">{{ t('audit.log.detail.correlationId') }}</dt>

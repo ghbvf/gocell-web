@@ -46,6 +46,8 @@ describe('useAuthStore', () => {
     expect(store.accessToken).toBeNull()
     // refreshToken is internal (write-only from outside) — not exposed on store
     expect(store.passwordResetRequired).toBe(false)
+    // tenantId has no session-contract source yet (BR-009) — null until then.
+    expect(store.tenantId).toBeNull()
   })
 
   it('setSession sets user, accessToken and passwordResetRequired correctly', () => {
@@ -74,6 +76,14 @@ describe('useAuthStore', () => {
     expect(store.user).toBeNull()
     expect(store.accessToken).toBeNull()
     expect(store.passwordResetRequired).toBe(false)
+  })
+
+  it('clearSession resets tenantId to null', () => {
+    const store = useAuthStore()
+    // Simulate a future session that carries a tenant (BR-009).
+    store.tenantId = 'tenant-abc'
+    store.clearSession()
+    expect(store.tenantId).toBeNull()
   })
 
   // Security: access token must NEVER touch localStorage
