@@ -1,11 +1,11 @@
 /* eslint-disable */
 /**
  * AUTO-GENERATED — DO NOT EDIT BY HAND.
- * Source: gocell/contracts/http/audit/list/v1/response.schema.json
+ * Source: gocell/contracts/http/audit/get/v1/response.schema.json
  * 由 `pnpm codegen` 派生；CI 经 `git diff --exit-code` 守门只读。
  */
 
-export interface HttpAuditListV1Response {
+export interface HttpAuditGetV1Response {
   data: {
     id: string;
     eventId: string;
@@ -27,11 +27,9 @@ export interface HttpAuditListV1Response {
     occurredAt?: string;
     timestamp: string;
     /**
-     * Row classification: "tenant" means the row belongs to a tenant (the owning tenant id is in the tenantId field; for a super-admin cross-tenant read rows from multiple tenants may appear, each with their own tenantId); "system" for tenant-less framework/system rows (e.g. bootstrap.auth.fail) that are surfaced to every tenant. Empty for rows predating its introduction.
+     * Row classification: "tenant" means the row belongs to a tenant (the owning tenant id is in the tenantId field; for a super-admin cross-tenant read the row may belong to any tenant, carried in tenantId); "system" for tenant-less framework/system rows (e.g. bootstrap.auth.fail) that are surfaced to every tenant. Empty for rows predating its introduction.
      */
     scope?: string;
     payload?: unknown;
-  }[];
-  nextCursor: string;
-  hasMore: boolean;
+  };
 }

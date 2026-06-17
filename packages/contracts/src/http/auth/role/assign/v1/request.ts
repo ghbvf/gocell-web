@@ -6,6 +6,7 @@
  */
 
 export interface HttpAuthRoleAssignV1Request {
+  tenantId: string;
   userId: string;
   roleId: string;
 }
