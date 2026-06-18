@@ -6,9 +6,14 @@ import { PDP_INJECTION_KEY } from '../pdp/types'
 import { _resetWarnFlagForTesting } from '../pdp/useDecision'
 import Can from './Can.vue'
 
+// Can consumes only can(); decide() is required by the PdpClient type but
+// unused in these tests, so a constant stub keeps the literals type-complete.
+const decide: PdpClient['decide'] = () => Promise.resolve({ effect: 'allow', reasonCode: '' })
+
 function makeMockClient(allowed: boolean): PdpClient {
   return {
     can: () => computed(() => allowed),
+    decide,
   }
 }
 
@@ -152,6 +157,7 @@ describe('Can.vue', () => {
       // Client whose can() returns a computed backed by allowedRef
       const client: PdpClient = {
         can: () => computed(() => allowedRef.value),
+        decide,
       }
 
       const Wrapper = defineComponent({

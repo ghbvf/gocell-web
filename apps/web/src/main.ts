@@ -7,9 +7,10 @@ import { createPinia } from 'pinia'
 import App from './App.vue'
 import { router } from './router'
 import { createGocellI18n, PDP_INJECTION_KEY } from '@gocell/core'
-import { createPdpClient } from '@gocell/access'
+import { createPdpClient, createHttpDecide } from '@gocell/access'
 import { configureAxios, bootstrapSession } from './bootstrap'
 import { registerGuards } from './router/guards'
+import { useUiStore } from './stores/useUiStore'
 
 const app = createApp(App)
 
@@ -23,12 +24,18 @@ configureAxios(router)
 app.use(createGocellI18n())
 app.use(router)
 
-// 4. PDP client provided for Can / useDecision in the whole app
-const pdpClient = createPdpClient()
+// 4. PDP client provided for Can / useDecision in the whole app.
+//    Assembly layer injects the real decision source (POST /api/v1/access/decide);
+//    createPdpClient keeps the cache / TTL / single-flight / fail-closed wrapper.
+const pdpClient = createPdpClient({ decide: createHttpDecide() })
 app.provide(PDP_INJECTION_KEY, pdpClient)
 
-// 5. Route guards (three-stage: first-run → auth → PDP)
-registerGuards(router, app, pdpClient)
+// 5. Route guards (three-stage: first-run → auth → PDP). PDP deny → push the
+//    reasonCode into useUiStore; AppShellLayout localises it (useI18n) and
+//    announces it in an aria-live region. Keeps the guard free of i18n/UI.
+registerGuards(router, app, pdpClient, (reasonCode: string) => {
+  useUiStore().notifyAccessDenied(reasonCode)
+})
 
 // 6. Attempt silent session restore before the first navigation, then mount.
 //    No-op on a cold load until the backend ships a refresh cookie (#12 H2).

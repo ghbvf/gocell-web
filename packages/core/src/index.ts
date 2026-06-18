@@ -9,7 +9,7 @@ export type { AppLocale } from './stores/index'
 
 // PDP
 export { useDecision, PDP_INJECTION_KEY } from './pdp/index'
-export type { PdpClient } from './pdp/index'
+export type { PdpClient, Decision, DecisionEffect } from './pdp/index'
 
 // Components
 export { Can, UnavailablePanel } from './components/index'

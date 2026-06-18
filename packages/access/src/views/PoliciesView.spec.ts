@@ -10,7 +10,10 @@ import PoliciesView from './PoliciesView.vue'
 
 vi.mock('vue-i18n', () => ({ useI18n: () => ({ t: (k: string) => k }) }))
 
-const pdp = (allowed: boolean): PdpClient => ({ can: () => computed(() => allowed) })
+const pdp = (allowed: boolean): PdpClient => ({
+  can: () => computed(() => allowed),
+  decide: () => Promise.resolve({ effect: allowed ? 'allow' : 'deny', reasonCode: '' }),
+})
 
 const mkRole = (over: Partial<Role> = {}): Role => ({
   id: 'role-1',

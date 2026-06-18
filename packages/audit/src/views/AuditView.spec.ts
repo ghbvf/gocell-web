@@ -9,7 +9,10 @@ import AuditView from './AuditView.vue'
 
 vi.mock('vue-i18n', () => ({ useI18n: () => ({ t: (k: string) => k }) }))
 
-const pdp = (allowed: boolean): PdpClient => ({ can: () => computed(() => allowed) })
+const pdp = (allowed: boolean): PdpClient => ({
+  can: () => computed(() => allowed),
+  decide: () => Promise.resolve({ effect: allowed ? 'allow' : 'deny', reasonCode: '' }),
+})
 
 const mkEntry = (over: Partial<AuditEntry> = {}): AuditEntry => ({
   id: 'evt-001',

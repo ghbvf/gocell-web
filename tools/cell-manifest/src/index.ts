@@ -26,7 +26,7 @@ function main(): void {
     throw new Error(
       `Cell source directory not found: ${CELLS_DIR}\n` +
         `Check out the backend repo ghbvf/gocell as a sibling of this repo, ` +
-        `or set GOCELL_CELLS_DIR to point to the cells directory.`,
+        `or set GOCELL_CELLS_DIR to point to the corecells directory.`,
     )
   }
 

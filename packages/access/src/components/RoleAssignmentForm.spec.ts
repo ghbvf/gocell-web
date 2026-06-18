@@ -16,6 +16,7 @@ const roles: Role[] = [
 function makePdpClient(allowed: boolean): PdpClient {
   return {
     can: () => computed(() => allowed),
+    decide: () => Promise.resolve({ effect: allowed ? 'allow' : 'deny', reasonCode: '' }),
   }
 }
 
