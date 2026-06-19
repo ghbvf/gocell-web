@@ -9,7 +9,10 @@ import IdentitiesView from './IdentitiesView.vue'
 
 vi.mock('vue-i18n', () => ({ useI18n: () => ({ t: (k: string) => k }) }))
 
-const pdp = (allowed: boolean): PdpClient => ({ can: () => computed(() => allowed) })
+const pdp = (allowed: boolean): PdpClient => ({
+  can: () => computed(() => allowed),
+  decide: () => Promise.resolve({ effect: allowed ? 'allow' : 'deny', reasonCode: '' }),
+})
 
 const mkUser = (over: Partial<Identity> = {}): Identity => ({
   id: 'u-1',

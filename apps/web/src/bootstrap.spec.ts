@@ -15,7 +15,7 @@ vi.mock('@gocell/access', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@gocell/access')>()
   return {
     ...actual,
-    createPdpClient: vi.fn(() => ({ can: vi.fn() })),
+    createPdpClient: vi.fn(() => ({ can: vi.fn(), decide: vi.fn() })),
   }
 })
 

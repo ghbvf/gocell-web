@@ -11,7 +11,7 @@ import { createApp } from 'vue'
 import { http } from '@gocell/request'
 import { useAuthStore } from '@gocell/access'
 import { registerGuards, _resetSetupStatusCache } from './guards'
-import type { PdpClient } from '@gocell/core'
+import type { PdpClient, Decision } from '@gocell/core'
 import type { ComputedRef } from 'vue'
 
 /** Helper: create a valid setSession payload */
@@ -83,10 +83,17 @@ async function navigate(router: Router, to: RouteLocationRaw): Promise<void> {
   await router.isReady()
 }
 
-/** Build a stub PdpClient whose can() returns the given allowed value */
+/**
+ * Build a stub PdpClient. The PDP gate awaits decide(), so the gate verdict comes
+ * from decide(); can() is kept for type-completeness (unused by the guard).
+ */
 function makePdpClient(allowed: boolean): PdpClient {
   return {
     can: vi.fn().mockReturnValue({ value: allowed } as ComputedRef<boolean>),
+    decide: vi.fn().mockResolvedValue({
+      effect: allowed ? 'allow' : 'deny',
+      reasonCode: allowed ? '' : 'role-missing',
+    } as Decision),
   }
 }
 
@@ -308,7 +315,7 @@ describe('Router guards', () => {
       authStore.setSession(makeSession())
     })
 
-    it('allows access when PDP can() returns true', async () => {
+    it('allows access when PDP decide() resolves allow', async () => {
       pdpClient = makePdpClient(true)
       // Re-register guards with the new pdpClient
       _resetSetupStatusCache()
@@ -328,8 +335,18 @@ describe('Router guards', () => {
       expect(router.currentRoute.value.name).toBe('pdp-guarded')
     })
 
-    it('redirects to home when PDP can() returns false (fail-closed)', async () => {
-      pdpClient = makePdpClient(false)
+    it('awaits an async decide() before allowing — no pending→deny flicker on first nav', async () => {
+      // decide() resolves allow on a later tick. The guard must await it (not read a
+      // synchronous pending value), so first navigation to the guarded route succeeds.
+      const deferredAllow: PdpClient = {
+        can: vi.fn(),
+        decide: vi.fn(
+          () =>
+            new Promise<Decision>((resolve) =>
+              setTimeout(() => resolve({ effect: 'allow', reasonCode: '' }), 0),
+            ),
+        ),
+      }
       _resetSetupStatusCache()
       const pinia = createPinia()
       setActivePinia(pinia)
@@ -338,18 +355,42 @@ describe('Router guards', () => {
       const app = createApp({ template: '<router-view/>' })
       app.use(pinia)
       router = makeRouter()
-      registerGuards(router, app, pdpClient)
+      registerGuards(router, app, deferredAllow)
+      app.use(router)
+      httpGet.mockResolvedValue({ data: { data: { hasAdmin: true } } })
+
+      await navigate(router, '/pdp-guarded')
+
+      expect(router.currentRoute.value.name).toBe('pdp-guarded')
+    })
+
+    it('redirects to home and surfaces the deny reasonCode when decide() denies', async () => {
+      pdpClient = makePdpClient(false)
+      const onAccessDenied = vi.fn()
+      _resetSetupStatusCache()
+      const pinia = createPinia()
+      setActivePinia(pinia)
+      authStore = useAuthStore()
+      authStore.setSession(makeSession())
+      const app = createApp({ template: '<router-view/>' })
+      app.use(pinia)
+      router = makeRouter()
+      registerGuards(router, app, pdpClient, onAccessDenied)
       app.use(router)
       httpGet.mockResolvedValue({ data: { data: { hasAdmin: true } } })
 
       await navigate(router, '/pdp-guarded')
 
       expect(router.currentRoute.value.name).toBe('home')
+      expect(onAccessDenied).toHaveBeenCalledWith('role-missing')
     })
 
-    it('does not run PDP gate (can not called) for routes without requiredAction', async () => {
-      const canSpy = vi.fn().mockReturnValue({ value: true } as ComputedRef<boolean>)
-      pdpClient = { can: canSpy }
+    it('does not run PDP gate (decide not called) for routes without requiredAction', async () => {
+      const decideSpy = vi.fn().mockResolvedValue({ effect: 'allow', reasonCode: '' } as Decision)
+      pdpClient = {
+        can: vi.fn().mockReturnValue({ value: true } as ComputedRef<boolean>),
+        decide: decideSpy,
+      }
       _resetSetupStatusCache()
       const pinia = createPinia()
       setActivePinia(pinia)
@@ -364,7 +405,27 @@ describe('Router guards', () => {
 
       await navigate(router, '/protected')
 
-      expect(canSpy).not.toHaveBeenCalled()
+      expect(decideSpy).not.toHaveBeenCalled()
+    })
+
+    it('fail-closed to home and surfaces "error" when no PDP client is wired', async () => {
+      const onAccessDenied = vi.fn()
+      _resetSetupStatusCache()
+      const pinia = createPinia()
+      setActivePinia(pinia)
+      authStore = useAuthStore()
+      authStore.setSession(makeSession())
+      const app = createApp({ template: '<router-view/>' })
+      app.use(pinia)
+      router = makeRouter()
+      registerGuards(router, app, undefined, onAccessDenied) // no pdpClient
+      app.use(router)
+      httpGet.mockResolvedValue({ data: { data: { hasAdmin: true } } })
+
+      await navigate(router, '/pdp-guarded')
+
+      expect(router.currentRoute.value.name).toBe('home')
+      expect(onAccessDenied).toHaveBeenCalledWith('error')
     })
   })
 

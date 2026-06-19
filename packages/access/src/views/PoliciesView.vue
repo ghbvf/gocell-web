@@ -15,7 +15,7 @@ import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
 import { isGoCellRequestError } from '@gocell/request'
-import { usePoliciesStore } from '../stores/usePoliciesStore'
+import { usePoliciesStore, TenantUnavailableError } from '../stores/usePoliciesStore'
 import RolePermissionMatrix from '../components/RolePermissionMatrix.vue'
 import RoleAssignmentForm from '../components/RoleAssignmentForm.vue'
 
@@ -47,6 +47,10 @@ async function onAssign(roleId: string): Promise<void> {
     await store.assign(roleId)
     assignRoleId.value = ''
   } catch (err: unknown) {
+    if (err instanceof TenantUnavailableError) {
+      assignErrorKey.value = 'access.policies.errors.tenantUnavailable'
+      return
+    }
     assignErrorKey.value = isGoCellRequestError(err)
       ? (err.i18nKey ?? 'access.policies.errors.assignFailed')
       : 'access.policies.errors.assignFailed'
@@ -58,6 +62,10 @@ async function onRevoke(roleId: string): Promise<void> {
   try {
     await store.revoke(roleId)
   } catch (err: unknown) {
+    if (err instanceof TenantUnavailableError) {
+      revokeErrorKey.value = 'access.policies.errors.tenantUnavailable'
+      return
+    }
     revokeErrorKey.value = isGoCellRequestError(err)
       ? (err.i18nKey ?? 'access.policies.errors.revokeFailed')
       : 'access.policies.errors.revokeFailed'

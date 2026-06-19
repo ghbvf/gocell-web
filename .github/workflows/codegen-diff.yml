@@ -16,12 +16,20 @@ jobs:
         with:
           path: gocell-web
 
-      # 后端契约源仓库（公开仓库 ghbvf/gocell），checkout 为 gocell-web 的同级目录
+      # 读取 pin 的后端 SHA（tools/.gocell-ref，注释行剔除）。CI 钉死该 SHA 而非
+      # 追后端 develop HEAD —— 后端推进不再无故打红前端 CI（见 ADR
+      # docs/adr/20260618-01-pin-backend-contract-ref.md）。
+      - name: Read pinned backend ref
+        id: backendref
+        run: echo "ref=$(grep -vE '^[[:space:]]*#' gocell-web/tools/.gocell-ref | tr -d '[:space:]')" >> "$GITHUB_OUTPUT"
+
+      # 后端契约源仓库（公开仓库 ghbvf/gocell），checkout pin 的 SHA 为 gocell-web 同级目录
       # （codegen 默认读 ../gocell/contracts）。公开仓库无需 PAT，默认 GITHUB_TOKEN 即可拉取。
-      - name: Checkout gocell (backend contracts)
+      - name: Checkout gocell (backend contracts) at pinned ref
         uses: actions/checkout@v4
         with:
           repository: ghbvf/gocell
+          ref: ${{ steps.backendref.outputs.ref }}
           path: gocell
 
       # gocell-web checkout 在子目录，runner 根无 package.json，显式钉死 pnpm 版本

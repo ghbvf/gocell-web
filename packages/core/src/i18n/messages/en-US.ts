@@ -107,6 +107,13 @@ const enUS = {
     resultsLabel: 'Search results',
   },
   access: {
+    pdp: {
+      // Route PDP gate deny notice; key suffix = Decision.reasonCode
+      deny: {
+        'role-missing': "You don't have permission to access this page",
+        error: 'Permission check failed, please try again',
+      },
+    },
     login: {
       title: 'Sign in',
       subtitle: 'Sign in to the console with your admin account',
@@ -414,6 +421,7 @@ const enUS = {
       errors: {
         assignFailed: 'Failed to assign role',
         revokeFailed: 'Failed to revoke role',
+        tenantUnavailable: 'No tenant in the current session — role changes are unavailable',
       },
     },
     comingSoon: {
@@ -486,6 +494,8 @@ const enUS = {
         eventType: 'Event type',
         actor: 'Actor',
         target: 'Target',
+        tenantId: 'Tenant',
+        scope: 'Scope',
         correlationId: 'Correlation ID',
         timestamp: 'Timestamp',
         payload: 'Payload (signed)',

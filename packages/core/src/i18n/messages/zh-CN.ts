@@ -110,6 +110,13 @@ const zhCN = {
     resultsLabel: '搜索结果',
   },
   access: {
+    pdp: {
+      // 路由 PDP 网关拒绝时的提示，key 后缀 = Decision.reasonCode
+      deny: {
+        'role-missing': '您没有访问该页面的权限',
+        error: '权限校验失败，请稍后重试',
+      },
+    },
     login: {
       title: '登录',
       subtitle: '使用管理员账号登录控制台',
@@ -406,6 +413,7 @@ const zhCN = {
       errors: {
         assignFailed: '分配角色失败',
         revokeFailed: '撤销角色失败',
+        tenantUnavailable: '当前会话缺少租户上下文，暂无法变更角色',
       },
     },
     comingSoon: {
@@ -478,6 +486,8 @@ const zhCN = {
         eventType: '事件类型',
         actor: '操作者',
         target: '目标',
+        tenantId: '租户',
+        scope: '范围',
         correlationId: '关联 ID',
         timestamp: '时间',
         payload: 'Payload（已签名）',

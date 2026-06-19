@@ -4,13 +4,16 @@ import { computed } from 'vue'
 import { createTestingPinia } from '@pinia/testing'
 import { PDP_INJECTION_KEY, type PdpClient } from '@gocell/core'
 import type { GoCellRequestError } from '@gocell/request'
-import { usePoliciesStore } from '../stores/usePoliciesStore'
+import { usePoliciesStore, TenantUnavailableError } from '../stores/usePoliciesStore'
 import type { Role } from '../api/roles'
 import PoliciesView from './PoliciesView.vue'
 
 vi.mock('vue-i18n', () => ({ useI18n: () => ({ t: (k: string) => k }) }))
 
-const pdp = (allowed: boolean): PdpClient => ({ can: () => computed(() => allowed) })
+const pdp = (allowed: boolean): PdpClient => ({
+  can: () => computed(() => allowed),
+  decide: () => Promise.resolve({ effect: allowed ? 'allow' : 'deny', reasonCode: '' }),
+})
 
 const mkRole = (over: Partial<Role> = {}): Role => ({
   id: 'role-1',
@@ -242,6 +245,26 @@ describe('PoliciesView · mutations', () => {
 
     const form = wrapper.findComponent({ name: 'RoleAssignmentForm' })
     expect(form.props('assignError')).toBe('access.policies.errors.assignFailed')
+  })
+
+  it('maps TenantUnavailableError to the tenantUnavailable assign-error key', async () => {
+    const { wrapper, store } = mountWithRoles()
+    vi.mocked(store.assign).mockRejectedValue(new TenantUnavailableError())
+    wrapper.findComponent({ name: 'RoleAssignmentForm' }).vm.$emit('assign', 'role-1')
+    await flushPromises()
+
+    const form = wrapper.findComponent({ name: 'RoleAssignmentForm' })
+    expect(form.props('assignError')).toBe('access.policies.errors.tenantUnavailable')
+  })
+
+  it('maps TenantUnavailableError to the tenantUnavailable revoke-error key', async () => {
+    const { wrapper, store } = mountWithRoles()
+    vi.mocked(store.revoke).mockRejectedValue(new TenantUnavailableError())
+    wrapper.findComponent({ name: 'RoleAssignmentForm' }).vm.$emit('revoke', 'role-1')
+    await flushPromises()
+
+    const form = wrapper.findComponent({ name: 'RoleAssignmentForm' })
+    expect(form.props('revokeError')).toBe('access.policies.errors.tenantUnavailable')
   })
 
   it('assign failure does NOT set revokeError', async () => {

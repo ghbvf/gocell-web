@@ -11,7 +11,9 @@
  *    的结果**；needsSetup=true 时不缓存，每次导航重新查，直到 setup 完成后某次
  *    查到 false 才缓存，破除 first-run 完成后仍死循环重定向的问题。
  *  - auth: requiresAuth 默认 true；meta.requiresAuth === false 或 meta.public 放行
- *  - PDP: fail-closed；仅当明确 allowed 时通过（ComputedRef.value 读取）
+ *  - PDP: fail-closed；await pdpClient.decide() 拿结构化决策，仅当 effect==='allow'
+ *    时通过；拒绝时把 reasonCode 交给 onAccessDenied 做 i18n 提示。用 decide() 而非
+ *    响应式 can()：can() 首次导航 pending→false 会误把已授权用户重定向回 home。
  *
  * 顺序安全注解（Stage 1 → Stage 2）：
  *  fetchSetupStatus 的 catch 块 return false（fail-open）是安全的，
@@ -96,12 +98,21 @@ export function _resetSetupStatusCache(): void {
 /**
  * Register the three-stage beforeEach guard on the router.
  *
- * @param router    — Vue Router instance
- * @param _app      — Vue App instance (reserved for future app.inject() wiring)
- * @param pdpClient — Optional PDP client override; used in tests. In production
- *                    main.ts provides it via app.provide() and passes it here.
+ * @param router         — Vue Router instance
+ * @param _app           — Vue App instance (reserved for future app.inject() wiring)
+ * @param pdpClient      — Optional PDP client override; used in tests. In production
+ *                         main.ts provides it via app.provide() and passes it here.
+ * @param onAccessDenied — Optional callback invoked with the deny reasonCode when the
+ *                         PDP gate rejects, so the assembly layer can surface an i18n
+ *                         notice. Kept out of guards.ts to keep it free of AntD / i18n
+ *                         coupling (and trivially testable in isolation).
  */
-export function registerGuards(router: Router, _app: App, pdpClient?: PdpClient): void {
+export function registerGuards(
+  router: Router,
+  _app: App,
+  pdpClient?: PdpClient,
+  onAccessDenied?: (reasonCode: string) => void,
+): void {
   router.beforeEach(async (to) => {
     // ── Stage 1: first-run gate ─────────────────────────────────────────────
     // PRD §5.1: needsSetup=true → always redirect to /first-run-setup, including
@@ -126,21 +137,24 @@ export function registerGuards(router: Router, _app: App, pdpClient?: PdpClient)
     // ── Stage 3: PDP gate ───────────────────────────────────────────────────
     const requiredAction = to.meta.requiredAction
     if (typeof requiredAction === 'string') {
-      // Resolve PDP client: explicit override > app global property > fail-closed
-      const client: PdpClient | undefined = pdpClient
-
-      if (!client) {
-        // PDP client not wired yet (Batch 0 fallback) → fail-closed
+      if (!pdpClient) {
+        // PDP client not wired (Batch 0 fallback) → fail-closed
         if (import.meta.env.DEV)
           console.warn('[guards] PDP client not provided; denying access to', to.path)
+        onAccessDenied?.('error')
         return { name: 'home' }
       }
 
       const resource =
         typeof to.meta.requiredResource === 'string' ? to.meta.requiredResource : undefined
 
-      const allowed = client.can(requiredAction, resource)
-      if (!allowed.value) {
+      // Await the structured decision rather than reading the reactive can():
+      // can() is pending→false on first navigation and would wrongly redirect an
+      // allowed user home. decide() resolves the real decision and carries the
+      // deny reasonCode for the i18n notice.
+      const decision = await pdpClient.decide(requiredAction, resource)
+      if (decision.effect !== 'allow') {
+        onAccessDenied?.(decision.reasonCode)
         return { name: 'home' }
       }
     }
