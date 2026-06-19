@@ -52,10 +52,10 @@ contract 来源：`@gocell/contracts`（codegen 派生，只读）。
 - **getter**：`isAuthenticated: boolean`
 - **actions**：
   - `setSession(payload)` / `clearSession()`
-  - `login({ username, password })`：POST `/sessions/login`（带 `__skipAuthRefresh`，401 不触发 refresh），成功 `setSession`，失败抛出（错误带 `i18nKey`）；导航由调用方负责
-  - `logout()`：best-effort `DELETE /sessions/{id}` + `clearSession()`
-  - `refresh(): Promise<string | null>`：`@gocell/request` 的 `onRefresh` 回调
-- 安全铁律：access token / refresh token **仅内存**，绝不写 localStorage / sessionStorage。
+  - `login({ username, password })`：POST `/sessions/login`（带 `__skipAuthRefresh` + `withCredentials`，401 不触发 refresh），成功 `setSession`，失败抛出（错误带 `i18nKey`）；导航由调用方负责
+  - `logout()`：best-effort `DELETE /sessions/{id}`（带 `withCredentials`，收后端清 cookie）+ `clearSession()`
+  - `refresh(): Promise<string | null>`：`@gocell/request` 的 `onRefresh` 回调，同时是 `bootstrapSession()` 冷启动续期的引擎。cookie 优先（靠 httpOnly `__Host-gocell_rt`，BR-005），无内存 token 也发 `POST /sessions/refresh`（空 body）续期；内存 token 作 body 兜底
+- 安全铁律：access token / 内存 refresh token **仅内存**，绝不写 localStorage / sessionStorage。冷启动续期靠浏览器托管的 **httpOnly cookie**（JS 不可读），铁律不破。
 
 ### `LoginView` / `FirstRunSetupView` (`./views/login` · `./views/first-run`)
 

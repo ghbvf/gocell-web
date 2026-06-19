@@ -4,6 +4,7 @@ import { http } from '@gocell/request'
 import type {
   HttpAuthLoginV1Request,
   HttpAuthLoginV1Response,
+  HttpAuthRefreshV1Request,
   HttpAuthRefreshV1Response,
 } from '@gocell/contracts'
 
@@ -23,6 +24,12 @@ const LOGIN_URL = '/api/v1/access/sessions/login'
 const REFRESH_URL = '/api/v1/access/sessions/refresh'
 /** DELETE /sessions/{id} — logout revokes the current session server-side. */
 const SESSION_URL = '/api/v1/access/sessions/'
+
+/**
+ * Cap the silent refresh so an unresponsive backend cannot block app mount
+ * forever — apps/web bootstrapSession() awaits refresh() before app.mount().
+ */
+const REFRESH_TIMEOUT_MS = 10_000
 
 function decodeJwtPayload(token: string): Record<string, unknown> | null {
   const payload = token.split('.')[1]
@@ -89,10 +96,14 @@ export const useAuthStore = defineStore('access.auth', () => {
    * /login (see @gocell/request). On failure the error propagates (with its
    * i18nKey attached by the interceptor) for the caller to display; the store
    * is left untouched. Navigation is the view's responsibility, not the store's.
+   *
+   * withCredentials lets the browser accept the backend's Set-Cookie for the
+   * httpOnly refresh cookie (`__Host-gocell_rt`) that powers cold-start renewal.
    */
   async function login(credentials: HttpAuthLoginV1Request): Promise<void> {
     const res = await http.post<HttpAuthLoginV1Response>(LOGIN_URL, credentials, {
       __skipAuthRefresh: true,
+      withCredentials: true,
     })
     setSession(res.data.data)
   }
@@ -103,12 +114,15 @@ export const useAuthStore = defineStore('access.auth', () => {
    * Best-effort: a failed DELETE (network / already-expired) must not block the
    * local sign-out, so the session is always cleared in `finally`. Navigation
    * to /login is the caller's responsibility.
+   *
+   * withCredentials lets the browser receive the backend's cookie-clearing
+   * Set-Cookie (Max-Age=0) so a subsequent cold start does not silently renew.
    */
   async function logout(): Promise<void> {
     const sid = _sessionId.value
     try {
       if (sid) {
-        await http.delete(`${SESSION_URL}${sid}`)
+        await http.delete(`${SESSION_URL}${sid}`, { withCredentials: true })
       }
     } catch {
       // Swallowed by design — local sign-out proceeds regardless.
@@ -118,22 +132,34 @@ export const useAuthStore = defineStore('access.auth', () => {
   }
 
   /**
-   * Attempt to exchange the current refresh token for a new access token.
+   * Attempt to exchange the refresh token for a new access token.
+   *
+   * Cookie-first: the backend reads the refresh token from the httpOnly
+   * `__Host-gocell_rt` cookie (which survives a reload), so we always attempt the
+   * call — including on a cold start when nothing is in memory. The in-memory
+   * token, when present, is sent as a body fallback for the backend's dual
+   * channel; with no token we POST an empty body and rely purely on the cookie.
+   * withCredentials lets the browser attach the cookie and accept the rotated one.
    *
    * Returns the new accessToken on success, null otherwise.
-   * On network/server failure: clearSession() + return null.
+   * On network/server failure (e.g. no valid cookie): clearSession() + return null.
    *
-   * This function is the onRefresh callback for apps/web setupAxios (PR-06).
-   * Do NOT call setupAxios here — that is the app assembly layer's job.
+   * This function is the onRefresh callback for apps/web setupAxios (PR-06) and
+   * the engine behind bootstrapSession()'s cold-start restore. Do NOT call
+   * setupAxios here — that is the app assembly layer's job.
    */
   async function refresh(): Promise<string | null> {
-    if (!_refreshToken.value) {
-      return null
-    }
-
+    // Cookie-only cold start sends an empty body; an in-memory token, when
+    // present, rides along as the backend's documented body fallback. Typed
+    // against the contract so a future schema rename surfaces here at compile
+    // time instead of silently sending a stale field name.
+    const body: HttpAuthRefreshV1Request | Record<string, never> = _refreshToken.value
+      ? { refreshToken: _refreshToken.value }
+      : {}
     try {
-      const res = await http.post<HttpAuthRefreshV1Response>(REFRESH_URL, {
-        refreshToken: _refreshToken.value,
+      const res = await http.post<HttpAuthRefreshV1Response>(REFRESH_URL, body, {
+        withCredentials: true,
+        timeout: REFRESH_TIMEOUT_MS,
       })
       setSession(res.data.data)
       return res.data.data.accessToken
